@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Buyzo Cart — Modern Shop</title>
+  <meta name="description" content="Buyzo Cart — clean, mobile‑first shop template with product cards, step checkout, and policy modals."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://images.unsplash.com"/>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="brand" aria-label="Buyzo Cart brand" onclick="showPage('productsPage')">
+        <span class="chip">BUYZO</span>
+        <span>Cart</span>
+      </div>
+      <div class="cta">
+        <button class="btn secondary" id="openContactTop" title="Contact">Contact</button>
+        <button class="btn secondary" id="openMyOrdersTop" title="My Orders">My Orders
+          <span id="ordersNotification" class="notification-badge" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Products Page -->
+    <section class="page active" id="productsPage">
+      <section class="hero">
+        <h1>Welcome to <span style="color:var(--accent)">Buyzo Cart</span></h1>
+        <p>Clean, fast checkout. Hand‑picked products. Fully responsive UI.</p>
+      </section>
+
+      <div class="steps center">
+        <div class="step-pill" id="pill-products">1 • Products</div>
+        <div class="step-pill disabled" id="pill-order">2 • Order Details</div>
+        <div class="step-pill disabled" id="pill-user">3 • Your Info</div>
+        <div class="step-pill disabled" id="pill-pay">4 • Payment</div>
+      </div>
+
+      <div class="card-panel" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <h2 style="margin:0">Featured Products</h2>
+      </div>
+
+      <!-- Horizontal Product Slider -->
+      <div class="product-slider">
+        <div class="slider-header">
+          <h2 class="slider-title">Trending Now</h2>
+          <!-- Removed slider controls as requested -->
+        </div>
+        <div class="slider-container">
+          <div class="slider-track" id="productSlider"></div>
+        </div>
+      </div>
+
+      <!-- Moved search bar here as requested -->
+      <div class="search-wrap">
+        <input id="searchInput" placeholder="Search products (e.g. 'Sneakers', 'T-shirt', 'Earbuds')" />
+      </div>
+
+      <!-- Category Navigation -->
+      <div class="categories">
+        <div class="category-pill active" data-category="all">All</div>
+        <div class="category-pill" data-category="Topwear">Topwear</div>
+        <div class="category-pill" data-category="Sarees">Sarees</div>
+        <div class="category-pill" data-category="Bottomwear">Bottomwear</div>
+        <div class="category-pill" data-category="Watches">Watches</div>
+        <div class="category-pill" data-category="Backt">Backt</div>
+        <div class="category-pill" data-category="Kurta Sets">Kurta Sets</div>
+        <div class="category-pill" data-category="Winter Wear">Winter Wear</div>
+        <div class="category-pill" data-category="Casual shoes">Casual shoes</div>
+        <div class="category-pill" data-category="Trolley Bags">Trolley Bags</div>
+        <div class="category-pill" data-category="Men's Acc">Men's Acc</div>
+        <div class="category-pill" data-category="Bottor">Bottor</div>
+      </div>
+
+      <div class="grid" id="productGrid"><!-- product cards here --></div>
+    </section>
+
+    <!-- Product Detail Page -->
+    <section class="page" id="productDetailPage">
+      <div class="product-detail-page">
+        <div class="back-to-products" onclick="showPage('productsPage')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Products
+        </div>
+        
+        <div class="product-detail-container">
+          <div class="product-detail-gallery">
+            <div class="product-detail-main-image" id="detailMainImage">
+              <button class="detail-carousel-control prev">&#10094;</button>
+              <button class="detail-carousel-control next">&#10095;</button>
+              <div class="detail-carousel-dots" id="detailCarouselDots"></div>
+            </div>
+            <div class="product-detail-thumbnails" id="detailThumbnails"></div>
+          </div>
+          
+          <div class="product-detail-info">
+            <h1 class="product-detail-title" id="detailTitle"></h1>
+            <div class="product-detail-price" id="detailPrice"></div>
+            <div class="product-detail-desc" id="detailDesc"></div>
+            <div class="product-detail-full-desc" id="detailFullDesc"></div>
+            
+            <div class="product-detail-meta">
+              <h4>Product Details</h4>
+              <div id="detailMeta"></div>
+            </div>
+            
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <button class="btn" id="detailOrderBtn">Order Now</button>
+              <button class="btn secondary" onclick="showPage('productsPage')">Continue Shopping</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Similar Products Section -->
+        <div class="similar-products">
+          <h2 class="similar-title">Similar Products</h2>
+          <div class="slider-container">
+            <div class="slider-track" id="similarProductsSlider"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Order Details Page -->
+    <section class="page" id="orderPage">
+      <div class="card-panel">
+        <h3 style="margin-top:0">Order Details</h3>
+        <p style="color:var(--muted)">Choose size/quantity and confirm product before entering contact or payment details.</p>
+
+        <div id="selectedProductCard" class="card" style="margin-bottom:16px">
+          <div style="display:flex;gap:16px;flex-direction:column">
+            <div id="galleryMain" class="gallery-main">
+              <button class="carousel-control prev">&#10094;</button>
+              <button class="carousel-control next">&#10095;</button>
+              <div class="carousel-dots"></div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="title" id="spTitle"></div>
+            <div class="price" id="spPrice"></div>
+            <div class="badge" id="spDesc"></div>
+            
+            <!-- Product Details Section -->
+            <div class="product-details">
+              <h4>Product Details</h4>
+              <p id="spFullDesc"></p>
+            </div>
+
+            <div style="margin-top:auto">
+              <label>Size</label>
+              <select id="sizeSelect"><option value="">Select size</option></select>
+
+              <div style="height:12px"></div>
+              <label>Quantity</label>
+              <!-- Replaced with plus/minus quantity control -->
+              <div class="quantity-control">
+                <button class="qty-minus">-</button>
+                <input type="number" id="qtySelect" min="1" value="1" readonly>
+                <button class="qty-plus">+</button>
+              </div>
+
+              <div style="height:16px"></div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button id="toUserInfo" class="btn" style="flex:1">Continue → Provide Your Info</button>
+                <button id="backToProducts" class="btn secondary" style="flex:1">Back to Products</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- User Info Page -->
+    <section class="page" id="userPage">
+      <div class="card-panel">
+        <h3 style="margin-top:0">Your Contact & Delivery Address</h3>
+        <p style="color:var(--muted)">We do not use saved addresses. Please provide a fresh delivery address for this order.</p>
+
+        <div style="display:flex;gap:16px;flex-direction:column">
+          <div>
+            <label>Full Name *</label>
+            <input id="fullname" placeholder="Enter full name" />
+          </div>
+          <div class="row">
+            <div class="col"><label>Mobile Number *</label><input id="mobile" placeholder="10-digit mobile number" /></div>
+            <div class="col"><label>Pincode *</label><input id="pincode" placeholder="Pincode" /></div>
+          </div>
+          <div class="row">
+            <div class="col"><label>City *</label><input id="city" /></div>
+            <div class="col"><label>State *</label><input id="state" /></div>
+          </div>
+          <div>
+            <label>House / Street *</label>
+            <input id="house" />
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+            <button id="toPayment" class="btn" style="flex:1">Continue to Payment</button>
+            <button id="editOrder" class="btn secondary" style="flex:1">Edit Order Details</button>
+          </div>
+          <div style="margin-top:16px;color:var(--muted);font-size:14px">
+            <strong>Note:</strong> If you prefer to change products, click "Edit Order Details" or use "Products" to go back.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Payment Page -->
+    <section class="page" id="paymentPage">
+      <div class="card-panel">
+        <h3 style="margin-top:0">Payment Method</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;">
+            <input type="radio" name="pay" value="prepaid" checked /> Prepaid (UPI / Card)
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;">
+            <input type="radio" name="pay" value="cod" /> Cash on Delivery (Note: may increase processing time)
+          </label>
+        </div>
+        
+        <div class="summary">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div>Product</div><div id="sumProduct">-</div></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div>Qty</div><div id="sumQty">-</div></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div>Price</div><div id="sumPrice">-</div></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px dashed var(--border)"><div>Delivery</div><div id="sumDel">₹50</div></div>
+          <div style="display:flex;justify-content:space-between;font-weight:700;margin-top:8px;font-size:18px"><div>Total</div><div id="sumTotal">-</div></div>
+        </div>
+        
+        <div style="height:16px"></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button id="confirmOrder" class="btn" style="flex:1">Confirm & Place Order</button>
+          <button id="payBack" class="btn secondary" style="flex:1">Back</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Order Success (hidden) -->
+    <section class="page center" id="successPage">
+      <div class="card-panel" style="max-width:520px;margin:32px auto;padding:32px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 16px">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <div style="font-size:24px;font-weight:700;color:var(--success);margin-bottom:8px">Thank You for Your Order!</div>
+        <div style="margin-top:10px;color:var(--muted)">Your order has been placed successfully! We will confirm and process your order. Tracking will be shared once supplier ships it.</div>
+        <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button id="goHome" class="btn">Back to Products</button>
+          <button id="viewOrders" class="btn secondary">View My Orders</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- My Orders Page -->
+    <section class="page" id="myOrdersPage">
+      <div class="policy-page">
+        <div class="back-button" onclick="showPage('productsPage')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Products
+        </div>
+        
+        <div class="orders-container">
+          <h2>My Orders</h2>
+          <p style="color:var(--muted);margin-bottom:24px">View and manage your recent orders</p>
+          
+          <div id="ordersList">
+            <!-- Orders will be dynamically inserted here -->
+          </div>
+          
+          <div id="noOrders" class="card-panel center" style="display:none">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted-light)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            <h3 style="margin:16px 0 8px;color:var(--muted)">No orders yet</h3>
+            <p style="color:var(--muted-light)">You haven't placed any orders yet. Start shopping to see your orders here.</p>
+            <button class="btn" style="margin-top:16px" onclick="showPage('productsPage')">Start Shopping</button>
+            </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Policy Pages -->
+    <section class="page" id="contactPage">
+      <div class="policy-page">
+        <div class="back-button" onclick="showPage('productsPage')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Products
+        </div>
+        <div class="policy-content">
+          <h2>Contact Us</h2>
+          <p>We're here to help with any questions or concerns about your order or our products.</p>
+          
+          <h3>Our Address</h3>
+          <p>Jwalapur, Haridwar, Uttarakhand - 249401<br>India</p>
+          
+          <h3>Customer Support Hours</h3>
+          <p>Monday to Saturday: 10:00 AM to 7:00 PM IST<br>
+          Sunday: Closed</p>
+          
+          <h3>Email</h3>
+          <p>For order-related queries: <a href="mailto:buyzocartshop@gmail.com">buyzocartshop@gmail.com</a></p>
+
+          <h3>Telegram Support</h3>
+          <p>For quick assistance: <a href="https://t.me/Buyzocartsupport" target="_blank">@Buyzocartsupport</a></p>
+          
+          <h3>Response Time</h3>
+          <p>We strive to respond to all emails within <strong>24 business hours</strong>.</p>
+          
+          <h3>Order Issues</h3>
+          <p>When contacting us about an order, please include your order ID for faster resolution.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="cancellationPage">
+      <div class="policy-page">
+        <div class="back-button" onclick="showPage('productsPage')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin" round" style="margin-right: 8px;">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Products
+        </div>
+        <div class="policy-content">
+          <h2>Refund & Cancellation Policy</h2>
+          <p>At Buyzo, we value our customers and aim to provide a smooth shopping experience.</p>
+
+          <h3>Order Cancellation</h3>
+          <p>Orders can be cancelled within <strong>24 hours</strong> of placing them. Once the order is processed/shipped, cancellation requests will not be accepted.</p>
+
+          <h3>Refunds</h3>
+          <p>If you cancel your order within the allowed time, the amount will be refunded to your original payment method within <strong>5–7 working days</strong>.</p>
+
+          <h3>Payment Gateway Charges</h3>
+          <p>Please note that payment gateway charges (approx <strong>2–3% of the order value</strong>) are non-refundable. For example, if you placed an order of ₹100 and cancelled it, the refund amount will be ₹97–₹98. This deduction is due to Razorpay’s non-refundable transaction fee.</p>
+
+          <h3>Contact Us</h3>
+          <p>
+          For refund or cancellation requests, please contact us at:<br>
+          Email: <strong>buyzocartshop@gmail.com</strong><br>
+          Telegram: <a href="https://t.me/Buyzocartsupport" target="_blank">@Buyzocartsupport</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="termsPage">
+      <div class="policy-page">
+        <div class="back-button" onclick="showPage('productsPage')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Products
+        </div>
+        <div class="policy-content">
+          <h2>Terms & Conditions</h2>
+          <p>Welcome to <strong>Buyzo Cart</strong>. By placing an order on our website, you agree to the terms below.</p>
+          
+          <h3>1. Service Model</h3>
+          <p>We operate a <strong>dropshipping</strong> model. Products are sourced from third‑party suppliers and shipped directly to you. Images shown are for representation and minor variations may occur.</p>
+          
+          <h3>2. Orders & Pricing</h3>
+          <p>All prices are in INR and inclusive of applicable taxes unless stated. An order is confirmed only after successful payment authorization. We reserve the right to cancel and refund any order due to stock, pricing, or verification issues.</p>
+          
+          <h3>3. Delivery</h3>
+          <p>Estimated delivery time is displayed at checkout. Delays may occur due to courier logistics or festivals. We are not liable for delays once the order is handed over to the courier.</p>
+          
+          <h3>4. Customer Responsibilities</h3>
+          <p>Please provide accurate contact details and delivery address. Incorrect information may cause delays or non‑delivery.</p>
+          
+          <h3>5. Prohibited Use</h3>
+          <p>Do not misuse the website, attempt unauthorized access, or submit fraudulent orders.</p>
+          
+          <h3>6. Liability</h3>
+          <p>To the maximum extent permitted by law, our liability is limited to the order value paid by you.</p>
+          
+          <h3>7. Contact</h3>
+          <p>For any support, email us at <a href="mailto:buyzocartshop@gmail.com">buyzocartshop@gmail.com</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="shippingPage">
+      <div class="policy-page">
+        <div class="back-button" onclick="showPage('productsPage')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height:20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Products
+        </div>
+        <div class="policy-content">
+          <h2>Shipping Policy</h2>
+          
+          <h3>1. Processing Time</h3>
+          <p>Orders are processed within <strong>1-2 business days</strong> after payment confirmation. Business days are Monday to Saturday, excluding public holidays.</p>
+          
+          <h3>2. Shipping Timeline</h3>
+          <p>Delivery usually takes 5–10 working days depending on location.</p>
+          
+          <h3>3. Shipping Methods</h3>
+          <ul>
+            <li><strong>Standard Shipping</strong>: 5-7 business days (₹50)</li>
+            <li><strong>Express Shipping</strong>: 2-4 business days (₹150)</li>
+          </ul>
+          
+          <h3>4. Shipping Areas</h3>
+          <p>We currently ship to all major cities and towns across India. For remote locations, additional delivery time may be required.</p>
+          
+          <h3>5. Order Tracking</h3>
+          <p>Once your order is shipped, you will receive a confirmation email with tracking information. You can track your order using the provided tracking number.</p>
+          
+          <h3>6. Undeliverable Orders</h3>
+          <p>If a delivery attempt fails due to incorrect address or recipient unavailable, the package will be returned to us. Additional shipping charges will apply for redelivery.</p>
+          
+          <h3>7. International Shipping</h3>
+          <p>Currently, we only ship within India. International shipping is not available.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="privacyPage">
+      <div class="policy-page">
+        <div class="back-button" onclick="showPage('productsPage')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Products
+        </div>
+        <div class="policy-content">
+          <h2>Privacy Policy</h2>
+          <p>At Buyzo Cart, we are committed to protecting your privacy and ensuring the security of your personal information.</p>
+          
+          <h3>1. Information We Collect</h3>
+          <p>We collect information that you provide directly to us, including:</p>
+          <ul>
+            <li>Name, email address, phone number, and shipping address</li>
+            <li>Payment information (processed securely by our payment partners)</li>
+            <li>Order history and preferences</li>
+          </ul>
+          
+          <h3>2. How We Use Your Information</h3>
+          <p>We use your information to:</p>
+          <ul>
+            <li>Process and fulfill your orders</li>
+            <li>Communicate with you about orders, products, and promotions</li>
+            <li>Improve our website and customer experience</li>
+            <li>Prevent fraud and enhance security</li>
+          </ul>
+          
+          <h3>3. Information Sharing</h3>
+          <p>We do not sell your personal information to third parties. We may share your information with:</p>
+          <ul>
+            <li>Shipping partners to deliver your orders</li>
+            <li>Payment processors to complete transactions</li>
+            <li>Service providers who assist our operations</li>
+          </ul>
+          
+          <h3>4. Data Security</h3>
+          <p>We implement appropriate security measures to protect your personal information against unauthorized access, alteration, or destruction.</p>
+          
+          <h3>5. Your Rights</h3>
+          <p>You have the right to access, correct, or delete your personal information. You can also opt-out of marketing communications at any time.</p>
+          
+          <h3>6. Cookies</h3>
+          <p>Our website uses cookies to enhance your shopping experience and analyze site traffic. You can adjust your browser settings to refuse cookies.</p>
+          
+          <h3>7. Policy Updates</h3>
+          <p>We may update this policy periodically. The updated version will be posted on our website with the effective date.</p>
+          
+          <h3>8. Contact Us</h3>
+          <p>For privacy-related questions, contact us at <a href="mailto:buyzocartshop@gmail.com">buyzocartshop@gmail.com</a></p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div style="max-width:900px;margin:0 auto;color:var(--muted)">
+        <div style="font-weight:700;color:var(--accent);font-size:18px">Buyzo Cart</div>
+        
+        <!-- About Us Section -->
+        <div class="about-us">
+          <h3>About Us</h3>
+          <p>Buyzo is a dropshipping platform from Haridwar, Uttarakhand. We provide affordable and trendy clothing directly to your doorstep.</p>
+        </div>
+        
+        <div style="font-size:14px;margin-top:16px">We perform dropshipping using third‑party suppliers. This site does not impersonate any marketplace.</div>
+        
+        <!-- Social Media Links -->
+        <div class="social-links">
+          <a href="https://www.instagram.com/buyzo.cart?igsh=MW5lMmpqcnYwOXduaA==" target="_blank" class="social-icon" title="Instagram">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919 4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.980-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.980.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.40-1.439-1.40z"/>
+            </svg>
+          </a>
+          <a href="https://www.facebook.com/share/1ErTUZySbt/" target="_blank" class="social-icon" title="Facebook">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
+            </svg>
+          </a>
+          <a href="https://t.me/buyzocartshop" target="_blank" class="social-icon" title="Telegram">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.140.141-.259.259-.374.261l.213-3.053 5.56-5.022c.240-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.640-.203-.658-.64.136-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
+            </svg>
+          </a>
+          <a href="https://www.youtube.com/@BuyzoCard" target="_blank" class="social-icon" title="YouTube">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.230 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.230 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+            </svg>
+          </a>
+        </div>
+        
+        <div style="margin-top:16px;font-size:14px">
+          <a href="#" onclick="showPage('contactPage'); return false;">Contact Us</a> •
+          <a href="#" onclick="showPage('cancellationPage'); return false;">Refund & Cancellation Policy</a> •
+          <a href="#" onclick="showPage('termsPage'); return false;">Terms & Conditions</a> •
+          <a href="#" onclick="showPage('shippingPage'); return false;">Shipping Policy</a> •
+          <a href="#" onclick="showPage('privacyPage'); return false;">Privacy Policy</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    <div class="toast-icon">✓</div>
+    <div id="toast-message"></div>
+  </div>
+
+  <!-- Cancellation Modal -->
+  <div class="modal-overlay" id="cancellationModal">
+    <div class="cancellation-modal">
+      <h3>Select Reason for Cancellation</h3>
+      <div id="cancellationReasons">
+        <label class="cancellation-reason">
+          <input type="radio" name="cancelReason" value="Changed my mind"> Changed my mind
+        </label>
+        <label class="cancellation-reason">
+          <input type="radio" name="cancelReason" value="Product not required anymore"> Product not required anymore
+        </label>
+        <label class="cancellation-reason">
+          <input type="radio" name="cancelReason" value="Found a better price elsewhere"> Found a better price elsewhere
+        </label>
+        <label class="cancellation-reason">
+          <input type="radio" name="cancelReason" value="Delivery time is too long"> Delivery time is too long
+        </label>
+        <label class="cancellation-reason">
+          <input type="radio" name="cancelReason" value="Ordered by mistake"> Ordered by mistake
+        </label>
+        <label class="cancellation-reason">
+          <input type="radio" name="cancelReason" value="Other reason"> Other reason
+        </label>
+      </div>
+      <div class="cancellation-actions">
+        <button class="btn secondary" id="cancelModalClose">Cancel</button>
+        <button class="btn error" id="cancelModalConfirm">Confirm Cancellation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Modal - Updated with Cancel and Yes buttons -->
+  <div class="modal-overlay" id="alertModal">
+    <div class="alert-modal">
+      <div class="alert-icon">⚠️</div>
+      <h3>Payment Gateway Charges</h3>
+      <p id="alertMessage">Please note that payment gateway charges (approx 2–3% of the order value) are non-refundable. This deduction is due to Razorpay's non-refundable transaction fee.</p>
+      <div class="alert-modal-buttons">
+        <button class="btn secondary" id="alertModalCancel">Cancel</button>
+        <button class="btn" id="alertModalConfirm">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
