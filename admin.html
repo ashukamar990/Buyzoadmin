@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buyzo Cart - Admin Panel</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <span class="chip">BUYZO</span>
+        <span>Admin</span>
+      </div>
+      <div class="cta">
+        <button class="btn" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Login Page -->
+    <section class="page active" id="loginPage">
+      <div class="card-panel" style="max-width: 400px; margin: 50px auto;">
+        <h2 style="text-align: center; margin-bottom: 24px;">Admin Login</h2>
+        <div>
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="Admin email">
+        </div>
+        <div style="margin-top: 16px;">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="Password">
+        </div>
+        <button class="btn" style="width: 100%; margin-top: 24px;" id="loginBtn">Login</button>
+      </div>
+    </section>
+
+    <!-- Dashboard Page -->
+    <section class="page" id="dashboardPage">
+      <h2>Admin Dashboard</h2>
+      
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="products">Products</button>
+        <button class="admin-tab" data-tab="orders">Orders</button>
+        <button class="admin-tab" data-tab="policies">Policies</button>
+      </div>
+      
+      <!-- Products Tab -->
+      <div class="admin-tab-content active" data-tab="products">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3>Product Management</h3>
+          <button class="btn" id="addProductBtn">Add New Product</button>
+        </div>
+        
+        <div class="admin-table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Category</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsTable">
+              <!-- Products will be loaded here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Orders Tab -->
+      <div class="admin-tab-content" data-tab="orders">
+        <h3>Order Management</h3>
+        
+        <div class="admin-table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Product</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTable">
+              <!-- Orders will be loaded here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Policies Tab -->
+      <div class="admin-tab-content" data-tab="policies">
+        <h3>Policy Management</h3>
+        
+        <div class="policy-editor">
+          <div class="policy-section">
+            <h4>About Us</h4>
+            <textarea id="aboutPolicy" rows="6"></textarea>
+          </div>
+          
+          <div class="policy-section">
+            <h4>Refund Policy</h4>
+            <textarea id="refundPolicy" rows="6"></textarea>
+          </div>
+          
+          <div class="policy-section">
+            <h4>Terms & Conditions</h4>
+            <textarea id="termsPolicy" rows="6"></textarea>
+          </div>
+          
+          <div class="policy-section">
+            <h4>Shipping Policy</h4>
+            <textarea id="shippingPolicy" rows="6"></textarea>
+          </div>
+          
+          <div class="policy-section">
+            <h4>Privacy Policy</h4>
+            <textarea id="privacyPolicy" rows="6"></textarea>
+          </div>
+          
+          <button class="btn" id="savePoliciesBtn" style="margin-top: 20px;">Save All Policies</button>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Product Form Modal -->
+    <div class="modal-overlay" id="productModal">
+      <div class="modal">
+        <h3 id="productModalTitle">Add Product</h3>
+        
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" id="productTitle">
+        </div>
+        
+        <div class="form-group">
+          <label>Price (₹)</label>
+          <input type="number" id="productPrice">
+        </div>
+        
+        <div class="form-group">
+          <label>Category</label>
+          <input type="text" id="productCategory">
+        </div>
+        
+        <div class="form-group">
+          <label>Short Description</label>
+          <input type="text" id="productDesc">
+        </div>
+        
+        <div class="form-group">
+          <label>Full Description</label>
+          <textarea id="productFullDesc" rows="3"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Sizes (comma separated)</label>
+          <input type="text" id="productSizes" placeholder="S, M, L, XL">
+        </div>
+        
+        <div class="form-group">
+          <label>Image URLs (one per line)</label>
+          <textarea id="productImages" rows="3"></textarea>
+        </div>
+        
+        <div class="form-actions">
+          <button class="btn secondary" id="cancelProductBtn">Cancel</button>
+          <button class="btn" id="saveProductBtn">Save Product</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="../js/firebase.js"></script>
+  <script type="module" src="../js/admin.js"></script>
+</body>
+</html>
