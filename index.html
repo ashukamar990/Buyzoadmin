@@ -1,211 +1,571 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Buyzo Cart - Modern E-commerce</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Buyzo Cart — Admin Panel</title>
+  <meta name="description" content="Admin panel for Buyzo Cart — manage products, orders, and settings."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <!-- Firebase Database -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  
+  <!-- External CSS -->
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <div class="header-inner">
-      <div class="brand">
-        <span class="chip">BUYZO</span>
-        <span>Cart</span>
-      </div>
-      <div class="cta">
-        <button class="btn secondary" id="openContact">Contact</button>
-        <button class="btn secondary" id="openMyOrders">My Orders</button>
-      </div>
-    </div>
-  </header>
-
-  <main class="container">
-    <!-- Products Page -->
-    <section class="page active" id="productsPage">
-      <section class="hero">
-        <h1>Welcome to <span style="color:var(--accent)">Buyzo Cart</span></h1>
-        <p>Clean, fast checkout. Hand‑picked products. Fully responsive UI.</p>
-      </section>
-
-      <div class="search-wrap">
-        <input id="searchInput" placeholder="Search products..." />
-      </div>
-
-      <div class="categories" id="categoriesContainer">
-        <!-- Categories will be loaded dynamically -->
-      </div>
-
-      <div class="grid" id="productGrid">
-        <!-- Products will be loaded dynamically -->
-        <div class="loading">Loading products...</div>
-      </div>
-    </section>
-
-    <!-- Product Detail Page -->
-    <section class="page" id="productDetailPage">
-      <div class="back-to-products" onclick="showPage('productsPage')">
-        ← Back to Products
+  <!-- Admin Login Page -->
+  <div id="adminLoginPage" class="login-container">
+    <div class="login-card">
+      <div class="login-logo">
+        <h1 class="login-title">Buyzo Cart</h1>
+        <p class="login-subtitle">Admin Panel Login</p>
       </div>
       
-      <div class="product-detail-container">
-        <div class="product-detail-gallery">
-          <div class="product-detail-main-image" id="detailMainImage"></div>
-          <div class="product-detail-thumbnails" id="detailThumbnails"></div>
-        </div>
-        
-        <div class="product-detail-info">
-          <h1 class="product-detail-title" id="detailTitle"></h1>
-          <div class="product-detail-price" id="detailPrice"></div>
-          <div class="product-detail-desc" id="detailDesc"></div>
-          <div class="product-detail-full-desc" id="detailFullDesc"></div>
-          
-          <div class="product-detail-meta">
-            <h4>Product Details</h4>
-            <div id="detailMeta"></div>
-          </div>
-          
-          <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <button class="btn" id="detailOrderBtn">Order Now</button>
-            <button class="btn secondary" onclick="showPage('productsPage')">Continue Shopping</button>
-          </div>
-        </div>
+      <div class="form-group">
+        <label for="adminEmail">Email</label>
+        <input type="email" id="adminEmail" placeholder="admin@example.com">
       </div>
-    </section>
-
-    <!-- Order Form Page -->
-    <section class="page" id="orderPage">
-      <div class="card-panel">
-        <h3>Order Details</h3>
-        
-        <div id="selectedProductCard" class="card">
-          <div class="card-body">
-            <div class="title" id="spTitle"></div>
-            <div class="price" id="spPrice"></div>
-            
-            <label>Size</label>
-            <select id="sizeSelect">
-              <option value="">Select size</option>
-            </select>
-
-            <label>Quantity</label>
-            <div class="quantity-control">
-              <button class="qty-minus">-</button>
-              <input type="number" id="qtySelect" min="1" value="1" readonly>
-              <button class="qty-plus">+</button>
-            </div>
-
-            <div style="display:flex;gap:10px;flex-wrap:wrap">
-              <button id="toUserInfo" class="btn" style="flex:1">Continue → Provide Your Info</button>
-              <button id="backToProducts" class="btn secondary" style="flex:1">Back to Products</button>
-            </div>
-          </div>
-        </div>
+      
+      <div class="form-group">
+        <label for="adminPassword">Password</label>
+        <input type="password" id="adminPassword" placeholder="Enter your password">
       </div>
-    </section>
-
-    <!-- User Info Page -->
-    <section class="page" id="userPage">
-      <div class="card-panel">
-        <h3>Your Contact & Delivery Address</h3>
-        
-        <div>
-          <label>Full Name *</label>
-          <input id="fullname" placeholder="Enter full name" />
-        </div>
-        <div class="row">
-          <div class="col"><label>Mobile Number *</label><input id="mobile" placeholder="10-digit mobile number" /></div>
-          <div class="col"><label>Pincode *</label><input id="pincode" placeholder="Pincode" /></div>
-        </div>
-        <div class="row">
-          <div class="col"><label>City *</label><input id="city" /></div>
-          <div class="col"><label>State *</label><input id="state" /></div>
-        </div>
-        <div>
-          <label>House / Street *</label>
-          <input id="house" />
-        </div>
-        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-          <button id="toPayment" class="btn" style="flex:1">Continue to Payment</button>
-          <button id="editOrder" class="btn secondary" style="flex:1">Edit Order Details</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Payment Page -->
-    <section class="page" id="paymentPage">
-      <div class="card-panel">
-        <h3>Payment Method</h3>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
-          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;">
-            <input type="radio" name="pay" value="prepaid" checked /> Prepaid (UPI / Card)
-          </label>
-          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;">
-            <input type="radio" name="pay" value="cod" /> Cash on Delivery
-          </label>
-        </div>
-        
-        <div class="summary">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div>Product</div><div id="sumProduct">-</div></div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div>Qty</div><div id="sumQty">-</div></div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div>Price</div><div id="sumPrice">-</div></div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px dashed var(--border)"><div>Delivery</div><div id="sumDel">₹50</div></div>
-          <div style="display:flex;justify-content:space-between;font-weight:700;margin-top:8px;font-size:18px"><div>Total</div><div id="sumTotal">-</div></div>
-        </div>
-        
-        <div style="height:16px"></div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <button id="confirmOrder" class="btn" style="flex:1">Confirm & Place Order</button>
-          <button id="payBack" class="btn secondary" style="flex:1">Back</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Order Success Page -->
-    <section class="page center" id="successPage">
-      <div class="card-panel" style="max-width:520px;margin:32px auto;padding:32px">
-        <div style="font-size:24px;font-weight:700;color:var(--success);margin-bottom:8px">Thank You for Your Order!</div>
-        <div style="margin-top:10px;color:var(--muted)">Your order has been placed successfully!</div>
-        <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-          <button id="goHome" class="btn">Back to Products</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Policy Pages -->
-    <section class="page" id="policyPage">
-      <div class="policy-page">
-        <div class="back-button" onclick="showPage('productsPage')">
-          ← Back to Products
-        </div>
-        <div class="policy-content">
-          <h2 id="policyTitle"></h2>
-          <div id="policyContent"></div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <div>
-      <div style="font-weight:700;color:var(--accent);font-size:18px">Buyzo Cart</div>
-      <div style="margin-top:16px;font-size:14px">
-        <a href="#" onclick="showPolicy('about'); return false;">About Us</a> •
-        <a href="#" onclick="showPolicy('refund'); return false;">Refund Policy</a> •
-        <a href="#" onclick="showPolicy('terms'); return false;">Terms & Conditions</a> •
-        <a href="#" onclick="showPolicy('shipping'); return false;">Shipping Policy</a> •
-        <a href="#" onclick="showPolicy('privacy'); return false;">Privacy Policy</a>
-      </div>
+      
+      <button class="btn" style="width: 100%" onclick="adminLogin()">Login</button>
     </div>
-  </footer>
-
-  <!-- Toast Notification -->
-  <div id="toast" class="toast">
-    <div class="toast-icon">✓</div>
-    <div id="toast-message"></div>
   </div>
 
-  <script type="module" src="js/firebase.js"></script>
-  <script type="module" src="js/public.js"></script>
+  <!-- Admin Panel (initially hidden) -->
+  <div id="adminPanel" style="display: none">
+    <div class="admin-container">
+      <!-- Sidebar -->
+      <div class="admin-sidebar" id="adminSidebar">
+        <div class="admin-brand">
+          <div class="chip">BUYZO</div>
+          <h1>Admin Panel</h1>
+          <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
+        </div>
+        
+        <ul class="admin-nav">
+          <li><a href="#" class="active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+          <li><a href="#" data-tab="products"><i class="fas fa-box"></i> Products</a></li>
+          <li><a href="#" data-tab="orders"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+          <li><a href="#" data-tab="trending"><i class="fas fa-fire"></i> Trending Products</a></li>
+          <li><a href="#" data-tab="customers"><i class="fas fa-users"></i> Customers</a></li>
+          <li><a href="#" data-tab="policies"><i class="fas fa-file-alt"></i> Policies</a></li>
+          <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+      </div>
+      
+      <!-- Main Content -->
+      <div class="admin-main">
+        <div class="admin-header">
+          <div>
+            <button class="menu-toggle" onclick="toggleSidebar()">
+              <i class="fas fa-bars"></i>
+            </button>
+            <h1 class="admin-title" id="adminPageTitle">Dashboard</h1>
+          </div>
+          
+          <div class="admin-user">
+            <div class="admin-avatar">A</div>
+            <div>
+              <div style="font-weight: 600">Admin User</div>
+              <div style="font-size: 14px; color: var(--muted)">Super Admin</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Dashboard Tab -->
+        <div class="tab-content active" id="dashboard">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon blue">
+                <i class="fas fa-box"></i>
+              </div>
+              <div class="stat-value" id="totalProducts">0</div>
+              <div class="stat-label">Total Products</div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon green">
+                <i class="fas fa-shopping-cart"></i>
+              </div>
+              <div class="stat-value" id="totalOrders">0</div>
+              <div class="stat-label">Total Orders</div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon orange">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="stat-value" id="pendingOrders">0</div>
+              <div class="stat-label">Pending Orders</div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon red">
+                <i class="fas fa-fire"></i>
+              </div>
+              <div class="stat-value" id="trendingProducts">0</div>
+              <div class="stat-label">Trending Products</div>
+            </div>
+          </div>
+
+          <!-- Earnings Section -->
+          <div class="earnings-section">
+            <div class="earnings-header">
+              <h2 class="earnings-title">Revenue & Earnings</h2>
+            </div>
+            <div class="earnings-cards">
+              <div class="earnings-card">
+                <div class="earnings-value" id="totalEarnings">₹0</div>
+                <div class="earnings-label">Total Earnings</div>
+                <div class="earnings-comparison">
+                  <span class="earnings-trend" id="totalEarningsTrend">
+                    <i class="fas fa-caret-up trend-up"></i>
+                    <span>0%</span>
+                  </span>
+                  <span>vs lifetime</span>
+                </div>
+              </div>
+              
+              <div class="earnings-card">
+                <div class="earnings-value" id="lastWeekEarnings">₹0</div>
+                <div class="earnings-label">Last Week Earnings</div>
+                <div class="earnings-comparison">
+                  <span class="earnings-trend" id="lastWeekTrend">
+                    <i class="fas fa-caret-up trend-up"></i>
+                    <span>0%</span>
+                  </span>
+                  <span>vs previous week</span>
+                </div>
+              </div>
+              
+              <div class="earnings-card">
+                <div class="earnings-value" id="lastMonthEarnings">₹0</div>
+                <div class="earnings-label">Last Month Earnings</div>
+                <div class="earnings-comparison">
+                  <span class="earnings-trend" id="lastMonthTrend">
+                    <i class="fas fa-caret-up trend-up"></i>
+                    <span>0%</span>
+                  </span>
+                  <span>vs previous month</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="content-card">
+            <div class="card-header">
+              <h2 class="card-title">Recent Orders</h2>
+              <a href="#" onclick="showTab('orders'); return false;" class="btn secondary btn-sm">View All</a>
+            </div>
+            
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Product</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="recentOrders">
+                  <!-- Will be populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Products Tab -->
+        <div class="tab-content" id="products">
+          <div class="card-header">
+            <h2 class="card-title">Product Management</h2>
+            <button class="btn" onclick="showAddProductModal()"><i class="fas fa-plus"></i> Add Product</button>
+          </div>
+          
+          <div class="table-controls">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" placeholder="Search products..." id="productSearch">
+            </div>
+            
+            <div class="filters">
+              <select id="categoryFilter">
+                <option value="">All Categories</option>
+                <option value="Topwear">Topwear</option>
+                <option value="Sarees">Sarees</option>
+                <option value="Bottomwear">Bottomwear</option>
+                <option value="Watches">Watches</option>
+                <option value="Backt">Backt</option>
+                <option value="Kurta Sets">Kurta Sets</option>
+                <option value="Winter Wear">Winter Wear</option>
+                <option value="Casual shoes">Casual shoes</option>
+                <option value="Trolley Bags">Trolley Bags</option>
+                <option value="Men's Acc">Men's Acc</option>
+                <option value="Bottor">Bottor</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="content-card">
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Trending</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="productsTable">
+                  <!-- Will be populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="pagination" id="productsPagination">
+              <!-- Pagination will be added here -->
+            </div>
+          </div>
+        </div>
+        
+        <!-- Orders Tab -->
+        <div class="tab-content" id="orders">
+          <div class="card-header">
+            <h2 class="card-title">Order Management</h2>
+            <button class="btn secondary" onclick="exportOrders()"><i class="fas fa-download"></i> Export</button>
+          </div>
+          
+          <div class="table-controls">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" placeholder="Search orders..." id="orderSearch">
+            </div>
+            
+            <div class="filters">
+              <select id="statusFilter">
+                <option value="">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Shipped">Shipped</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+              
+              <input type="date" id="dateFilter">
+            </div>
+          </div>
+          
+          <div class="content-card">
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" id="selectAllOrders"></th>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Product</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTable">
+                  <!-- Will be populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+            
+            <div style="margin-top: 16px">
+              <select id="bulkStatusAction" style="width: auto; margin-right: 12px">
+                <option value="">Bulk Action</option>
+                <option value="Confirmed">Mark as Confirmed</option>
+                <option value="Shipped">Mark as Shipped</option>
+                <option value="Delivered">Mark as Delivered</option>
+                <option value="Cancelled">Mark as Cancelled</option>
+              </select>
+              <button class="btn" onclick="applyBulkAction()">Apply</button>
+            </div>
+            
+            <div class="pagination" id="ordersPagination">
+              <!-- Pagination will be added here -->
+            </div>
+          </div>
+        </div>
+        
+        <!-- Trending Tab -->
+        <div class="tab-content" id="trending">
+          <div class="card-header">
+            <h2 class="card-title">Trending Products Control</h2>
+          </div>
+          
+          <div class="content-card">
+            <p style="margin-bottom: 16px">Select products to feature in the "Trending Now" section on the website.</p>
+            
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Trending</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="trendingTable">
+                  <!-- Will be populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Customers Tab -->
+        <div class="tab-content" id="customers">
+          <div class="card-header">
+            <h2 class="card-title">Customer Data</h2>
+            <button class="btn secondary" onclick="exportCustomers()"><i class="fas fa-download"></i> Export CSV</button>
+          </div>
+          
+          <div class="table-controls">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" placeholder="Search customers..." id="customerSearch">
+            </div>
+          </div>
+          
+          <div class="content-card">
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Mobile</th>
+                    <th>Email</th>
+                    <th>Location</th>
+                    <th>Orders</th>
+                    <th>Last Order</th>
+                  </tr>
+                </thead>
+                <tbody id="customersTable">
+                  <!-- Will be populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="pagination" id="customersPagination">
+              <!-- Pagination will be added here -->
+            </div>
+          </div>
+        </div>
+        
+        <!-- Policies Tab -->
+        <div class="tab-content" id="policies">
+          <div class="admin-tabs">
+            <div class="tab active" data-policy="about">About Us</div>
+            <div class="tab" data-policy="refund">Refund Policy</div>
+            <div class="tab" data-policy="terms">Terms & Conditions</div>
+            <div class="tab" data-policy="shipping">Shipping Policy</div>
+            <div class="tab" data-policy="privacy">Privacy Policy</div>
+          </div>
+          
+          <div class="content-card">
+            <div class="policy-content active" data-policy="about">
+              <h3>About Us Page Content</h3>
+              <textarea id="aboutContent" rows="10" style="width: 100%; margin-top: 16px"></textarea>
+              <button class="btn" style="margin-top: 16px" onclick="savePolicy('about')">Save Changes</button>
+            </div>
+            
+            <div class="policy-content" data-policy="refund">
+              <h3>Refund Policy Content</h3>
+              <textarea id="refundContent" rows="10" style="width: 100%; margin-top: 16px"></textarea>
+              <button class="btn" style="margin-top: 16px" onclick="savePolicy('refund')">Save Changes</button>
+            </div>
+            
+            <div class="policy-content" data-policy="terms">
+              <h3>Terms & Conditions Content</h3>
+              <textarea id="termsContent" rows="10" style="width: 100%; margin-top: 16px"></textarea>
+              <button class="btn" style="margin-top: 16px" onclick="savePolicy('terms')">Save Changes</button>
+            </div>
+            
+            <div class="policy-content" data-policy="shipping">
+              <h3>Shipping Policy Content</h3>
+              <textarea id="shippingContent" rows="10" style="width: 100%; margin-top: 16px"></textarea>
+              <button class="btn" style="margin-top: 16px" onclick="savePolicy('shipping')">Save Changes</button>
+            </div>
+            
+            <div class="policy-content" data-policy="privacy">
+              <h3>Privacy Policy Content</h3>
+              <textarea id="privacyContent" rows="10" style="width: 100%; margin-top: 16px"></textarea>
+              <button class="btn" style="margin-top: 16px" onclick="savePolicy('privacy')">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div class="modal-overlay" id="addProductModal">
+    <div class="admin-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Add New Product</h2>
+        <button class="modal-close" onclick="closeModal('addProductModal')">&times;</button>
+      </div>
+      
+      <div class="form-group">
+        <label for="productName">Product Name</label>
+        <input type="text" id="productName" placeholder="Enter product name">
+      </div>
+      
+      <div class="form-group">
+        <label for="productPrice">Price (₹)</label>
+        <input type="number" id="productPrice" placeholder="Enter price">
+      </div>
+      
+      <div class="form-group">
+        <label for="productCategory">Category</label>
+        <input list="categoryOptions" id="productCategory" placeholder="Select or type category">
+        <datalist id="categoryOptions">
+          <option value="Topwear">
+          <option value="Sarees">
+          <option value="Bottomwear">
+          <option value="Watches">
+          <option value="Backt">
+          <option value="Kurta Sets">
+          <option value="Winter Wear">
+          <option value="Casual shoes">
+          <option value="Trolley Bags">
+          <option value="Men's Acc">
+          <option value="Bottor">
+        </datalist>
+      </div>
+      
+      <div class="form-group">
+        <label for="productDesc">Short Description</label>
+        <input type="text" id="productDesc" placeholder="Enter short description">
+      </div>
+      
+      <div class="form-group">
+        <label for="productFullDesc">Full Description</label>
+        <textarea id="productFullDesc" placeholder="Enter full description"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label>Sizes (comma separated)</label>
+        <input type="text" id="productSizes" placeholder="S, M, L, XL">
+      </div>
+      
+      <div class="form-group">
+        <label>Product Images</label>
+        <div class="image-upload" onclick="document.getElementById('productImages').click()">
+          <div class="upload-icon">
+            <i class="fas fa-cloud-upload-alt"></i>
+          </div>
+          <p>Click to upload images</p>
+          <input type="file" id="productImages" multiple style="display: none" onchange="handleImageUpload(this)">
+        </div>
+        
+        <div class="image-preview" id="imagePreview">
+          <!-- Image previews will be added here -->
+        </div>
+      </div>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="productTrending">
+        <label for="productTrending">Mark as Trending Product</label>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn secondary" onclick="closeModal('addProductModal')">Cancel</button>
+        <button class="btn" onclick="saveProduct()">Save Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Product Modal -->
+  <div class="modal-overlay" id="editProductModal">
+    <div class="admin-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Edit Product</h2>
+        <button class="modal-close" onclick="closeModal('editProductModal')">&times;</button>
+      </div>
+      
+      <input type="hidden" id="editProductId">
+      
+      <div class="form-group">
+        <label for="editProductName">Product Name</label>
+        <input type="text" id="editProductName" placeholder="Enter product name">
+      </div>
+      
+      <div class="form-group">
+        <label for="editProductPrice">Price (₹)</label>
+        <input type="number" id="editProductPrice" placeholder="Enter price">
+      </div>
+      
+      <div class="form-group">
+        <label for="editProductCategory">Category</label>
+        <select id="editProductCategory">
+          <option value="">Select Category</option>
+          <option value="Topwear">Topwear</option>
+          <option value="Sarees">Sarees</option>
+          <option value="Bottomwear">Bottomwear</option>
+          <option value="Watches">Watches</option>
+          <option value="Backt">Backt</option>
+          <option value="Kurta Sets">Kurta Sets</option>
+          <option value="Winter Wear">Winter Wear</option>
+          <option value="Casual shoes">Casual shoes</option>
+          <option value="Trolley Bags">Trolley Bags</option>
+          <option value="Men's Acc">Men's Acc</option>
+          <option value="Bottor">Bottor</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="editProductDesc">Short Description</label>
+        <input type="text" id="editProductDesc" placeholder="Enter short description">
+      </div>
+      
+      <div class="form-group">
+        <label for="editProductFullDesc">Full Description</label>
+        <textarea id="editProductFullDesc" placeholder="Enter full description"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label>Sizes (comma separated)</label>
+        <input type="text" id="editProductSizes" placeholder="S, M, L, XL">
+      </div>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="editProductTrending">
+        <label for="editProductTrending">Mark as Trending Product</label>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn error" onclick="deleteProduct()">Delete Product</button>
+        <button class="btn" onclick="updateProduct()">Update Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- External JavaScript -->
+  <script src="script.js"></script>
 </body>
 </html>
