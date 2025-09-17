@@ -9,14 +9,821 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Firebase App (the core Firebase SDK) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <!-- Firebase Database -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-  
-  <!-- External CSS -->
-  <link rel="stylesheet" href="style.css">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --muted: #64748b;
+      --muted-light: #94a3b8;
+      --success: #22c55e;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --purple: #8b5cf6;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      --shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.08);
+      --ring: #dbeafe;
+      --ink: #0f172a;
+      --ink-2: #334155;
+      --border: #e2e8f0;
+      --radius: 12px;
+      --sidebar-width: 260px;
+      --header-height: 70px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* Admin Layout */
+    .admin-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .admin-sidebar {
+      width: var(--sidebar-width);
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      padding: 20px 0;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+
+    .admin-brand {
+      padding: 0 24px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+
+    .admin-brand h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .admin-brand .chip {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .admin-nav {
+      list-style: none;
+      padding: 0;
+    }
+
+    .admin-nav li {
+      margin-bottom: 4px;
+    }
+
+    .admin-nav a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      color: var(--muted);
+      transition: all 0.2s ease;
+    }
+
+    .admin-nav a:hover, .admin-nav a.active {
+      background: #f1f5f9;
+      color: var(--accent);
+    }
+
+    .admin-nav a i {
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Sidebar close button for mobile */
+    .sidebar-close {
+      display: none;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    /* Main Content */
+    .admin-main {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: 20px;
+    }
+
+    .admin-header {
+      background: var(--card);
+      padding: 16px 24px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .admin-title {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .admin-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .admin-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    /* Dashboard Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 20px;
+    }
+
+    .stat-icon.blue {
+      background: #dbeafe;
+      color: var(--accent);
+    }
+
+    .stat-icon.green {
+      background: #dcfce7;
+      color: var(--success);
+    }
+
+    .stat-icon.orange {
+      background: #fed7aa;
+      color: var(--warning);
+    }
+
+    .stat-icon.red {
+      background: #fee2e2;
+      color: var(--error);
+    }
+
+    .stat-icon.purple {
+      background: #ede9fe;
+      color: var(--purple);
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* Content Cards */
+    .content-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    /* Tables */
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .admin-table th,
+    .admin-table td {
+      padding: 12px 16px;
+      text-align: left;
+    }
+
+    .admin-table th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .admin-table tr {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-table tr:last-child {
+      border-bottom: none;
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: #fff;
+      outline: none;
+      font-family: inherit;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      box-shadow: 0 0 0 3px var(--ring);
+      border-color: var(--accent);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 16px;
+    }
+
+    .form-col {
+      flex: 1;
+    }
+
+    /* Buttons */
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn.secondary {
+      background: #f1f5f9;
+      color: var(--ink-2);
+    }
+
+    .btn.secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .btn.success {
+      background: var(--success);
+    }
+
+    .btn.success:hover {
+      background: #16a34a;
+    }
+
+    .btn.error {
+      background: var(--error);
+    }
+
+    .btn.error:hover {
+      background: #dc2626;
+    }
+
+    .btn.warning {
+      background: var(--warning);
+    }
+
+    .btn.warning:hover {
+      background: #d97706;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    /* Tabs */
+    .admin-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--muted);
+      transition: all 0.2s ease;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Image Upload */
+    .image-upload {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .image-upload:hover {
+      border-color: var(--accent);
+    }
+
+    .upload-icon {
+      font-size: 32px;
+      color: var(--muted-light);
+      margin-bottom: 8px;
+    }
+
+    .image-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .preview-item {
+      width: 100px;
+      height: 100px;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .remove-image {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: var(--error);
+      color: white;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Login Page */
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f1f5f9;
+    }
+
+    .login-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: var(--shadow-hover);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .login-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .login-subtitle {
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    /* Earnings Section */
+    .earnings-section {
+      margin-bottom: 24px;
+    }
+
+    .earnings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .earnings-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .earnings-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .earnings-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .earnings-value {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .earnings-label {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .earnings-comparison {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .earnings-trend {
+      display: flex;
+      align-items: center;
+      margin-right: 8px;
+    }
+
+    .trend-up {
+      color: var(--success);
+    }
+
+    .trend-down {
+      color: var(--error);
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .admin-sidebar {
+        transform: translateX(-100%);
+        width: 280px;
+      }
+      
+      .admin-sidebar.active {
+        transform: translateX(0);
+      }
+      
+      .admin-main {
+        margin-left: 0;
+      }
+      
+      .menu-toggle {
+        display: block;
+      }
+      
+      .sidebar-close {
+        display: block;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      
+      .form-row {
+        flex-direction: column;
+        gap: 0;
+      }
+      
+      .admin-table {
+        display: block;
+        overflow-x: auto;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .earnings-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .admin-main {
+        padding: 16px;
+      }
+      
+      .content-card {
+        padding: 16px;
+      }
+    }
+
+    /* Toggle for mobile */
+    .menu-toggle {
+      display: none;
+      background: var(--accent);
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    @media (max-width: 1024px) {
+      .menu-toggle {
+        display: flex;
+      }
+    }
+
+    /* Checkbox */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .checkbox-group input {
+      width: auto;
+    }
+
+    /* Search and filters */
+    .table-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .search-box input {
+      padding-left: 40px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted-light);
+    }
+
+    .filters {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* Action buttons */
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 24px;
+    }
+
+    .page-item {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius);
+      background: #f1f5f9;
+      color: var(--ink);
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .page-item.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .admin-modal {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-hover);
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--muted);
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+  </style>
 </head>
 <body>
   <!-- Admin Login Page -->
@@ -126,7 +933,7 @@
             <div class="earnings-cards">
               <div class="earnings-card">
                 <div class="earnings-value" id="totalEarnings">₹0</div>
-                <div class="earnings-label">Total Earnings</div>
+                <div class="earnings-label">Total Selling</div>
                 <div class="earnings-comparison">
                   <span class="earnings-trend" id="totalEarningsTrend">
                     <i class="fas fa-caret-up trend-up"></i>
@@ -565,7 +1372,1559 @@
     </div>
   </div>
 
-  <!-- External JavaScript -->
-  <script src="script.js"></script>
+  <script>
+    // Admin State
+    let currentAdminTab = 'dashboard';
+    let currentProductsPage = 1;
+    let currentOrdersPage = 1;
+    let currentCustomersPage = 1;
+    let productsPerPage = 10;
+    let ordersPerPage = 10;
+    let customersPerPage = 10;
+    let uploadedImages = [];
+
+    // Initialize admin panel
+    function initAdminPanel() {
+      // Check if user is logged in
+      const isLoggedIn = localStorage.getItem('admin_logged_in') === 'true';
+      
+      if (isLoggedIn) {
+        document.getElementById('adminLoginPage').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadDashboardData();
+        loadProducts();
+        loadOrders();
+        loadTrendingProducts();
+        loadCustomers();
+        loadPolicies();
+      } else {
+        document.getElementById('adminLoginPage').style.display = 'flex';
+        document.getElementById('adminPanel').style.display = 'none';
+      }
+      
+      // Setup tab navigation
+      document.querySelectorAll('.admin-nav a').forEach(tab => {
+        tab.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (this.dataset.tab) {
+            showTab(this.dataset.tab);
+          }
+        });
+      });
+      
+      // Setup policy tabs
+      document.querySelectorAll('.admin-tabs .tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+          const policy = this.dataset.policy;
+          showPolicyTab(policy);
+        });
+      });
+      
+      // Setup search and filters
+      document.getElementById('productSearch').addEventListener('input', filterProducts);
+      document.getElementById('categoryFilter').addEventListener('change', filterProducts);
+      document.getElementById('orderSearch').addEventListener('input', filterOrders);
+      document.getElementById('statusFilter').addEventListener('change', filterOrders);
+      document.getElementById('dateFilter').addEventListener('change', filterOrders);
+      document.getElementById('customerSearch').addEventListener('input', filterCustomers);
+      
+      // Select all orders checkbox
+      document.getElementById('selectAllOrders').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('#ordersTable input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+          checkbox.checked = this.checked;
+        });
+      });
+    }
+
+    // Admin login function
+    function adminLogin() {
+      const email = document.getElementById('adminEmail').value;
+      const password = document.getElementById('adminPassword').value;
+      
+      // Simple validation - in a real app, this would call an API
+      if (email === 'admin@buyzo.com' && password === 'admin123') {
+        localStorage.setItem('admin_logged_in', 'true');
+        document.getElementById('adminLoginPage').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadDashboardData();
+      } else {
+        alert('Invalid credentials. Try admin@buyzo.com / admin123');
+      }
+    }
+
+    // Logout function
+    function logout() {
+      localStorage.removeItem('admin_logged_in');
+      document.getElementById('adminLoginPage').style.display = 'flex';
+      document.getElementById('adminPanel').style.display = 'none';
+    }
+
+    // Toggle sidebar on mobile
+    function toggleSidebar() {
+      document.getElementById('adminSidebar').classList.toggle('active');
+    }
+
+    // Show specific tab
+    function showTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Remove active class from all nav items
+      document.querySelectorAll('.admin-nav a').forEach(nav => {
+        nav.classList.remove('active');
+      });
+      
+      // Show selected tab
+      document.getElementById(tabName).classList.add('active');
+      
+      // Set active nav item
+      document.querySelector(`.admin-nav a[data-tab="${tabName}"]`).classList.add('active');
+      
+      // Update page title
+      document.getElementById('adminPageTitle').textContent = 
+        tabName.charAt(0).toUpperCase() + tabName.slice(1);
+      
+      currentAdminTab = tabName;
+      
+      // Load data if needed
+      if (tabName === 'dashboard') {
+        loadDashboardData();
+      } else if (tabName === 'products') {
+        loadProducts();
+      } else if (tabName === 'orders') {
+        loadOrders();
+      } else if (tabName === 'trending') {
+        loadTrendingProducts();
+      } else if (tabName === 'customers') {
+        loadCustomers();
+      } else if (tabName === 'policies') {
+        loadPolicies();
+      }
+    }
+
+    // Show policy tab
+    function showPolicyTab(policy) {
+      // Remove active class from all policy tabs
+      document.querySelectorAll('.admin-tabs .tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Hide all policy contents
+      document.querySelectorAll('.policy-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      
+      // Activate selected tab and content
+      document.querySelector(`.tab[data-policy="${policy}"]`).classList.add('active');
+      document.querySelector(`.policy-content[data-policy="${policy}"]`).classList.add('active');
+    }
+
+    // Calculate earnings data
+    function calculateEarnings(orders, products) {
+      const now = new Date();
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+      
+      let totalEarnings = 0;
+      let lastWeekEarnings = 0;
+      let previousWeekEarnings = 0;
+      let lastMonthEarnings = 0;
+      let previousMonthEarnings = 0;
+      
+      orders.forEach(order => {
+        const product = products.find(p => p.id === order.productId);
+        if (product) {
+          const orderValue = product.price * order.qty;
+          const orderDate = new Date(order.timestamp);
+          
+          totalEarnings += orderValue;
+          
+          // Last week earnings (last 7 days)
+          if (orderDate >= oneWeekAgo) {
+            lastWeekEarnings += orderValue;
+          }
+          
+          // Previous week earnings (7-14 days ago)
+          if (orderDate >= twoWeeksAgo && orderDate < oneWeekAgo) {
+            previousWeekEarnings += orderValue;
+          }
+          
+          // Last month earnings (last 30 days)
+          if (orderDate >= oneMonthAgo) {
+            lastMonthEarnings += orderValue;
+          }
+          
+          // Previous month earnings (30-60 days ago)
+          if (orderDate >= twoMonthsAgo && orderDate < oneMonthAgo) {
+            previousMonthEarnings += orderValue;
+          }
+        }
+      });
+      
+      // Calculate trends
+      const weeklyTrend = previousWeekEarnings > 0 
+        ? ((lastWeekEarnings - previousWeekEarnings) / previousWeekEarnings) * 100 
+        : lastWeekEarnings > 0 ? 100 : 0;
+        
+      const monthlyTrend = previousMonthEarnings > 0 
+        ? ((lastMonthEarnings - previousMonthEarnings) / previousMonthEarnings) * 100 
+        : lastMonthEarnings > 0 ? 100 : 0;
+      
+      return {
+        totalEarnings,
+        lastWeekEarnings,
+        lastMonthEarnings,
+        weeklyTrend,
+        monthlyTrend
+      };
+    }
+
+    // Load dashboard data
+    function loadDashboardData() {
+      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
+      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
+      const trendingProducts = products.filter(p => p.trending);
+      
+      // Update stats
+      document.getElementById('totalProducts').textContent = products.length;
+      document.getElementById('totalOrders').textContent = orders.length;
+      document.getElementById('pendingOrders').textContent = orders.filter(o => o.status === 'Pending').length;
+      document.getElementById('trendingProducts').textContent = trendingProducts.length;
+      
+      // Calculate and update earnings
+      const earnings = calculateEarnings(orders, products);
+      document.getElementById('totalEarnings').textContent = `₹${earnings.totalEarnings.toLocaleString()}`;
+      document.getElementById('lastWeekEarnings').textContent = `₹${earnings.lastWeekEarnings.toLocaleString()}`;
+      document.getElementById('lastMonthEarnings').textContent = `₹${earnings.lastMonthEarnings.toLocaleString()}`;
+      
+      // Update trends
+      updateTrendElement('lastWeekTrend', earnings.weeklyTrend);
+      updateTrendElement('lastMonthTrend', earnings.monthlyTrend);
+      
+      // Load recent orders
+      const recentOrders = orders.slice(-5).reverse();
+      const recentOrdersHtml = recentOrders.map(order => {
+        const product = products.find(p => p.id === order.productId);
+        return `
+          <tr>
+            <td>#${order.id || 'N/A'}</td>
+            <td>${order.fullname}</td>
+            <td>${product ? product.title : 'Unknown Product'}</td>
+            <td>₹${product ? product.price * order.qty : 'N/A'}</td>
+            <td><span class="badge ${getStatusBadgeClass(order.status)}">${order.status || 'Pending'}</span></td>
+            <td>${new Date(order.timestamp).toLocaleDateString()}</td>
+          </tr>
+        `;
+      }).join('');
+      
+      document.getElementById('recentOrders').innerHTML = recentOrdersHtml || '<tr><td colspan="6" style="text-align: center">No orders found</td></tr>';
+    }
+
+    // Update trend element with appropriate icon and color
+    function updateTrendElement(elementId, trendValue) {
+      const element = document.getElementById(elementId);
+      const valueElement = element.querySelector('span:last-child');
+      const iconElement = element.querySelector('i');
+      
+      valueElement.textContent = `${Math.abs(trendValue).toFixed(1)}%`;
+      
+      if (trendValue >= 0) {
+        element.className = 'earnings-trend';
+        iconElement.className = 'fas fa-caret-up trend-up';
+      } else {
+        element.className = 'earnings-trend';
+        iconElement.className = 'fas fa-caret-down trend-down';
+      }
+    }
+
+    // Get status badge class
+    function getStatusBadgeClass(status) {
+      switch(status) {
+        case 'Delivered': return 'badge-success';
+        case 'Shipped': return 'badge-info';
+        case 'Confirmed': return 'badge-info';
+        case 'Cancelled': return 'badge-error';
+        default: return 'badge-warning';
+      }
+    }
+
+    // Load products
+    function loadProducts() {
+      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
+      const filteredProducts = filterProductsList(products);
+      const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+      
+      // Update pagination
+      updatePagination('productsPagination', currentProductsPage, totalPages, 'products');
+      
+      // Get products for current page
+      const startIndex = (currentProductsPage - 1) * productsPerPage;
+      const paginatedProducts = filteredProducts.slice(startIndex, startIndex + productsPerPage);
+      
+      // Render products table
+      const productsHtml = paginatedProducts.map(product => {
+        return `
+          <tr>
+            <td><img src="${product.images[0]}" width="50" height="50" style="object-fit: cover; border-radius: 6px"></td>
+            <td>${product.title}</td>
+            <td>${product.category}</td>
+            <td>₹${product.price}</td>
+            <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn secondary btn-sm" onclick="editProduct(${product.id})"><i class="fas fa-edit"></i></button>
+                <button class="btn error btn-sm" onclick="deleteProductConfirm(${product.id})"><i class="fas fa-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      document.getElementById('productsTable').innerHTML = productsHtml || '<tr><td colspan="6" style="text-align: center">No products found</td></tr>';
+    }
+
+    // Filter products list
+    function filterProductsList(products) {
+      const searchTerm = document.getElementById('productSearch').value.toLowerCase();
+      const category = document.getElementById('categoryFilter').value;
+      
+      return products.filter(product => {
+        const matchesSearch = product.title.toLowerCase().includes(searchTerm) || 
+                             product.desc.toLowerCase().includes(searchTerm);
+        const matchesCategory = !category || product.category === category;
+        
+        return matchesSearch && matchesCategory;
+      });
+    }
+
+    // Filter products
+    function filterProducts() {
+      currentProductsPage = 1;
+      loadProducts();
+    }
+
+    // Load orders
+    function loadOrders() {
+      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
+      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
+      const filteredOrders = filterOrdersList(orders, products);
+      const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+      
+      // Update pagination
+      updatePagination('ordersPagination', currentOrdersPage, totalPages, 'orders');
+      
+      // Get orders for current page
+      const startIndex = (currentOrdersPage - 1) * ordersPerPage;
+      const paginatedOrders = filteredOrders.slice(startIndex, startIndex + ordersPerPage);
+      
+      // Render orders table
+      const ordersHtml = paginatedOrders.map(order => {
+        const product = products.find(p => p.id === order.productId);
+        return `
+          <tr>
+            <td><input type="checkbox" value="${order.id}"></td>
+            <td>#${order.id || 'N/A'}</td>
+            <td>${order.fullname}<br><small>${order.mobile}</small></td>
+            <td>${product ? product.title : 'Unknown Product'} (x${order.qty})</td>
+            <td>₹${product ? product.price * order.qty : 'N/A'}</td>
+            <td>
+              <select onchange="updateOrderStatus(${order.id}, this.value)" class="status-select">
+                <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+              </select>
+            </td>
+            <td>${new Date(order.timestamp).toLocaleDateString()}</td>
+            <td>
+              <button class="btn secondary btn-sm" onclick="viewOrderDetails(${order.id})"><i class="fas fa-eye"></i></button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      document.getElementById('ordersTable').innerHTML = ordersHtml || '<tr><td colspan="8" style="text-align: center">No orders found</td></tr>';
+    }
+
+    // Filter orders list
+    function filterOrdersList(orders, products) {
+      const searchTerm = document.getElementById('orderSearch').value.toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      const date = document.getElementById('dateFilter').value;
+      
+      return orders.filter(order => {
+        const product = products.find(p => p.id === order.productId);
+        const productName = product ? product.title.toLowerCase() : '';
+        const matchesSearch = order.fullname.toLowerCase().includes(searchTerm) || 
+                             order.mobile.includes(searchTerm) ||
+                             productName.includes(searchTerm);
+        const matchesStatus = !status || order.status === status;
+        const matchesDate = !date || new Date(order.timestamp).toLocaleDateString() === new Date(date).toLocaleDateString();
+        
+        return matchesSearch && matchesStatus && matchesDate;
+      });
+    }
+
+    // Filter orders
+    function filterOrders() {
+      currentOrdersPage = 1;
+      loadOrders();
+    }
+
+    // Update order status
+    function updateOrderStatus(orderId, status) {
+      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
+      const orderIndex = orders.findIndex(o => o.id === orderId);
+      
+      if (orderIndex !== -1) {
+        orders[orderIndex].status = status;
+        localStorage.setItem('demo_orders', JSON.stringify(orders));
+        loadOrders();
+        
+        // If on dashboard, refresh it too
+        if (currentAdminTab === 'dashboard') {
+          loadDashboardData();
+        }
+      }
+    }
+
+    // Apply bulk action to orders
+    function applyBulkAction() {
+      const status = document.getElementById('bulkStatusAction').value;
+      if (!status) {
+        alert('Please select a status action');
+        return;
+      }
+      
+      const checkboxes = document.querySelectorAll('#ordersTable input[type="checkbox"]:checked');
+      if (checkboxes.length === 0) {
+        alert('Please select at least one order');
+        return;
+      }
+      
+      // Check if trying to update more than 100 orders
+      if (checkboxes.length > 100) {
+        alert('You can only update up to 100 orders at a time');
+        return;
+      }
+      
+      if (!confirm(`Are you sure you want to update ${checkboxes.length} order(s) to ${status}?`)) {
+        return;
+      }
+      
+      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
+      const orderIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+      
+      orderIds.forEach(orderId => {
+        const orderIndex = orders.findIndex(o => o.id === orderId);
+        if (orderIndex !== -1) {
+          orders[orderIndex].status = status;
+        }
+      });
+      
+      localStorage.setItem('demo_orders', JSON.stringify(orders));
+      loadOrders();
+      
+      // If on dashboard, refresh it too
+      if (currentAdminTab === 'dashboard') {
+        loadDashboardData();
+      }
+      
+      // Uncheck select all
+      document.getElementById('selectAllOrders').checked = false;
+    }
+
+    // View order details
+    function viewOrderDetails(orderId) {
+      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
+      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
+      const order = orders.find(o => o.id === orderId);
+      
+      if (!order) {
+        alert('Order not found');
+        return;
+      }
+      
+      const product = products.find(p => p.id === order.productId);
+      
+      const detailsHtml = `
+        <h3>Order Details #${order.id}</h3>
+        <p><strong>Customer:</strong> ${order.fullname}</p>
+        <p><strong>Mobile:</strong> ${order.mobile}</p>
+        <p><strong>Address:</strong> ${order.house}, ${order.city}, ${order.state} - ${order.pincode}</p>
+        <p><strong>Product:</strong> ${product ? product.title : 'Unknown'} (x${order.qty})</p>
+        <p><strong>Amount:</strong> ₹${product ? product.price * order.qty : 'N/A'}</p>
+        <p><strong>Status:</strong> ${order.status || 'Pending'}</p>
+        <p><strong>Order Date:</strong> ${new Date(order.timestamp).toLocaleString()}</p>
+        <p><strong>Payment Method:</strong> ${order.payment === 'prepaid' ? 'Prepaid' : 'Cash on Delivery'}</p>
+      `;
+      
+      alert(detailsHtml);
+    }
+
+    // Load trending products
+    function loadTrendingProducts() {
+      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
+      
+      const trendingHtml = products.map(product => {
+        return `
+          <tr>
+            <td><img src="${product.images[0]}" width="50" height="50" style="object-fit: cover; border-radius: 6px"></td>
+            <td>${product.title}</td>
+            <td>₹${product.price}</td>
+            <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn ${product.trending ? 'error' : 'success'} btn-sm" onclick="toggleTrending(${product.id}, ${!product.trending})">
+                  <i class="fas ${product.trending ? 'fa-times' : 'fa-fire'}"></i> 
+                  ${product.trending ? 'Remove' : 'Add'}
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      
+      document.getElementById('trendingTable').innerHTML = trendingHtml || '<tr><td colspan="5" style="text-align: center">No products found</td></tr>';
+    }
+
+    // Toggle trending status
+    function toggleTrending(productId, isTrending) {
+      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
+      const productIndex = products.findIndex(p => p.id === productId);
+      
+      if (productIndex !== -1) {
+        products[productIndex].trending = isTrending;
+        localStorage.setItem('demo_products', JSON.stringify(products));
+        loadTrendingProducts();
+        
+        // If on dashboard, refresh it too
+        if (currentAdminTab === 'dashboard') {
+          loadDashboardData();
+        }
+      }
+    }
+
+    // Load customers
+    function loadCustomers() {
+      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
+      
+      // Extract unique customers based on mobile number
+      const customersMap = {};
+      orders.forEach(order => {
+        if (!customersMap[order.mobile]) {
+          customersMap[order.mobile] = {
+            name: order.fullname,
+            mobile: order.mobile,
+            email: order.email || 'N/A',
+            location: `${order.city}, ${order.state}`,
+            orderCount: 1,
+            lastOrder: order.timestamp
+          };
+        } else {
+          customersMap[order.mobile].orderCount++;
+          if (new Date(order.timestamp) > new Date(customersMap[order.mobile].lastOrder)) {
+            customersMap[order.mobile].lastOrder = order.timestamp;
+          }
+        }
+      });
+      
+      const customers = Object.values(customersMap);
+      const filteredCustomers = filterCustomersList(customers);
+      const totalPages = Math.ceil(filteredCustomers.length / customersPerPage);
+      
+      // Update pagination
+      updatePagination('customersPagination', currentCustomersPage, totalPages, 'customers');
+      
+      // Get customers for current page
+      const startIndex = (currentCustomersPage - 1) * customersPerPage;
+      const paginatedCustomers = filteredCustomers.slice(startIndex, startIndex + customersPerPage);
+      
+      // Render customers table
+      const customersHtml = paginatedCustomers.map(customer => {
+        return `
+          <tr>
+            <td>${customer.name}</td>
+            <td>${customer.mobile}</td>
+            <td>${customer.email}</td>
+            <td>${customer.location}</td>
+            <td>${customer.orderCount}</td>
+            <td>${new Date(customer.lastOrder).toLocaleDateString()}</td>
+          </tr>
+        `;
+      }).join('');
+      
+      document.getElementById('customersTable').innerHTML = customersHtml || '<tr><td colspan="6" style="text-align: center">No customers found</td></tr>';
+    }
+
+    // Filter customers list
+    function filterCustomersList(customers) {
+      const searchTerm = document.getElementById('customerSearch').value.toLowerCase();
+      
+      return customers.filter(customer => {
+        return customer.name.toLowerCase().includes(searchTerm) || 
+               customer.mobile.includes(searchTerm) ||
+               customer.email.toLowerCase().includes(searchTerm) ||
+               customer.location.toLowerCase().includes(searchTerm);
+      });
+    }
+
+    // Filter customers
+    function filterCustomers() {
+      currentCustomersPage = 1;
+      loadCustomers();
+    }
+
+    // Load policies
+    function loadPolicies() {
+      const policies = JSON.parse(localStorage.getItem('demo_policies') || '{}');
+      
+      // Set policy content
+      document.getElementById('aboutContent').value = policies.about || '';
+      document.getElementById('refundContent').value = policies.refund || '';
+      document.getElementById('termsContent').value = policies.terms || '';
+      document.getElementById('shippingContent').value = policies.shipping || '';
+      document.getElementById('privacyContent').value = policies.privacy || '';
+    }
+
+    // Save policy
+    function savePolicy(policyType) {
+      const content = document.getElementById(`${policyType}Content`).value;
+      const policies = JSON.parse(localStorage.getItem('demo_policies') || '{}');
+      
+      policies[policyType] = content;
+      localStorage.setItem('demo_policies', JSON.stringify(policies));
+      
+      alert(`${policyType.charAt(0).toUpperCase() + policyType.slice(1)} policy saved successfully!`);
+    }
+
+    // Show add product modal
+    function showAddProductModal() {
+      // Reset form
+      document.getElementById('productName').value = '';
+      document.getElementById('productPrice').value = '';
+      document.getElementById('productCategory').value = '';
+      document.getElementById('productDesc').value = '';
+      document.getElementById('productFullDesc').value = '';
+      document.getElementById('productSizes').value = '';
+      document.getElementById('productTrending').checked = false;
+      document.getElementById('imagePreview').innerHTML = '';
+      uploadedImages = [];
+      
+      // Show modal
+      document.getElementById('addProductModal').classList.add('active');
+    }
+
+    // Handle image upload
+    function handleImageUpload(input) {
+      if (input.files && input.files.length > 0) {
+        const preview = document.getElementById('imagePreview');
+        
+        Array.from(input.files).forEach(file => {
+          const reader = new FileReader();
+          
+          reader.onload = function(e) {
+            // Store image data
+            uploadedImages.push(e.target.result);
+            
+            // Create preview
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            previewItem.innerHTML = `
+              <img src="${e.target.result}" alt="Preview">
+              <div class="remove-image" onclick="removeImage(this)">&times;</div>
+            `;
+            
+            preview.appendChild(previewItem);
+          };
+          
+          reader.readAsDataURL(file);
+        });
+      }
+    }
+
+    // Remove image from upload preview
+    function removeImage(button) {
+      const previewItem = button.parentElement;
+      const imgSrc = previewItem.querySelector('img').src;
+      const index = uploadedImages.indexOf(imgSrc);
+      
+      if (index !== -1) {
+        uploadedImages.splice(index, 1);
+      }
+      
+      previewItem.remove();
+    }
+
+    // Save product
+    function saveProduct() {
+      const name = document.getElementById('productName').value;
+      const price = document.getElementById('productPrice').value;
+      const category = document.getElementById('productCategory').value;
+      const desc = document.getElementById('productDesc').value;
+      const fullDesc = document.getElementById('productFullDesc').value;
+      const sizes = document.getElementById('productSizes').value.split(',').map(s => s.trim());
+      const trending = document.getElementById('productTrending').checked;
+      
+      // Validation
+      if (!name || !price || !category || !desc) {
+        alert('Please fill in all required fields');
+        return;
+      }
+      
+      if (uploadedImages.length === 0) {
+        alert('Please upload at least one product image');
+        return;
+      }
+      
+      // Get existing products
+      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
+      
+      // Create new product
+      const newProduct = {
+        id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1,
+        title: name,
+        price: parseInt(price),
+        desc: desc,
+        fullDesc: fullDesc,
+        images: uploadedImages,
+        sizes: sizes,
+        category: category,
+        trending: trending
+      };
+      
+      // Add to products
+      products.push(newProduct);
+      
+      // Save to localStorage
+      localStorage.setItem('demo_products', JSON.stringify(products));
+      
+      // Close modal and refresh products list
+      closeModal('addProductModal');
+      loadProducts();
+      loadTrendingProducts();
+      
+      // If on dashboard, refresh it too
+      if (currentAdminTab === 'dashboard') {
+        loadDashboardData();
+      }
+      
+      alert('Product added successfully!');
+    }
+
+    // Edit product
+    function editProduct(productId) {
+      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
+      const product = products.find(p => p.id === productId);
+      
+      if (!product) {
+        alert('Product not found');
+        return;
+      }
+      
+      // Fill form with product data
+      document.getElementById('editProductId').value = product.id;
+      document.getElementById('editProductName').value = product.title;
+      document.getElementById('editProductPrice').value = product.price;
+      document.getElementById('editProductCategory').value = product.category;
+      document.getElementById('editProductDesc').value = product.desc;
+      document.getElementById('editProductFullDesc').value = product.fullDesc;
+      document.getElementById('editProductSizes').value = product.sizes.join(', ');
+      document.getElementById('editProductTrending').checked = product.trending;
+      
+      // Show modal
+      document.getElementById('editProductModal').classList.add('active');
+    }
+
+    // Update product
+    function updateProduct() {
+      const productId = parseInt(document.getElementById('editProductId').value);
+      const name = document.getElementById('editProductName').value;
+      const price = document.getElementById('editProductPrice').value;
+      const category = document.getElementById('editProductCategory').value;
+      const desc = document.getElementById('editProductDesc').value;
+      const fullDesc = document.getElementById('editProductFullDesc').value;
+      const sizes = document.getElementById('editProductSizes').value.split(',').map(s => s.trim());
+      const trending = document.getElementById('editProductTrending').checked;
+      
+      // Validation
+      if (!name || !price || !category || !desc) {
+        alert('Please fill in all required fields');
+        return;
+      }
+      
+      // Get existing products
+      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
+      const productIndex = products.findIndex(p => p.id === productId);
+      
+      if (productIndex === -1) {
+        alert('Product not found');
+        return;
+      }
+      
+      // Update product
+      products[productIndex] = {
+        ...products[productIndex],
+        title: name,
+        price: parseInt(price),
+        desc: desc,
+        fullDesc: fullDesc,
+        sizes: sizes,
+        category: category,
+        trending: trending
+      };
+      
+      // Save to localStorage
+      localStorage.setItem('demo_products', JSON.stringify(products));
+      
+      // Close modal and refresh products list
+      closeModal('editProductModal');
+      loadProducts();
+      loadTrendingProducts();
+      
+      // If on dashboard, refresh it too
+      if (currentAdminTab === 'dashboard') {
+        loadDashboardData();
+      }
+      
+      alert('Product updated successfully!');
+    }
+
+    // Delete product confirmation
+    function deleteProductConfirm(productId) {
+      if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+        deleteProduct(productId);
+      }
+    }
+
+    // Delete product
+    function deleteProduct(productId) {
+      // Get existing products
+      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
+      const filteredProducts = products.filter(p => p.id !== productId);
+      
+      // Save to localStorage
+      localStorage.setItem('demo_products', JSON.stringify(filteredProducts));
+      
+      // Close modal and refresh products list
+      closeModal('editProductModal');
+      loadProducts();
+      loadTrendingProducts();
+      
+      // If on dashboard, refresh it too
+      if (currentAdminTab === 'dashboard') {
+        loadDashboardData();
+      }
+      
+      alert('Product deleted successfully!');
+    }
+
+    // Export orders
+    function exportOrders() {
+      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
+      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
+      
+      if (orders.length === 0) {
+        alert('No orders to export');
+        return;
+      }
+      
+      // Create CSV content
+      let csv = 'Order ID,Customer,Product,Quantity,Amount,Status,Date\n';
+      
+      orders.forEach(order => {
+        const product = products.find(p => p.id === order.productId);
+        csv += `"${order.id || 'N/A'}","${order.fullname}","${product ? product.title : 'Unknown'}","${order.qty}","${product ? product.price * order.qty : 'N/A'}","${order.status || 'Pending'}","${new Date(order.timestamp).toLocaleDateString()}"\n`;
+      });
+      
+      // Create download link
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `buyzo_orders_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // Export customers
+    function exportCustomers() {
+      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
+      
+      if (orders.length === 0) {
+        alert('No customer data to export');
+        return;
+      }
+      
+      // Extract unique customers based on mobile number
+      const customersMap = {};
+      orders.forEach(order => {
+        if (!customersMap[order.mobile]) {
+          customersMap[order.mobile] = {
+            name: order.fullname,
+            mobile: order.mobile,
+            email: order.email || 'N/A',
+            location: `${order.city}, ${order.state}`,
+            orderCount: 1
+          };
+        } else {
+          customersMap[order.mobile].orderCount++;
+        }
+      });
+      
+      const customers = Object.values(customersMap);
+      
+      // Create CSV content
+      let csv = 'Name,Mobile,Email,Location,Orders\n';
+      
+      customers.forEach(customer => {
+        csv += `"${customer.name}","${customer.mobile}","${customer.email}","${customer.location}","${customer.orderCount}"\n`;
+      });
+      
+      // Create download link
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `buyzo_customers_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // Close modal
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    // Update pagination
+    function updatePagination(elementId, currentPage, totalPages, type) {
+      const pagination = document.getElementById(elementId);
+      
+      if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+      }
+      
+      let html = '';
+      
+      // Previous button
+      if (currentPage > 1) {
+        html += `<div class="page-item" onclick="changePage('${type}', ${currentPage - 1})">&laquo;</div>`;
+      }
+      
+      // Page numbers
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + 4);
+      
+      for (let i = startPage; i <= endPage; i++) {
+        html += `<div class="page-item ${i === currentPage ? 'active' : ''}" onclick="changePage('${type}', ${i})">${i}</div>`;
+      }
+      
+      // Next button
+      if (currentPage < totalPages) {
+        html += `<div class="page-item" onclick="changePage('${type}', ${currentPage + 1})">&raquo;</div>`;
+      }
+      
+      pagination.innerHTML = html;
+    }
+
+    // Change page
+    function changePage(type, page) {
+      if (type === 'products') {
+        currentProductsPage = page;
+        loadProducts();
+      } else if (type === 'orders') {
+        currentOrdersPage = page;
+        loadOrders();
+      } else if (type === 'customers') {
+        currentCustomersPage = page;
+        loadCustomers();
+      }
+      
+      // Scroll to top
+      window.scrollTo(0, 0);
+    }
+
+    // Initialize when page loads
+    window.addEventListener('DOMContentLoaded', initAdminPanel);
+  </script>
+
+<script>
+// Customer filtering by state and city
+document.addEventListener("DOMContentLoaded", () => {
+  const stateFilter = document.getElementById("stateFilter");
+  const cityFilter = document.getElementById("cityFilter");
+  if(stateFilter && cityFilter){
+    function applyCustomerFilters(){
+      const stateVal = stateFilter.value.trim().toLowerCase();
+      const cityVal = cityFilter.value.trim().toLowerCase();
+      const rows = document.querySelectorAll("#customersList table tbody tr");
+      rows.forEach(row => {
+        const cells = row.querySelectorAll("td");
+        const location = cells.length > 3 ? cells[3].innerText.toLowerCase() : "";
+        let show = true;
+        if(stateVal !== "all" && !location.includes(stateVal)){ show = false; }
+        if(cityVal && !location.includes(cityVal)){ show = false; }
+        row.style.display = show ? "" : "none";
+      });
+    }
+    stateFilter.addEventListener("change", applyCustomerFilters);
+    cityFilter.addEventListener("input", applyCustomerFilters);
+  }
+});
+</script>
+
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+  import { getFirestore, collection, doc, getDocs, onSnapshot, addDoc, updateDoc, deleteDoc, query, orderBy, where, setDoc, getDoc, serverTimestamp, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
+
+  // --- REPLACE with provided config ---
+  const firebaseConfig = {
+    apiKey: "AIzaSyAMDAW2Gvsh8qJY5gZoFvgiMHxO5qjQl-I",
+    authDomain: "videoapp-67c32.firebaseapp.com",
+    databaseURL: "https://videoapp-67c32-default-rtdb.firebaseio.com",
+    projectId: "videoapp-67c32",
+    storageBucket: "videoapp-67c32.firebasestorage.app",
+    messagingSenderId: "711675594877",
+    appId: "1:711675594877:web:7786ab4a432d60e6f70914"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  const storage = getStorage(app);
+
+  // Enable offline persistence
+  try {
+    enableIndexedDbPersistence(db);
+    console.log('Firestore persistence enabled');
+  } catch (e) {
+    console.warn('Persistence could not be enabled:', e);
+  }
+
+  // Helper: format currency
+  const fmt = (n) => '₹' + (Number(n)||0).toLocaleString();
+
+  // Override legacy local handlers to use Firebase
+  window.adminLogin = async function() {
+    const email = document.getElementById('adminEmail').value.trim();
+    const password = document.getElementById('adminPassword').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged will handle UI switch
+    } catch (e) {
+      alert('Login failed: ' + e.message);
+    }
+  };
+
+  window.logout = async function() {
+    try {
+      await signOut(auth);
+    } catch(e) {
+      console.error(e);
+      alert('Logout error: ' + e.message);
+    }
+  };
+
+  // Global state
+  let productsUnsub = null;
+  let ordersUnsub = null;
+  let policiesUnsub = null;
+
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      console.log('Signed in as', user.email);
+      localStorage.setItem('admin_logged_in', 'true');
+      document.getElementById('adminLoginPage').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'block';
+      document.querySelector('.admin-avatar').textContent = (user.email && user.email[0].toUpperCase()) || 'A';
+      // start listeners
+      startProductsListener();
+      startOrdersListener();
+      loadPolicies();
+    } else {
+      console.log('Signed out');
+      localStorage.removeItem('admin_logged_in');
+      document.getElementById('adminLoginPage').style.display = 'flex';
+      document.getElementById('adminPanel').style.display = 'none';
+      // stop listeners
+      if (productsUnsub) productsUnsub();
+      if (ordersUnsub) ordersUnsub();
+    }
+  });
+
+  // PRODUCTS
+  function startProductsListener() {
+    const productsRef = collection(db, 'products');
+    const q = query(productsRef, orderBy('title'));
+    productsUnsub = onSnapshot(q, snapshot => {
+      const products = [];
+      snapshot.forEach(docSnap => {
+        products.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      renderProducts(products);
+      renderTrendingTable(products);
+      // store for other usage
+      window._admin_products = products;
+      // refresh dashboard earnings from orders (orders listener will do)
+    }, err => {
+      console.error('products snapshot error', err);
+    });
+  }
+
+  async function renderProducts(products) {
+    // pagination simple: current page already in global var
+    const tbody = document.getElementById('productsTable');
+    if(!tbody) return;
+    const html = products.map(p => {
+      const img = (p.images && p.images[0]) ? p.images[0] : '';
+      return `
+        <tr>
+          <td><img src="${img}" width="50" height="50" style="object-fit: cover; border-radius: 6px"></td>
+          <td>${p.title || ''}</td>
+          <td>${p.category || ''}</td>
+          <td>₹${p.price || 0}</td>
+          <td>${p.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn secondary btn-sm" onclick="editProductFirestore('${p.id}')"><i class="fas fa-edit"></i></button>
+              <button class="btn error btn-sm" onclick="deleteProductConfirmFirestore('${p.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    tbody.innerHTML = html || '<tr><td colspan="6" style="text-align: center">No products found</td></tr>';
+  }
+
+  // Show add product modal: keep using existing showAddProductModal()
+
+  // File upload handling: override to keep File objects
+  window._firebaseUploadedFiles = [];
+  window.handleImageUpload = function(input){
+    window._firebaseUploadedFiles = [];
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+    if(input.files && input.files.length){
+      Array.from(input.files).forEach(file => {
+        window._firebaseUploadedFiles.push(file);
+        const reader = new FileReader();
+        reader.onload = function(e){
+          const div = document.createElement('div');
+          div.className = 'preview-item';
+          div.innerHTML = `<img src="${e.target.result}" alt="Preview"><div class="remove-image" onclick="removeImage(this)">&times;</div>`;
+          preview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+  window.removeImage = function(button){
+    const item = button.parentElement;
+    const img = item.querySelector('img').src;
+    // remove matching dataURL/file is hard; clear all for simplicity
+    item.remove();
+    // we won't alter _firebaseUploadedFiles here; it's okay for small flows
+  };
+
+  // Save product to Firestore (with storage upload)
+  window.saveProduct = async function(){
+  const name = document.getElementById('productName').value.trim();
+  const price = Number(document.getElementById('productPrice').value) || 0;
+  const category = document.getElementById('productCategory').value.trim();
+  const desc = document.getElementById('productDesc').value.trim();
+  const fullDesc = document.getElementById('productFullDesc').value.trim();
+  const sizes = (document.getElementById('productSizes').value || '').split(',').map(s=>s.trim()).filter(Boolean);
+  const trending = document.getElementById('productTrending').checked;
+
+  if(!name || !price || !category || !desc){
+    alert('⚠️ Please fill all required fields');
+    return;
+  }
+
+  const files = window._firebaseUploadedFiles || [];
+  const uploadedUrls = [];
+
+  try {
+    // Upload images if any
+    for(const file of files){
+      const path = `product-images/${Date.now()}_${file.name.replace(/\s/g,'_')}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      uploadedUrls.push(url);
+    }
+
+    // Save product doc
+    await addDoc(collection(db, 'products'), {
+      title: name,
+      price: price,
+      category: category,
+      desc: desc,
+      fullDesc: fullDesc,
+      sizes: sizes,
+      images: uploadedUrls,
+      trending: trending || false,
+      createdAt: serverTimestamp()
+    });
+
+    // Reset form + close modal
+    document.getElementById('productName').value = '';
+    document.getElementById('productPrice').value = '';
+    document.getElementById('productCategory').value = '';
+    document.getElementById('productDesc').value = '';
+    document.getElementById('productFullDesc').value = '';
+    document.getElementById('productSizes').value = '';
+    document.getElementById('productTrending').checked = false;
+    document.getElementById('imagePreview').innerHTML = '';
+    window._firebaseUploadedFiles = [];
+
+    closeModal('addProductModal');
+    alert('✅ Product Added Successfully!');
+  } catch(e){
+    console.error(e);
+    alert('❌ Error saving product: ' + e.message);
+  }
+};
+
+  // Edit product - load data into edit modal
+  window.editProductFirestore = async function(prodId){
+    try{
+      const d = await getDoc(doc(db, 'products', prodId));
+      if(!d.exists()) { alert('Product not found'); return; }
+      const p = d.data();
+      document.getElementById('editProductId').value = prodId;
+      document.getElementById('editProductName').value = p.title || '';
+      document.getElementById('editProductPrice').value = p.price || '';
+      document.getElementById('editProductCategory').value = p.category || '';
+      document.getElementById('editProductDesc').value = p.desc || '';
+      document.getElementById('editProductFullDesc').value = p.fullDesc || '';
+      document.getElementById('editProductSizes').value = (p.sizes||[]).join(', ');
+      document.getElementById('editProductTrending').checked = !!p.trending;
+      // show modal
+      document.getElementById('editProductModal').classList.add('active');
+    } catch(e){
+      console.error(e);
+      alert('Error loading product: '+e.message);
+    }
+  };
+
+  window.updateProduct = async function(){
+    const prodId = document.getElementById('editProductId').value;
+    if(!prodId) return alert('Missing product id');
+    const name = document.getElementById('editProductName').value.trim();
+    const price = Number(document.getElementById('editProductPrice').value) || 0;
+    const category = document.getElementById('editProductCategory').value;
+    const desc = document.getElementById('editProductDesc').value;
+    const fullDesc = document.getElementById('editProductFullDesc').value;
+    const sizes = (document.getElementById('editProductSizes').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+    const trending = document.getElementById('editProductTrending').checked;
+
+    try {
+      await updateDoc(doc(db,'products',prodId), {
+        title: name,
+        price: price,
+        category: category,
+        desc: desc,
+        fullDesc: fullDesc,
+        sizes: sizes,
+        trending: trending,
+        updatedAt: serverTimestamp()
+      });
+      closeModal('editProductModal');
+      alert('Product updated');
+    } catch(e){
+      console.error(e);
+      alert('Update error: '+e.message);
+    }
+  };
+
+  window.deleteProductConfirmFirestore = async function(prodId){
+    if(!confirm('Delete product? This action cannot be undone.')) return;
+    try {
+      // Delete product doc (images remain unless you implement delete)
+      await deleteDoc(doc(db,'products',prodId));
+      alert('Product deleted');
+    } catch(e){
+      console.error(e);
+      alert('Delete error: '+e.message);
+    }
+  };
+
+  // ORDERS
+  function startOrdersListener(){
+    const ordersRef = collection(db, 'orders');
+    const q = query(ordersRef, orderBy('createdAt','desc'));
+    ordersUnsub = onSnapshot(q, snapshot => {
+      const orders = [];
+      snapshot.forEach(snap => {
+        orders.push({ id: snap.id, ...snap.data() });
+      });
+      renderOrders(orders);
+      renderDashboardStats(window._admin_products || [], orders);
+      // store for customers view
+      window._admin_orders = orders;
+      renderCustomersFromOrders(orders);
+    }, err => {
+      console.error('orders snapshot err', err);
+    });
+  }
+
+  async function renderOrders(orders){
+    const tbody = document.getElementById('ordersTable');
+    if(!tbody) return;
+    const html = orders.map(order => {
+      const productName = (order.items && order.items[0] && order.items[0].title) || (order.productName) || 'Product';
+      const amount = order.total || order.amount || 0;
+      const dateStr = order.createdAt && order.createdAt.toDate ? order.createdAt.toDate().toLocaleDateString() : (order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '');
+      return `
+        <tr>
+          <td><input type="checkbox" value="${order.id}"></td>
+          <td>#${order.id}</td>
+          <td>${order.fullname || order.customerName || ''}<br><small>${order.mobile || ''}</small></td>
+          <td>${productName} ${order.qty ? '(x'+order.qty +')' : ''}</td>
+          <td>${fmt(amount)}</td>
+          <td>
+            <select onchange="updateOrderStatusFirestore('${order.id}', this.value)" class="status-select">
+              <option value="Pending" ${order.status==='Pending'?'selected':''}>Pending</option>
+              <option value="Confirmed" ${order.status==='Confirmed'?'selected':''}>Confirmed</option>
+              <option value="Shipped" ${order.status==='Shipped'?'selected':''}>Shipped</option>
+              <option value="Delivered" ${order.status==='Delivered'?'selected':''}>Delivered</option>
+              <option value="Cancelled" ${order.status==='Cancelled'?'selected':''}>Cancelled</option>
+            </select>
+          </td>
+          <td>${dateStr}</td>
+          <td>
+            <button class="btn secondary btn-sm" onclick="viewOrderDetailsFirestore('${order.id}')"><i class="fas fa-eye"></i></button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    tbody.innerHTML = html || '<tr><td colspan="8" style="text-align:center">No orders found</td></tr>';
+  }
+
+  window.updateOrderStatusFirestore = async function(orderId, status){
+    try {
+      await updateDoc(doc(db,'orders',orderId), { status: status, updatedAt: serverTimestamp() });
+      // refresh handled by snapshot
+    } catch(e){
+      console.error(e); alert('Error updating order: '+e.message);
+    }
+  };
+
+  window.viewOrderDetailsFirestore = async function(orderId){
+    const d = await getDoc(doc(db,'orders',orderId));
+    if(!d.exists()) return alert('Order not found');
+    const o = d.data();
+    const product = (o.items && o.items[0]) || {};
+    const details = `
+      Order #${orderId}
+      Customer: ${o.fullname || o.customerName || ''}
+      Mobile: ${o.mobile || ''}
+      Address: ${o.house || ''}, ${o.city || ''}, ${o.state || ''} - ${o.pincode || ''}
+      Product: ${product.title || ''}
+      Amount: ${fmt(o.total || o.amount || 0)}
+      Status: ${o.status || ''}
+      Payment: ${o.payment || ''}
+      Date: ${o.createdAt && o.createdAt.toDate ? o.createdAt.toDate().toLocaleString() : ''}
+    `;
+    alert(details);
+  };
+
+  // DASHBOARD
+  function renderDashboardStats(products, orders){
+    const totalProducts = (products || []).length;
+    const totalOrders = (orders || []).length;
+    const pendingOrders = (orders || []).filter(o => o.status === 'Pending').length;
+    const trendingCount = (products || []).filter(p=>p.trending).length;
+    document.getElementById('totalProducts').textContent = totalProducts;
+    document.getElementById('totalOrders').textContent = totalOrders;
+    document.getElementById('pendingOrders').textContent = pendingOrders;
+    document.getElementById('trendingProducts').textContent = trendingCount;
+
+    // Total Selling = sum of order totals
+    const totalSelling = (orders || []).reduce((s,o) => s + (Number(o.total||o.amount||0)), 0);
+    document.getElementById('totalEarnings').textContent = fmt(totalSelling);
+  }
+
+  // POLICIES - use single doc 'sitePolicies' in collection 'policies'
+  async function loadPolicies(){
+    try {
+      const docRef = doc(db,'policies','sitePolicies');
+      const snap = await getDoc(docRef);
+      const data = snap.exists() ? snap.data() : {};
+      document.getElementById('aboutContent').value = data.about || '';
+      document.getElementById('refundContent').value = data.refund || '';
+      document.getElementById('termsContent').value = data.terms || '';
+      document.getElementById('shippingContent').value = data.shipping || '';
+      document.getElementById('privacyContent').value = data.privacy || '';
+    } catch(e){
+      console.error('loadPolicies', e);
+    }
+  }
+
+  window.savePolicy = async function(policyType){
+    const keys = {
+      about: 'about',
+      refund: 'refund',
+      terms: 'terms',
+      shipping: 'shipping',
+      privacy: 'privacy'
+    };
+    try {
+      const docRef = doc(db,'policies','sitePolicies');
+      const snap = await getDoc(docRef);
+      const current = snap.exists() ? snap.data() : {};
+      current[keys[policyType]] = document.getElementById(policyType+'Content').value;
+      await setDoc(docRef, current, { merge: true });
+      alert('Policy saved');
+    } catch(e){
+      console.error(e); alert('Policy save error: '+e.message);
+    }
+  };
+
+  // CUSTOMERS: derive from orders and render
+  function renderCustomersFromOrders(orders){
+    // build map by mobile (or email)
+    const map = {};
+    (orders||[]).forEach(o=>{
+      const key = o.mobile || o.email || (o.fullname||'') + (o.pincode||'');
+      if(!map[key]){
+        map[key] = {
+          name: o.fullname || o.customerName || '',
+          mobile: o.mobile || '',
+          email: o.email || 'N/A',
+          location: `${o.city || ''}, ${o.state || ''}`.trim().replace(/^,|,$/g,''),
+          orderCount: 1,
+          lastOrder: o.createdAt && o.createdAt.toDate ? o.createdAt.toDate() : (o.createdAt ? new Date(o.createdAt) : new Date())
+        };
+      } else {
+        map[key].orderCount++;
+        const d = o.createdAt && o.createdAt.toDate ? o.createdAt.toDate() : (o.createdAt ? new Date(o.createdAt) : new Date());
+        if(d > map[key].lastOrder) map[key].lastOrder = d;
+      }
+    });
+    const customers = Object.values(map);
+    // render table
+    const tbody = document.getElementById('customersTable');
+    if(!tbody) return;
+    const html = customers.map(c=>{
+      return `
+        <tr>
+          <td>${c.name}</td>
+          <td>${c.mobile}</td>
+          <td>${c.email}</td>
+          <td>${c.location}</td>
+          <td>${c.orderCount}</td>
+          <td>${c.lastOrder.toLocaleDateString()}</td>
+        </tr>
+      `;
+    }).join('');
+    tbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center">No customers found</td></tr>';
+    // apply current filters if any
+    applyCustomerFilters();
+  }
+
+  // Filtering UI logic (state dropdown & city text)
+  window.applyCustomerFilters = function(){
+    const stateVal = (document.getElementById('stateFilter')?.value || 'All').toLowerCase();
+    const cityVal = (document.getElementById('cityFilter')?.value || '').toLowerCase();
+    const rows = document.querySelectorAll('#customersTable tr');
+    rows.forEach(row=>{
+      const cols = row.querySelectorAll('td');
+      if(cols.length < 4) return;
+      const location = (cols[3].innerText || '').toLowerCase();
+      let show = true;
+      if(stateVal && stateVal !== 'all' && !location.includes(stateVal)) show = false;
+      if(cityVal && !location.includes(cityVal)) show = false;
+      row.style.display = show ? '' : 'none';
+    });
+  };
+
+  // attach filters events
+  document.addEventListener('input', (e)=>{
+    if(e.target && e.target.id === 'cityFilter') applyCustomerFilters();
+  });
+  document.addEventListener('change', (e)=>{
+    if(e.target && e.target.id === 'stateFilter') applyCustomerFilters();
+  });
+
+  // Export and bulk action functions can still use Firestore queries (left as exercise)
+  window.exportOrders = function(){
+    alert('Export will download current orders as CSV (client-side).');
+    // simple export using window._admin_orders
+    const orders = window._admin_orders || [];
+    if(!orders.length) return alert('No orders');
+    const headers = ['id','fullname','mobile','city','state','total','status','createdAt'];
+    const rows = orders.map(o => [o.id, o.fullname||'', o.mobile||'', o.city||'', o.state||'', o.total||o.amount||'', o.status||'', o.createdAt && o.createdAt.toDate ? o.createdAt.toDate().toISOString() : ''].join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'orders.csv'; document.body.appendChild(a); a.click(); a.remove();
+  };
+
+  // initial check: if user already logged in per localStorage, attempt to keep session
+  // Firebase maintains session; no explicit action needed.
+
+</script>
+
 </body>
 </html>
+<div style="margin:10px 0; display:flex; gap:10px; align-items:center;">
+  <label><b>Filter by State:</b></label>
+  <select id="stateFilter">
+    <option value="All">All States/UTs</option>
+    <option>Andhra Pradesh</option>
+    <option>Arunachal Pradesh</option>
+    <option>Assam</option>
+    <option>Bihar</option>
+    <option>Chhattisgarh</option>
+    <option>Goa</option>
+    <option>Gujarat</option>
+    <option>Haryana</option>
+    <option>Himachal Pradesh</option>
+    <option>Jharkhand</option>
+    <option>Karnataka</option>
+    <option>Kerala</option>
+    <option>Madhya Pradesh</option>
+    <option>Maharashtra</option>
+    <option>Manipur</option>
+    <option>Meghalaya</option>
+    <option>Mizoram</option>
+    <option>Nagaland</option>
+    <option>Odisha</option>
+    <option>Punjab</option>
+    <option>Rajasthan</option>
+    <option>Sikkim</option>
+    <option>Tamil Nadu</option>
+    <option>Telangana</option>
+    <option>Tripura</option>
+    <option>Uttar Pradesh</option>
+    <option>Uttarakhand</option>
+    <option>West Bengal</option>
+    <option>Andaman and Nicobar Islands</option>
+    <option>Chandigarh</option>
+    <option>Dadra and Nagar Haveli and Daman and Diu</option>
+    <option>Delhi</option>
+    <option>Jammu and Kashmir</option>
+    <option>Ladakh</option>
+    <option>Lakshadweep</option>
+    <option>Puducherry</option>
+  </select>
+
+  <label><b>Filter by City:</b></label>
+  <input type="text" id="cityFilter" placeholder="Enter city name" />
+</div>
