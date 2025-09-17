@@ -9,6 +9,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <!-- Firebase Database -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  
   <style>
     :root {
       --bg: #f8fafc;
@@ -933,7 +939,7 @@
             <div class="earnings-cards">
               <div class="earnings-card">
                 <div class="earnings-value" id="totalEarnings">₹0</div>
-                <div class="earnings-label">Total Selling</div>
+                <div class="earnings-label">Total Earnings</div>
                 <div class="earnings-comparison">
                   <span class="earnings-trend" id="totalEarningsTrend">
                     <i class="fas fa-caret-up trend-up"></i>
@@ -1373,6 +1379,22 @@
   </div>
 
   <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAeB7VzIxJaNYagUPoKd-kN5HXmLbS2-Vw",
+      authDomain: "videomanager-23d98.firebaseapp.com",
+      databaseURL: "https://videomanager-23d98-default-rtdb.firebaseio.com",
+      projectId: "videomanager-23d98",
+      storageBucket: "videomanager-23d98.firebasestorage.app",
+      messagingSenderId: "847321523576",
+      appId: "1:847321523576:web:bda3f5026e3e163603548d",
+      measurementId: "G-YBSJ1KMPV4"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
     // Admin State
     let currentAdminTab = 'dashboard';
     let currentProductsPage = 1;
@@ -1586,43 +1608,52 @@
 
     // Load dashboard data
     function loadDashboardData() {
-      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
-      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
-      const trendingProducts = products.filter(p => p.trending);
+      // Fetch products and orders from Firebase
+      const productsRef = database.ref('products');
+      const ordersRef = database.ref('orders');
       
-      // Update stats
-      document.getElementById('totalProducts').textContent = products.length;
-      document.getElementById('totalOrders').textContent = orders.length;
-      document.getElementById('pendingOrders').textContent = orders.filter(o => o.status === 'Pending').length;
-      document.getElementById('trendingProducts').textContent = trendingProducts.length;
-      
-      // Calculate and update earnings
-      const earnings = calculateEarnings(orders, products);
-      document.getElementById('totalEarnings').textContent = `₹${earnings.totalEarnings.toLocaleString()}`;
-      document.getElementById('lastWeekEarnings').textContent = `₹${earnings.lastWeekEarnings.toLocaleString()}`;
-      document.getElementById('lastMonthEarnings').textContent = `₹${earnings.lastMonthEarnings.toLocaleString()}`;
-      
-      // Update trends
-      updateTrendElement('lastWeekTrend', earnings.weeklyTrend);
-      updateTrendElement('lastMonthTrend', earnings.monthlyTrend);
-      
-      // Load recent orders
-      const recentOrders = orders.slice(-5).reverse();
-      const recentOrdersHtml = recentOrders.map(order => {
-        const product = products.find(p => p.id === order.productId);
-        return `
-          <tr>
-            <td>#${order.id || 'N/A'}</td>
-            <td>${order.fullname}</td>
-            <td>${product ? product.title : 'Unknown Product'}</td>
-            <td>₹${product ? product.price * order.qty : 'N/A'}</td>
-            <td><span class="badge ${getStatusBadgeClass(order.status)}">${order.status || 'Pending'}</span></td>
-            <td>${new Date(order.timestamp).toLocaleDateString()}</td>
-          </tr>
-        `;
-      }).join('');
-      
-      document.getElementById('recentOrders').innerHTML = recentOrdersHtml || '<tr><td colspan="6" style="text-align: center">No orders found</td></tr>';
+      Promise.all([
+        new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val()))),
+        new Promise(resolve => ordersRef.once('value', snapshot => resolve(snapshot.val())))
+      ]).then(([productsData, ordersData]) => {
+        const products = productsData ? Object.values(productsData) : [];
+        const orders = ordersData ? Object.values(ordersData) : [];
+        const trendingProducts = products.filter(p => p.trending);
+        
+        // Update stats
+        document.getElementById('totalProducts').textContent = products.length;
+        document.getElementById('totalOrders').textContent = orders.length;
+        document.getElementById('pendingOrders').textContent = orders.filter(o => o.status === 'Pending').length;
+        document.getElementById('trendingProducts').textContent = trendingProducts.length;
+        
+        // Calculate and update earnings
+        const earnings = calculateEarnings(orders, products);
+        document.getElementById('totalEarnings').textContent = `₹${earnings.totalEarnings.toLocaleString()}`;
+        document.getElementById('lastWeekEarnings').textContent = `₹${earnings.lastWeekEarnings.toLocaleString()}`;
+        document.getElementById('lastMonthEarnings').textContent = `₹${earnings.lastMonthEarnings.toLocaleString()}`;
+        
+        // Update trends
+        updateTrendElement('lastWeekTrend', earnings.weeklyTrend);
+        updateTrendElement('lastMonthTrend', earnings.monthlyTrend);
+        
+        // Load recent orders
+        const recentOrders = orders.slice(-5).reverse();
+        const recentOrdersHtml = recentOrders.map(order => {
+          const product = products.find(p => p.id === order.productId);
+          return `
+            <tr>
+              <td>#${order.id || 'N/A'}</td>
+              <td>${order.fullname}</td>
+              <td>${product ? product.title : 'Unknown Product'}</td>
+              <td>₹${product ? product.price * order.qty : 'N/A'}</td>
+              <td><span class="badge ${getStatusBadgeClass(order.status)}">${order.status || 'Pending'}</span></td>
+              <td>${new Date(order.timestamp).toLocaleDateString()}</td>
+            </tr>
+          `;
+        }).join('');
+        
+        document.getElementById('recentOrders').innerHTML = recentOrdersHtml || '<tr><td colspan="6" style="text-align: center">No orders found</td></tr>';
+      });
     }
 
     // Update trend element with appropriate icon and color
@@ -1655,37 +1686,41 @@
 
     // Load products
     function loadProducts() {
-      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
-      const filteredProducts = filterProductsList(products);
-      const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
-      
-      // Update pagination
-      updatePagination('productsPagination', currentProductsPage, totalPages, 'products');
-      
-      // Get products for current page
-      const startIndex = (currentProductsPage - 1) * productsPerPage;
-      const paginatedProducts = filteredProducts.slice(startIndex, startIndex + productsPerPage);
-      
-      // Render products table
-      const productsHtml = paginatedProducts.map(product => {
-        return `
-          <tr>
-            <td><img src="${product.images[0]}" width="50" height="50" style="object-fit: cover; border-radius: 6px"></td>
-            <td>${product.title}</td>
-            <td>${product.category}</td>
-            <td>₹${product.price}</td>
-            <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
-            <td>
-              <div class="action-buttons">
-                <button class="btn secondary btn-sm" onclick="editProduct(${product.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn error btn-sm" onclick="deleteProductConfirm(${product.id})"><i class="fas fa-trash"></i></button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-      
-      document.getElementById('productsTable').innerHTML = productsHtml || '<tr><td colspan="6" style="text-align: center">No products found</td></tr>';
+      const productsRef = database.ref('products');
+      productsRef.once('value', snapshot => {
+        const productsData = snapshot.val();
+        const products = productsData ? Object.values(productsData) : [];
+        const filteredProducts = filterProductsList(products);
+        const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+        
+        // Update pagination
+        updatePagination('productsPagination', currentProductsPage, totalPages, 'products');
+        
+        // Get products for current page
+        const startIndex = (currentProductsPage - 1) * productsPerPage;
+        const paginatedProducts = filteredProducts.slice(startIndex, startIndex + productsPerPage);
+        
+        // Render products table
+        const productsHtml = paginatedProducts.map(product => {
+          return `
+            <tr>
+              <td><img src="${product.images[0]}" width="50" height="50" style="object-fit: cover; border-radius: 6px"></td>
+              <td>${product.title}</td>
+              <td>${product.category}</td>
+              <td>₹${product.price}</td>
+              <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn secondary btn-sm" onclick="editProduct(${product.id})"><i class="fas fa-edit"></i></button>
+                  <button class="btn error btn-sm" onclick="deleteProductConfirm(${product.id})"><i class="fas fa-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+        
+        document.getElementById('productsTable').innerHTML = productsHtml || '<tr><td colspan="6" style="text-align: center">No products found</td></tr>';
+      });
     }
 
     // Filter products list
@@ -1710,46 +1745,54 @@
 
     // Load orders
     function loadOrders() {
-      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
-      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
-      const filteredOrders = filterOrdersList(orders, products);
-      const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+      const ordersRef = database.ref('orders');
+      const productsRef = database.ref('products');
       
-      // Update pagination
-      updatePagination('ordersPagination', currentOrdersPage, totalPages, 'orders');
-      
-      // Get orders for current page
-      const startIndex = (currentOrdersPage - 1) * ordersPerPage;
-      const paginatedOrders = filteredOrders.slice(startIndex, startIndex + ordersPerPage);
-      
-      // Render orders table
-      const ordersHtml = paginatedOrders.map(order => {
-        const product = products.find(p => p.id === order.productId);
-        return `
-          <tr>
-            <td><input type="checkbox" value="${order.id}"></td>
-            <td>#${order.id || 'N/A'}</td>
-            <td>${order.fullname}<br><small>${order.mobile}</small></td>
-            <td>${product ? product.title : 'Unknown Product'} (x${order.qty})</td>
-            <td>₹${product ? product.price * order.qty : 'N/A'}</td>
-            <td>
-              <select onchange="updateOrderStatus(${order.id}, this.value)" class="status-select">
-                <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
-                <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
-                <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-              </select>
-            </td>
-            <td>${new Date(order.timestamp).toLocaleDateString()}</td>
-            <td>
-              <button class="btn secondary btn-sm" onclick="viewOrderDetails(${order.id})"><i class="fas fa-eye"></i></button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-      
-      document.getElementById('ordersTable').innerHTML = ordersHtml || '<tr><td colspan="8" style="text-align: center">No orders found</td></tr>';
+      Promise.all([
+        new Promise(resolve => ordersRef.once('value', snapshot => resolve(snapshot.val()))),
+        new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val())))
+      ]).then(([ordersData, productsData]) => {
+        const orders = ordersData ? Object.values(ordersData) : [];
+        const products = productsData ? Object.values(productsData) : [];
+        const filteredOrders = filterOrdersList(orders, products);
+        const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+        
+        // Update pagination
+        updatePagination('ordersPagination', currentOrdersPage, totalPages, 'orders');
+        
+        // Get orders for current page
+        const startIndex = (currentOrdersPage - 1) * ordersPerPage;
+        const paginatedOrders = filteredOrders.slice(startIndex, startIndex + ordersPerPage);
+        
+        // Render orders table
+        const ordersHtml = paginatedOrders.map(order => {
+          const product = products.find(p => p.id === order.productId);
+          return `
+            <tr>
+              <td><input type="checkbox" value="${order.id}"></td>
+              <td>#${order.id || 'N/A'}</td>
+              <td>${order.fullname}<br><small>${order.mobile}</small></td>
+              <td>${product ? product.title : 'Unknown Product'} (x${order.qty})</td>
+              <td>₹${product ? product.price * order.qty : 'N/A'}</td>
+              <td>
+                <select onchange="updateOrderStatus(${order.id}, this.value)" class="status-select">
+                  <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                  <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                  <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                  <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                  <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                </select>
+              </td>
+              <td>${new Date(order.timestamp).toLocaleDateString()}</td>
+              <td>
+                <button class="btn secondary btn-sm" onclick="viewOrderDetails(${order.id})"><i class="fas fa-eye"></i></button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+        
+        document.getElementById('ordersTable').innerHTML = ordersHtml || '<tr><td colspan="8" style="text-align: center">No orders found</td></tr>';
+      });
     }
 
     // Filter orders list
@@ -1779,19 +1822,23 @@
 
     // Update order status
     function updateOrderStatus(orderId, status) {
-      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
-      const orderIndex = orders.findIndex(o => o.id === orderId);
-      
-      if (orderIndex !== -1) {
-        orders[orderIndex].status = status;
-        localStorage.setItem('demo_orders', JSON.stringify(orders));
-        loadOrders();
+      const ordersRef = database.ref('orders');
+      ordersRef.once('value', snapshot => {
+        const ordersData = snapshot.val();
+        if (!ordersData) return;
         
-        // If on dashboard, refresh it too
-        if (currentAdminTab === 'dashboard') {
-          loadDashboardData();
+        const orderKey = Object.keys(ordersData).find(key => ordersData[key].id === orderId);
+        if (orderKey) {
+          database.ref('orders/' + orderKey).update({ status: status })
+            .then(() => {
+              loadOrders();
+              // If on dashboard, refresh it too
+              if (currentAdminTab === 'dashboard') {
+                loadDashboardData();
+              }
+            });
         }
-      }
+      });
     }
 
     // Apply bulk action to orders
@@ -1818,149 +1865,175 @@
         return;
       }
       
-      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
-      const orderIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
-      
-      orderIds.forEach(orderId => {
-        const orderIndex = orders.findIndex(o => o.id === orderId);
-        if (orderIndex !== -1) {
-          orders[orderIndex].status = status;
-        }
+      const ordersRef = database.ref('orders');
+      ordersRef.once('value', snapshot => {
+        const ordersData = snapshot.val();
+        if (!ordersData) return;
+        
+        const orderIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        const updates = {};
+        
+        Object.keys(ordersData).forEach(key => {
+          if (orderIds.includes(ordersData[key].id)) {
+            updates['orders/' + key + '/status'] = status;
+          }
+        });
+        
+        database.ref().update(updates)
+          .then(() => {
+            loadOrders();
+            // If on dashboard, refresh it too
+            if (currentAdminTab === 'dashboard') {
+              loadDashboardData();
+            }
+            
+            // Uncheck select all
+            document.getElementById('selectAllOrders').checked = false;
+          });
       });
-      
-      localStorage.setItem('demo_orders', JSON.stringify(orders));
-      loadOrders();
-      
-      // If on dashboard, refresh it too
-      if (currentAdminTab === 'dashboard') {
-        loadDashboardData();
-      }
-      
-      // Uncheck select all
-      document.getElementById('selectAllOrders').checked = false;
     }
 
     // View order details
     function viewOrderDetails(orderId) {
-      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
-      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
-      const order = orders.find(o => o.id === orderId);
+      const ordersRef = database.ref('orders');
+      const productsRef = database.ref('products');
       
-      if (!order) {
-        alert('Order not found');
-        return;
-      }
-      
-      const product = products.find(p => p.id === order.productId);
-      
-      const detailsHtml = `
-        <h3>Order Details #${order.id}</h3>
-        <p><strong>Customer:</strong> ${order.fullname}</p>
-        <p><strong>Mobile:</strong> ${order.mobile}</p>
-        <p><strong>Address:</strong> ${order.house}, ${order.city}, ${order.state} - ${order.pincode}</p>
-        <p><strong>Product:</strong> ${product ? product.title : 'Unknown'} (x${order.qty})</p>
-        <p><strong>Amount:</strong> ₹${product ? product.price * order.qty : 'N/A'}</p>
-        <p><strong>Status:</strong> ${order.status || 'Pending'}</p>
-        <p><strong>Order Date:</strong> ${new Date(order.timestamp).toLocaleString()}</p>
-        <p><strong>Payment Method:</strong> ${order.payment === 'prepaid' ? 'Prepaid' : 'Cash on Delivery'}</p>
-      `;
-      
-      alert(detailsHtml);
+      Promise.all([
+        new Promise(resolve => ordersRef.once('value', snapshot => resolve(snapshot.val()))),
+        new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val())))
+      ]).then(([ordersData, productsData]) => {
+        const orders = ordersData ? Object.values(ordersData) : [];
+        const products = productsData ? Object.values(productsData) : [];
+        const order = orders.find(o => o.id === orderId);
+        
+        if (!order) {
+          alert('Order not found');
+          return;
+        }
+        
+        const product = products.find(p => p.id === order.productId);
+        
+        const detailsHtml = `
+          <h3>Order Details #${order.id}</h3>
+          <p><strong>Customer:</strong> ${order.fullname}</p>
+          <p><strong>Mobile:</strong> ${order.mobile}</p>
+          <p><strong>Address:</strong> ${order.house}, ${order.city}, ${order.state} - ${order.pincode}</p>
+          <p><strong>Product:</strong> ${product ? product.title : 'Unknown'} (x${order.qty})</p>
+          <p><strong>Amount:</strong> ₹${product ? product.price * order.qty : 'N/A'}</p>
+          <p><strong>Status:</strong> ${order.status || 'Pending'}</p>
+          <p><strong>Order Date:</strong> ${new Date(order.timestamp).toLocaleString()}</p>
+          <p><strong>Payment Method:</strong> ${order.payment === 'prepaid' ? 'Prepaid' : 'Cash on Delivery'}</p>
+        `;
+        
+        alert(detailsHtml);
+      });
     }
 
     // Load trending products
     function loadTrendingProducts() {
-      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
-      
-      const trendingHtml = products.map(product => {
-        return `
-          <tr>
-            <td><img src="${product.images[0]}" width="50" height="50" style="object-fit: cover; border-radius: 6px"></td>
-            <td>${product.title}</td>
-            <td>₹${product.price}</td>
-            <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
-            <td>
-              <div class="action-buttons">
-                <button class="btn ${product.trending ? 'error' : 'success'} btn-sm" onclick="toggleTrending(${product.id}, ${!product.trending})">
-                  <i class="fas ${product.trending ? 'fa-times' : 'fa-fire'}"></i> 
-                  ${product.trending ? 'Remove' : 'Add'}
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-      
-      document.getElementById('trendingTable').innerHTML = trendingHtml || '<tr><td colspan="5" style="text-align: center">No products found</td></tr>';
+      const productsRef = database.ref('products');
+      productsRef.once('value', snapshot => {
+        const productsData = snapshot.val();
+        const products = productsData ? Object.values(productsData) : [];
+        
+        const trendingHtml = products.map(product => {
+          return `
+            <tr>
+              <td><img src="${product.images[0]}" width="50" height="50" style="object-fit: cover; border-radius: 6px"></td>
+              <td>${product.title}</td>
+              <td>₹${product.price}</td>
+              <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn ${product.trending ? 'error' : 'success'} btn-sm" onclick="toggleTrending(${product.id}, ${!product.trending})">
+                    <i class="fas ${product.trending ? 'fa-times' : 'fa-fire'}"></i> 
+                    ${product.trending ? 'Remove' : 'Add'}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+        
+        document.getElementById('trendingTable').innerHTML = trendingHtml || '<tr><td colspan="5" style="text-align: center">No products found</td></tr>';
+      });
     }
 
     // Toggle trending status
     function toggleTrending(productId, isTrending) {
-      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
-      const productIndex = products.findIndex(p => p.id === productId);
-      
-      if (productIndex !== -1) {
-        products[productIndex].trending = isTrending;
-        localStorage.setItem('demo_products', JSON.stringify(products));
-        loadTrendingProducts();
+      const productsRef = database.ref('products');
+      productsRef.once('value', snapshot => {
+        const productsData = snapshot.val();
+        if (!productsData) return;
         
-        // If on dashboard, refresh it too
-        if (currentAdminTab === 'dashboard') {
-          loadDashboardData();
+        const productKey = Object.keys(productsData).find(key => productsData[key].id === productId);
+        if (productKey) {
+          database.ref('products/' + productKey).update({ trending: isTrending })
+            .then(() => {
+              loadTrendingProducts();
+              // If on dashboard, refresh it too
+              if (currentAdminTab === 'dashboard') {
+                loadDashboardData();
+              }
+            });
         }
-      }
+      });
     }
 
     // Load customers
     function loadCustomers() {
-      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
-      
-      // Extract unique customers based on mobile number
-      const customersMap = {};
-      orders.forEach(order => {
-        if (!customersMap[order.mobile]) {
-          customersMap[order.mobile] = {
-            name: order.fullname,
-            mobile: order.mobile,
-            email: order.email || 'N/A',
-            location: `${order.city}, ${order.state}`,
-            orderCount: 1,
-            lastOrder: order.timestamp
-          };
-        } else {
-          customersMap[order.mobile].orderCount++;
-          if (new Date(order.timestamp) > new Date(customersMap[order.mobile].lastOrder)) {
-            customersMap[order.mobile].lastOrder = order.timestamp;
+      const ordersRef = database.ref('orders');
+      ordersRef.once('value', snapshot => {
+        const ordersData = snapshot.val();
+        const orders = ordersData ? Object.values(ordersData) : [];
+        
+        // Extract unique customers based on mobile number
+        const customersMap = {};
+        orders.forEach(order => {
+          if (!customersMap[order.mobile]) {
+            customersMap[order.mobile] = {
+              name: order.fullname,
+              mobile: order.mobile,
+              email: order.email || 'N/A',
+              location: `${order.city}, ${order.state}`,
+              orderCount: 1,
+              lastOrder: order.timestamp
+            };
+          } else {
+            customersMap[order.mobile].orderCount++;
+            if (new Date(order.timestamp) > new Date(customersMap[order.mobile].lastOrder)) {
+              customersMap[order.mobile].lastOrder = order.timestamp;
+            }
           }
-        }
+        });
+        
+        const customers = Object.values(customersMap);
+        const filteredCustomers = filterCustomersList(customers);
+        const totalPages = Math.ceil(filteredCustomers.length / customersPerPage);
+        
+        // Update pagination
+        updatePagination('customersPagination', currentCustomersPage, totalPages, 'customers');
+        
+        // Get customers for current page
+        const startIndex = (currentCustomersPage - 1) * customersPerPage;
+        const paginatedCustomers = filteredCustomers.slice(startIndex, startIndex + customersPerPage);
+        
+        // Render customers table
+        const customersHtml = paginatedCustomers.map(customer => {
+          return `
+            <tr>
+              <td>${customer.name}</td>
+              <td>${customer.mobile}</td>
+              <td>${customer.email}</td>
+              <td>${customer.location}</td>
+              <td>${customer.orderCount}</td>
+              <td>${new Date(customer.lastOrder).toLocaleDateString()}</td>
+            </tr>
+          `;
+        }).join('');
+        
+        document.getElementById('customersTable').innerHTML = customersHtml || '<tr><td colspan="6" style="text-align: center">No customers found</td></tr>';
       });
-      
-      const customers = Object.values(customersMap);
-      const filteredCustomers = filterCustomersList(customers);
-      const totalPages = Math.ceil(filteredCustomers.length / customersPerPage);
-      
-      // Update pagination
-      updatePagination('customersPagination', currentCustomersPage, totalPages, 'customers');
-      
-      // Get customers for current page
-      const startIndex = (currentCustomersPage - 1) * customersPerPage;
-      const paginatedCustomers = filteredCustomers.slice(startIndex, startIndex + customersPerPage);
-      
-      // Render customers table
-      const customersHtml = paginatedCustomers.map(customer => {
-        return `
-          <tr>
-            <td>${customer.name}</td>
-            <td>${customer.mobile}</td>
-            <td>${customer.email}</td>
-            <td>${customer.location}</td>
-            <td>${customer.orderCount}</td>
-            <td>${new Date(customer.lastOrder).toLocaleDateString()}</td>
-          </tr>
-        `;
-      }).join('');
-      
-      document.getElementById('customersTable').innerHTML = customersHtml || '<tr><td colspan="6" style="text-align: center">No customers found</td></tr>';
     }
 
     // Filter customers list
@@ -1983,25 +2056,27 @@
 
     // Load policies
     function loadPolicies() {
-      const policies = JSON.parse(localStorage.getItem('demo_policies') || '{}');
-      
-      // Set policy content
-      document.getElementById('aboutContent').value = policies.about || '';
-      document.getElementById('refundContent').value = policies.refund || '';
-      document.getElementById('termsContent').value = policies.terms || '';
-      document.getElementById('shippingContent').value = policies.shipping || '';
-      document.getElementById('privacyContent').value = policies.privacy || '';
+      const policiesRef = database.ref('policies');
+      policiesRef.once('value', snapshot => {
+        const policies = snapshot.val() || {};
+        
+        // Set policy content
+        document.getElementById('aboutContent').value = policies.about || '';
+        document.getElementById('refundContent').value = policies.refund || '';
+        document.getElementById('termsContent').value = policies.terms || '';
+        document.getElementById('shippingContent').value = policies.shipping || '';
+        document.getElementById('privacyContent').value = policies.privacy || '';
+      });
     }
 
     // Save policy
     function savePolicy(policyType) {
       const content = document.getElementById(`${policyType}Content`).value;
-      const policies = JSON.parse(localStorage.getItem('demo_policies') || '{}');
       
-      policies[policyType] = content;
-      localStorage.setItem('demo_policies', JSON.stringify(policies));
-      
-      alert(`${policyType.charAt(0).toUpperCase() + policyType.slice(1)} policy saved successfully!`);
+      database.ref('policies/' + policyType).set(content)
+        .then(() => {
+          alert(`${policyType.charAt(0).toUpperCase() + policyType.slice(1)} policy saved successfully!`);
+        });
     }
 
     // Show add product modal
@@ -2083,63 +2158,72 @@
         return;
       }
       
-      // Get existing products
-      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
-      
-      // Create new product
-      const newProduct = {
-        id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1,
-        title: name,
-        price: parseInt(price),
-        desc: desc,
-        fullDesc: fullDesc,
-        images: uploadedImages,
-        sizes: sizes,
-        category: category,
-        trending: trending
-      };
-      
-      // Add to products
-      products.push(newProduct);
-      
-      // Save to localStorage
-      localStorage.setItem('demo_products', JSON.stringify(products));
-      
-      // Close modal and refresh products list
-      closeModal('addProductModal');
-      loadProducts();
-      loadTrendingProducts();
-      
-      // If on dashboard, refresh it too
-      if (currentAdminTab === 'dashboard') {
-        loadDashboardData();
-      }
-      
-      alert('Product added successfully!');
+      // Get next available ID
+      const productsRef = database.ref('products');
+      productsRef.once('value', snapshot => {
+        const productsData = snapshot.val();
+        const products = productsData ? Object.values(productsData) : [];
+        const nextId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+        
+        // Create new product
+        const newProduct = {
+          id: nextId,
+          title: name,
+          price: parseInt(price),
+          desc: desc,
+          fullDesc: fullDesc,
+          images: uploadedImages,
+          sizes: sizes,
+          category: category,
+          trending: trending
+        };
+        
+        // Add to Firebase
+        productsRef.push(newProduct)
+          .then(() => {
+            // Close modal and refresh products list
+            closeModal('addProductModal');
+            loadProducts();
+            loadTrendingProducts();
+            
+            // If on dashboard, refresh it too
+            if (currentAdminTab === 'dashboard') {
+              loadDashboardData();
+            }
+            
+            alert('Product added successfully!');
+          });
+      });
     }
 
     // Edit product
     function editProduct(productId) {
-      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
-      const product = products.find(p => p.id === productId);
-      
-      if (!product) {
-        alert('Product not found');
-        return;
-      }
-      
-      // Fill form with product data
-      document.getElementById('editProductId').value = product.id;
-      document.getElementById('editProductName').value = product.title;
-      document.getElementById('editProductPrice').value = product.price;
-      document.getElementById('editProductCategory').value = product.category;
-      document.getElementById('editProductDesc').value = product.desc;
-      document.getElementById('editProductFullDesc').value = product.fullDesc;
-      document.getElementById('editProductSizes').value = product.sizes.join(', ');
-      document.getElementById('editProductTrending').checked = product.trending;
-      
-      // Show modal
-      document.getElementById('editProductModal').classList.add('active');
+      const productsRef = database.ref('products');
+      productsRef.once('value', snapshot => {
+        const productsData = snapshot.val();
+        if (!productsData) return;
+        
+        const productKey = Object.keys(productsData).find(key => productsData[key].id === productId);
+        if (!productKey) {
+          alert('Product not found');
+          return;
+        }
+        
+        const product = productsData[productKey];
+        
+        // Fill form with product data
+        document.getElementById('editProductId').value = product.id;
+        document.getElementById('editProductName').value = product.title;
+        document.getElementById('editProductPrice').value = product.price;
+        document.getElementById('editProductCategory').value = product.category;
+        document.getElementById('editProductDesc').value = product.desc;
+        document.getElementById('editProductFullDesc').value = product.fullDesc;
+        document.getElementById('editProductSizes').value = product.sizes.join(', ');
+        document.getElementById('editProductTrending').checked = product.trending;
+        
+        // Show modal
+        document.getElementById('editProductModal').classList.add('active');
+      });
     }
 
     // Update product
@@ -2159,41 +2243,43 @@
         return;
       }
       
-      // Get existing products
-      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
-      const productIndex = products.findIndex(p => p.id === productId);
-      
-      if (productIndex === -1) {
-        alert('Product not found');
-        return;
-      }
-      
-      // Update product
-      products[productIndex] = {
-        ...products[productIndex],
-        title: name,
-        price: parseInt(price),
-        desc: desc,
-        fullDesc: fullDesc,
-        sizes: sizes,
-        category: category,
-        trending: trending
-      };
-      
-      // Save to localStorage
-      localStorage.setItem('demo_products', JSON.stringify(products));
-      
-      // Close modal and refresh products list
-      closeModal('editProductModal');
-      loadProducts();
-      loadTrendingProducts();
-      
-      // If on dashboard, refresh it too
-      if (currentAdminTab === 'dashboard') {
-        loadDashboardData();
-      }
-      
-      alert('Product updated successfully!');
+      const productsRef = database.ref('products');
+      productsRef.once('value', snapshot => {
+        const productsData = snapshot.val();
+        if (!productsData) return;
+        
+        const productKey = Object.keys(productsData).find(key => productsData[key].id === productId);
+        if (!productKey) {
+          alert('Product not found');
+          return;
+        }
+        
+        // Update product
+        const updates = {
+          title: name,
+          price: parseInt(price),
+          desc: desc,
+          fullDesc: fullDesc,
+          sizes: sizes,
+          category: category,
+          trending: trending
+        };
+        
+        database.ref('products/' + productKey).update(updates)
+          .then(() => {
+            // Close modal and refresh products list
+            closeModal('editProductModal');
+            loadProducts();
+            loadTrendingProducts();
+            
+            // If on dashboard, refresh it too
+            if (currentAdminTab === 'dashboard') {
+              loadDashboardData();
+            }
+            
+            alert('Product updated successfully!');
+          });
+      });
     }
 
     // Delete product confirmation
@@ -2205,98 +2291,118 @@
 
     // Delete product
     function deleteProduct(productId) {
-      // Get existing products
-      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
-      const filteredProducts = products.filter(p => p.id !== productId);
-      
-      // Save to localStorage
-      localStorage.setItem('demo_products', JSON.stringify(filteredProducts));
-      
-      // Close modal and refresh products list
-      closeModal('editProductModal');
-      loadProducts();
-      loadTrendingProducts();
-      
-      // If on dashboard, refresh it too
-      if (currentAdminTab === 'dashboard') {
-        loadDashboardData();
-      }
-      
-      alert('Product deleted successfully!');
+      const productsRef = database.ref('products');
+      productsRef.once('value', snapshot => {
+        const productsData = snapshot.val();
+        if (!productsData) return;
+        
+        const productKey = Object.keys(productsData).find(key => productsData[key].id === productId);
+        if (!productKey) {
+          alert('Product not found');
+          return;
+        }
+        
+        database.ref('products/' + productKey).remove()
+          .then(() => {
+            // Close modal and refresh products list
+            closeModal('editProductModal');
+            loadProducts();
+            loadTrendingProducts();
+            
+            // If on dashboard, refresh it too
+            if (currentAdminTab === 'dashboard') {
+              loadDashboardData();
+            }
+            
+            alert('Product deleted successfully!');
+          });
+      });
     }
 
     // Export orders
     function exportOrders() {
-      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
-      const products = JSON.parse(localStorage.getItem('demo_products') || '[]');
+      const ordersRef = database.ref('orders');
+      const productsRef = database.ref('products');
       
-      if (orders.length === 0) {
-        alert('No orders to export');
-        return;
-      }
-      
-      // Create CSV content
-      let csv = 'Order ID,Customer,Product,Quantity,Amount,Status,Date\n';
-      
-      orders.forEach(order => {
-        const product = products.find(p => p.id === order.productId);
-        csv += `"${order.id || 'N/A'}","${order.fullname}","${product ? product.title : 'Unknown'}","${order.qty}","${product ? product.price * order.qty : 'N/A'}","${order.status || 'Pending'}","${new Date(order.timestamp).toLocaleDateString()}"\n`;
+      Promise.all([
+        new Promise(resolve => ordersRef.once('value', snapshot => resolve(snapshot.val()))),
+        new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val())))
+      ]).then(([ordersData, productsData]) => {
+        const orders = ordersData ? Object.values(ordersData) : [];
+        const products = productsData ? Object.values(productsData) : [];
+        
+        if (orders.length === 0) {
+          alert('No orders to export');
+          return;
+        }
+        
+        // Create CSV content
+        let csv = 'Order ID,Customer,Product,Quantity,Amount,Status,Date\n';
+        
+        orders.forEach(order => {
+          const product = products.find(p => p.id === order.productId);
+          csv += `"${order.id || 'N/A'}","${order.fullname}","${product ? product.title : 'Unknown'}","${order.qty}","${product ? product.price * order.qty : 'N/A'}","${order.status || 'Pending'}","${new Date(order.timestamp).toLocaleDateString()}"\n`;
+        });
+        
+        // Create download link
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `buyzo_orders_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       });
-      
-      // Create download link
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `buyzo_orders_${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
     }
 
     // Export customers
     function exportCustomers() {
-      const orders = JSON.parse(localStorage.getItem('demo_orders') || '[]');
-      
-      if (orders.length === 0) {
-        alert('No customer data to export');
-        return;
-      }
-      
-      // Extract unique customers based on mobile number
-      const customersMap = {};
-      orders.forEach(order => {
-        if (!customersMap[order.mobile]) {
-          customersMap[order.mobile] = {
-            name: order.fullname,
-            mobile: order.mobile,
-            email: order.email || 'N/A',
-            location: `${order.city}, ${order.state}`,
-            orderCount: 1
-          };
-        } else {
-          customersMap[order.mobile].orderCount++;
+      const ordersRef = database.ref('orders');
+      ordersRef.once('value', snapshot => {
+        const ordersData = snapshot.val();
+        const orders = ordersData ? Object.values(ordersData) : [];
+        
+        if (orders.length === 0) {
+          alert('No customer data to export');
+          return;
         }
+        
+        // Extract unique customers based on mobile number
+        const customersMap = {};
+        orders.forEach(order => {
+          if (!customersMap[order.mobile]) {
+            customersMap[order.mobile] = {
+              name: order.fullname,
+              mobile: order.mobile,
+              email: order.email || 'N/A',
+              location: `${order.city}, ${order.state}`,
+              orderCount: 1
+            };
+          } else {
+            customersMap[order.mobile].orderCount++;
+          }
+        });
+        
+        const customers = Object.values(customersMap);
+        
+        // Create CSV content
+        let csv = 'Name,Mobile,Email,Location,Orders\n';
+        
+        customers.forEach(customer => {
+          csv += `"${customer.name}","${customer.mobile}","${customer.email}","${customer.location}","${customer.orderCount}"\n`;
+        });
+        
+        // Create download link
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `buyzo_customers_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       });
-      
-      const customers = Object.values(customersMap);
-      
-      // Create CSV content
-      let csv = 'Name,Mobile,Email,Location,Orders\n';
-      
-      customers.forEach(customer => {
-        csv += `"${customer.name}","${customer.mobile}","${customer.email}","${customer.location}","${customer.orderCount}"\n`;
-      });
-      
-      // Create download link
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `buyzo_customers_${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
     }
 
     // Close modal
@@ -2356,575 +2462,5 @@
     // Initialize when page loads
     window.addEventListener('DOMContentLoaded', initAdminPanel);
   </script>
-
-<script>
-// Customer filtering by state and city
-document.addEventListener("DOMContentLoaded", () => {
-  const stateFilter = document.getElementById("stateFilter");
-  const cityFilter = document.getElementById("cityFilter");
-  if(stateFilter && cityFilter){
-    function applyCustomerFilters(){
-      const stateVal = stateFilter.value.trim().toLowerCase();
-      const cityVal = cityFilter.value.trim().toLowerCase();
-      const rows = document.querySelectorAll("#customersList table tbody tr");
-      rows.forEach(row => {
-        const cells = row.querySelectorAll("td");
-        const location = cells.length > 3 ? cells[3].innerText.toLowerCase() : "";
-        let show = true;
-        if(stateVal !== "all" && !location.includes(stateVal)){ show = false; }
-        if(cityVal && !location.includes(cityVal)){ show = false; }
-        row.style.display = show ? "" : "none";
-      });
-    }
-    stateFilter.addEventListener("change", applyCustomerFilters);
-    cityFilter.addEventListener("input", applyCustomerFilters);
-  }
-});
-</script>
-
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-  import { getFirestore, collection, doc, getDocs, onSnapshot, addDoc, updateDoc, deleteDoc, query, orderBy, where, setDoc, getDoc, serverTimestamp, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
-  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-  import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
-
-  // --- REPLACE with provided config ---
-  const firebaseConfig = {
-    apiKey: "AIzaSyAMDAW2Gvsh8qJY5gZoFvgiMHxO5qjQl-I",
-    authDomain: "videoapp-67c32.firebaseapp.com",
-    databaseURL: "https://videoapp-67c32-default-rtdb.firebaseio.com",
-    projectId: "videoapp-67c32",
-    storageBucket: "videoapp-67c32.firebasestorage.app",
-    messagingSenderId: "711675594877",
-    appId: "1:711675594877:web:7786ab4a432d60e6f70914"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
-  const storage = getStorage(app);
-
-  // Enable offline persistence
-  try {
-    enableIndexedDbPersistence(db);
-    console.log('Firestore persistence enabled');
-  } catch (e) {
-    console.warn('Persistence could not be enabled:', e);
-  }
-
-  // Helper: format currency
-  const fmt = (n) => '₹' + (Number(n)||0).toLocaleString();
-
-  // Override legacy local handlers to use Firebase
-  window.adminLogin = async function() {
-    const email = document.getElementById('adminEmail').value.trim();
-    const password = document.getElementById('adminPassword').value;
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // onAuthStateChanged will handle UI switch
-    } catch (e) {
-      alert('Login failed: ' + e.message);
-    }
-  };
-
-  window.logout = async function() {
-    try {
-      await signOut(auth);
-    } catch(e) {
-      console.error(e);
-      alert('Logout error: ' + e.message);
-    }
-  };
-
-  // Global state
-  let productsUnsub = null;
-  let ordersUnsub = null;
-  let policiesUnsub = null;
-
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      console.log('Signed in as', user.email);
-      localStorage.setItem('admin_logged_in', 'true');
-      document.getElementById('adminLoginPage').style.display = 'none';
-      document.getElementById('adminPanel').style.display = 'block';
-      document.querySelector('.admin-avatar').textContent = (user.email && user.email[0].toUpperCase()) || 'A';
-      // start listeners
-      startProductsListener();
-      startOrdersListener();
-      loadPolicies();
-    } else {
-      console.log('Signed out');
-      localStorage.removeItem('admin_logged_in');
-      document.getElementById('adminLoginPage').style.display = 'flex';
-      document.getElementById('adminPanel').style.display = 'none';
-      // stop listeners
-      if (productsUnsub) productsUnsub();
-      if (ordersUnsub) ordersUnsub();
-    }
-  });
-
-  // PRODUCTS
-  function startProductsListener() {
-    const productsRef = collection(db, 'products');
-    const q = query(productsRef, orderBy('title'));
-    productsUnsub = onSnapshot(q, snapshot => {
-      const products = [];
-      snapshot.forEach(docSnap => {
-        products.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      renderProducts(products);
-      renderTrendingTable(products);
-      // store for other usage
-      window._admin_products = products;
-      // refresh dashboard earnings from orders (orders listener will do)
-    }, err => {
-      console.error('products snapshot error', err);
-    });
-  }
-
-  async function renderProducts(products) {
-    // pagination simple: current page already in global var
-    const tbody = document.getElementById('productsTable');
-    if(!tbody) return;
-    const html = products.map(p => {
-      const img = (p.images && p.images[0]) ? p.images[0] : '';
-      return `
-        <tr>
-          <td><img src="${img}" width="50" height="50" style="object-fit: cover; border-radius: 6px"></td>
-          <td>${p.title || ''}</td>
-          <td>${p.category || ''}</td>
-          <td>₹${p.price || 0}</td>
-          <td>${p.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
-          <td>
-            <div class="action-buttons">
-              <button class="btn secondary btn-sm" onclick="editProductFirestore('${p.id}')"><i class="fas fa-edit"></i></button>
-              <button class="btn error btn-sm" onclick="deleteProductConfirmFirestore('${p.id}')"><i class="fas fa-trash"></i></button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-    tbody.innerHTML = html || '<tr><td colspan="6" style="text-align: center">No products found</td></tr>';
-  }
-
-  // Show add product modal: keep using existing showAddProductModal()
-
-  // File upload handling: override to keep File objects
-  window._firebaseUploadedFiles = [];
-  window.handleImageUpload = function(input){
-    window._firebaseUploadedFiles = [];
-    const preview = document.getElementById('imagePreview');
-    preview.innerHTML = '';
-    if(input.files && input.files.length){
-      Array.from(input.files).forEach(file => {
-        window._firebaseUploadedFiles.push(file);
-        const reader = new FileReader();
-        reader.onload = function(e){
-          const div = document.createElement('div');
-          div.className = 'preview-item';
-          div.innerHTML = `<img src="${e.target.result}" alt="Preview"><div class="remove-image" onclick="removeImage(this)">&times;</div>`;
-          preview.appendChild(div);
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-  };
-  window.removeImage = function(button){
-    const item = button.parentElement;
-    const img = item.querySelector('img').src;
-    // remove matching dataURL/file is hard; clear all for simplicity
-    item.remove();
-    // we won't alter _firebaseUploadedFiles here; it's okay for small flows
-  };
-
-  // Save product to Firestore (with storage upload)
-  window.saveProduct = async function(){
-  const name = document.getElementById('productName').value.trim();
-  const price = Number(document.getElementById('productPrice').value) || 0;
-  const category = document.getElementById('productCategory').value.trim();
-  const desc = document.getElementById('productDesc').value.trim();
-  const fullDesc = document.getElementById('productFullDesc').value.trim();
-  const sizes = (document.getElementById('productSizes').value || '').split(',').map(s=>s.trim()).filter(Boolean);
-  const trending = document.getElementById('productTrending').checked;
-
-  if(!name || !price || !category || !desc){
-    alert('⚠️ Please fill all required fields');
-    return;
-  }
-
-  const files = window._firebaseUploadedFiles || [];
-  const uploadedUrls = [];
-
-  try {
-    // Upload images if any
-    for(const file of files){
-      const path = `product-images/${Date.now()}_${file.name.replace(/\s/g,'_')}`;
-      const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      uploadedUrls.push(url);
-    }
-
-    // Save product doc
-    await addDoc(collection(db, 'products'), {
-      title: name,
-      price: price,
-      category: category,
-      desc: desc,
-      fullDesc: fullDesc,
-      sizes: sizes,
-      images: uploadedUrls,
-      trending: trending || false,
-      createdAt: serverTimestamp()
-    });
-
-    // Reset form + close modal
-    document.getElementById('productName').value = '';
-    document.getElementById('productPrice').value = '';
-    document.getElementById('productCategory').value = '';
-    document.getElementById('productDesc').value = '';
-    document.getElementById('productFullDesc').value = '';
-    document.getElementById('productSizes').value = '';
-    document.getElementById('productTrending').checked = false;
-    document.getElementById('imagePreview').innerHTML = '';
-    window._firebaseUploadedFiles = [];
-
-    closeModal('addProductModal');
-    alert('✅ Product Added Successfully!');
-  } catch(e){
-    console.error(e);
-    alert('❌ Error saving product: ' + e.message);
-  }
-};
-
-  // Edit product - load data into edit modal
-  window.editProductFirestore = async function(prodId){
-    try{
-      const d = await getDoc(doc(db, 'products', prodId));
-      if(!d.exists()) { alert('Product not found'); return; }
-      const p = d.data();
-      document.getElementById('editProductId').value = prodId;
-      document.getElementById('editProductName').value = p.title || '';
-      document.getElementById('editProductPrice').value = p.price || '';
-      document.getElementById('editProductCategory').value = p.category || '';
-      document.getElementById('editProductDesc').value = p.desc || '';
-      document.getElementById('editProductFullDesc').value = p.fullDesc || '';
-      document.getElementById('editProductSizes').value = (p.sizes||[]).join(', ');
-      document.getElementById('editProductTrending').checked = !!p.trending;
-      // show modal
-      document.getElementById('editProductModal').classList.add('active');
-    } catch(e){
-      console.error(e);
-      alert('Error loading product: '+e.message);
-    }
-  };
-
-  window.updateProduct = async function(){
-    const prodId = document.getElementById('editProductId').value;
-    if(!prodId) return alert('Missing product id');
-    const name = document.getElementById('editProductName').value.trim();
-    const price = Number(document.getElementById('editProductPrice').value) || 0;
-    const category = document.getElementById('editProductCategory').value;
-    const desc = document.getElementById('editProductDesc').value;
-    const fullDesc = document.getElementById('editProductFullDesc').value;
-    const sizes = (document.getElementById('editProductSizes').value||'').split(',').map(s=>s.trim()).filter(Boolean);
-    const trending = document.getElementById('editProductTrending').checked;
-
-    try {
-      await updateDoc(doc(db,'products',prodId), {
-        title: name,
-        price: price,
-        category: category,
-        desc: desc,
-        fullDesc: fullDesc,
-        sizes: sizes,
-        trending: trending,
-        updatedAt: serverTimestamp()
-      });
-      closeModal('editProductModal');
-      alert('Product updated');
-    } catch(e){
-      console.error(e);
-      alert('Update error: '+e.message);
-    }
-  };
-
-  window.deleteProductConfirmFirestore = async function(prodId){
-    if(!confirm('Delete product? This action cannot be undone.')) return;
-    try {
-      // Delete product doc (images remain unless you implement delete)
-      await deleteDoc(doc(db,'products',prodId));
-      alert('Product deleted');
-    } catch(e){
-      console.error(e);
-      alert('Delete error: '+e.message);
-    }
-  };
-
-  // ORDERS
-  function startOrdersListener(){
-    const ordersRef = collection(db, 'orders');
-    const q = query(ordersRef, orderBy('createdAt','desc'));
-    ordersUnsub = onSnapshot(q, snapshot => {
-      const orders = [];
-      snapshot.forEach(snap => {
-        orders.push({ id: snap.id, ...snap.data() });
-      });
-      renderOrders(orders);
-      renderDashboardStats(window._admin_products || [], orders);
-      // store for customers view
-      window._admin_orders = orders;
-      renderCustomersFromOrders(orders);
-    }, err => {
-      console.error('orders snapshot err', err);
-    });
-  }
-
-  async function renderOrders(orders){
-    const tbody = document.getElementById('ordersTable');
-    if(!tbody) return;
-    const html = orders.map(order => {
-      const productName = (order.items && order.items[0] && order.items[0].title) || (order.productName) || 'Product';
-      const amount = order.total || order.amount || 0;
-      const dateStr = order.createdAt && order.createdAt.toDate ? order.createdAt.toDate().toLocaleDateString() : (order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '');
-      return `
-        <tr>
-          <td><input type="checkbox" value="${order.id}"></td>
-          <td>#${order.id}</td>
-          <td>${order.fullname || order.customerName || ''}<br><small>${order.mobile || ''}</small></td>
-          <td>${productName} ${order.qty ? '(x'+order.qty +')' : ''}</td>
-          <td>${fmt(amount)}</td>
-          <td>
-            <select onchange="updateOrderStatusFirestore('${order.id}', this.value)" class="status-select">
-              <option value="Pending" ${order.status==='Pending'?'selected':''}>Pending</option>
-              <option value="Confirmed" ${order.status==='Confirmed'?'selected':''}>Confirmed</option>
-              <option value="Shipped" ${order.status==='Shipped'?'selected':''}>Shipped</option>
-              <option value="Delivered" ${order.status==='Delivered'?'selected':''}>Delivered</option>
-              <option value="Cancelled" ${order.status==='Cancelled'?'selected':''}>Cancelled</option>
-            </select>
-          </td>
-          <td>${dateStr}</td>
-          <td>
-            <button class="btn secondary btn-sm" onclick="viewOrderDetailsFirestore('${order.id}')"><i class="fas fa-eye"></i></button>
-          </td>
-        </tr>
-      `;
-    }).join('');
-    tbody.innerHTML = html || '<tr><td colspan="8" style="text-align:center">No orders found</td></tr>';
-  }
-
-  window.updateOrderStatusFirestore = async function(orderId, status){
-    try {
-      await updateDoc(doc(db,'orders',orderId), { status: status, updatedAt: serverTimestamp() });
-      // refresh handled by snapshot
-    } catch(e){
-      console.error(e); alert('Error updating order: '+e.message);
-    }
-  };
-
-  window.viewOrderDetailsFirestore = async function(orderId){
-    const d = await getDoc(doc(db,'orders',orderId));
-    if(!d.exists()) return alert('Order not found');
-    const o = d.data();
-    const product = (o.items && o.items[0]) || {};
-    const details = `
-      Order #${orderId}
-      Customer: ${o.fullname || o.customerName || ''}
-      Mobile: ${o.mobile || ''}
-      Address: ${o.house || ''}, ${o.city || ''}, ${o.state || ''} - ${o.pincode || ''}
-      Product: ${product.title || ''}
-      Amount: ${fmt(o.total || o.amount || 0)}
-      Status: ${o.status || ''}
-      Payment: ${o.payment || ''}
-      Date: ${o.createdAt && o.createdAt.toDate ? o.createdAt.toDate().toLocaleString() : ''}
-    `;
-    alert(details);
-  };
-
-  // DASHBOARD
-  function renderDashboardStats(products, orders){
-    const totalProducts = (products || []).length;
-    const totalOrders = (orders || []).length;
-    const pendingOrders = (orders || []).filter(o => o.status === 'Pending').length;
-    const trendingCount = (products || []).filter(p=>p.trending).length;
-    document.getElementById('totalProducts').textContent = totalProducts;
-    document.getElementById('totalOrders').textContent = totalOrders;
-    document.getElementById('pendingOrders').textContent = pendingOrders;
-    document.getElementById('trendingProducts').textContent = trendingCount;
-
-    // Total Selling = sum of order totals
-    const totalSelling = (orders || []).reduce((s,o) => s + (Number(o.total||o.amount||0)), 0);
-    document.getElementById('totalEarnings').textContent = fmt(totalSelling);
-  }
-
-  // POLICIES - use single doc 'sitePolicies' in collection 'policies'
-  async function loadPolicies(){
-    try {
-      const docRef = doc(db,'policies','sitePolicies');
-      const snap = await getDoc(docRef);
-      const data = snap.exists() ? snap.data() : {};
-      document.getElementById('aboutContent').value = data.about || '';
-      document.getElementById('refundContent').value = data.refund || '';
-      document.getElementById('termsContent').value = data.terms || '';
-      document.getElementById('shippingContent').value = data.shipping || '';
-      document.getElementById('privacyContent').value = data.privacy || '';
-    } catch(e){
-      console.error('loadPolicies', e);
-    }
-  }
-
-  window.savePolicy = async function(policyType){
-    const keys = {
-      about: 'about',
-      refund: 'refund',
-      terms: 'terms',
-      shipping: 'shipping',
-      privacy: 'privacy'
-    };
-    try {
-      const docRef = doc(db,'policies','sitePolicies');
-      const snap = await getDoc(docRef);
-      const current = snap.exists() ? snap.data() : {};
-      current[keys[policyType]] = document.getElementById(policyType+'Content').value;
-      await setDoc(docRef, current, { merge: true });
-      alert('Policy saved');
-    } catch(e){
-      console.error(e); alert('Policy save error: '+e.message);
-    }
-  };
-
-  // CUSTOMERS: derive from orders and render
-  function renderCustomersFromOrders(orders){
-    // build map by mobile (or email)
-    const map = {};
-    (orders||[]).forEach(o=>{
-      const key = o.mobile || o.email || (o.fullname||'') + (o.pincode||'');
-      if(!map[key]){
-        map[key] = {
-          name: o.fullname || o.customerName || '',
-          mobile: o.mobile || '',
-          email: o.email || 'N/A',
-          location: `${o.city || ''}, ${o.state || ''}`.trim().replace(/^,|,$/g,''),
-          orderCount: 1,
-          lastOrder: o.createdAt && o.createdAt.toDate ? o.createdAt.toDate() : (o.createdAt ? new Date(o.createdAt) : new Date())
-        };
-      } else {
-        map[key].orderCount++;
-        const d = o.createdAt && o.createdAt.toDate ? o.createdAt.toDate() : (o.createdAt ? new Date(o.createdAt) : new Date());
-        if(d > map[key].lastOrder) map[key].lastOrder = d;
-      }
-    });
-    const customers = Object.values(map);
-    // render table
-    const tbody = document.getElementById('customersTable');
-    if(!tbody) return;
-    const html = customers.map(c=>{
-      return `
-        <tr>
-          <td>${c.name}</td>
-          <td>${c.mobile}</td>
-          <td>${c.email}</td>
-          <td>${c.location}</td>
-          <td>${c.orderCount}</td>
-          <td>${c.lastOrder.toLocaleDateString()}</td>
-        </tr>
-      `;
-    }).join('');
-    tbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center">No customers found</td></tr>';
-    // apply current filters if any
-    applyCustomerFilters();
-  }
-
-  // Filtering UI logic (state dropdown & city text)
-  window.applyCustomerFilters = function(){
-    const stateVal = (document.getElementById('stateFilter')?.value || 'All').toLowerCase();
-    const cityVal = (document.getElementById('cityFilter')?.value || '').toLowerCase();
-    const rows = document.querySelectorAll('#customersTable tr');
-    rows.forEach(row=>{
-      const cols = row.querySelectorAll('td');
-      if(cols.length < 4) return;
-      const location = (cols[3].innerText || '').toLowerCase();
-      let show = true;
-      if(stateVal && stateVal !== 'all' && !location.includes(stateVal)) show = false;
-      if(cityVal && !location.includes(cityVal)) show = false;
-      row.style.display = show ? '' : 'none';
-    });
-  };
-
-  // attach filters events
-  document.addEventListener('input', (e)=>{
-    if(e.target && e.target.id === 'cityFilter') applyCustomerFilters();
-  });
-  document.addEventListener('change', (e)=>{
-    if(e.target && e.target.id === 'stateFilter') applyCustomerFilters();
-  });
-
-  // Export and bulk action functions can still use Firestore queries (left as exercise)
-  window.exportOrders = function(){
-    alert('Export will download current orders as CSV (client-side).');
-    // simple export using window._admin_orders
-    const orders = window._admin_orders || [];
-    if(!orders.length) return alert('No orders');
-    const headers = ['id','fullname','mobile','city','state','total','status','createdAt'];
-    const rows = orders.map(o => [o.id, o.fullname||'', o.mobile||'', o.city||'', o.state||'', o.total||o.amount||'', o.status||'', o.createdAt && o.createdAt.toDate ? o.createdAt.toDate().toISOString() : ''].join(','));
-    const csv = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'orders.csv'; document.body.appendChild(a); a.click(); a.remove();
-  };
-
-  // initial check: if user already logged in per localStorage, attempt to keep session
-  // Firebase maintains session; no explicit action needed.
-
-</script>
-
 </body>
 </html>
-<div style="margin:10px 0; display:flex; gap:10px; align-items:center;">
-  <label><b>Filter by State:</b></label>
-  <select id="stateFilter">
-    <option value="All">All States/UTs</option>
-    <option>Andhra Pradesh</option>
-    <option>Arunachal Pradesh</option>
-    <option>Assam</option>
-    <option>Bihar</option>
-    <option>Chhattisgarh</option>
-    <option>Goa</option>
-    <option>Gujarat</option>
-    <option>Haryana</option>
-    <option>Himachal Pradesh</option>
-    <option>Jharkhand</option>
-    <option>Karnataka</option>
-    <option>Kerala</option>
-    <option>Madhya Pradesh</option>
-    <option>Maharashtra</option>
-    <option>Manipur</option>
-    <option>Meghalaya</option>
-    <option>Mizoram</option>
-    <option>Nagaland</option>
-    <option>Odisha</option>
-    <option>Punjab</option>
-    <option>Rajasthan</option>
-    <option>Sikkim</option>
-    <option>Tamil Nadu</option>
-    <option>Telangana</option>
-    <option>Tripura</option>
-    <option>Uttar Pradesh</option>
-    <option>Uttarakhand</option>
-    <option>West Bengal</option>
-    <option>Andaman and Nicobar Islands</option>
-    <option>Chandigarh</option>
-    <option>Dadra and Nagar Haveli and Daman and Diu</option>
-    <option>Delhi</option>
-    <option>Jammu and Kashmir</option>
-    <option>Ladakh</option>
-    <option>Lakshadweep</option>
-    <option>Puducherry</option>
-  </select>
-
-  <label><b>Filter by City:</b></label>
-  <input type="text" id="cityFilter" placeholder="Enter city name" />
-</div>
