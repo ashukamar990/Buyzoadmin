@@ -14,35 +14,28 @@
     :root {
       --primary: #2563eb;
       --primary-dark: #1d4ed8;
-      --primary-light: #dbeafe;
       --secondary: #64748b;
       --success: #22c55e;
-      --success-light: #dcfce7;
       --warning: #f59e0b;
-      --warning-light: #fef3c7;
       --danger: #ef4444;
-      --danger-light: #fee2e2;
       --light: #f8fafc;
       --dark: #0f172a;
-      --sidebar-width: 260px;
+      --sidebar-width: 250px;
       --header-height: 70px;
-      --border-radius: 12px;
-      --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      --shadow-hover: 0 6px 16px rgba(0, 0, 0, 0.08);
     }
 
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     body {
       background-color: #f1f5f9;
       color: #334155;
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
+      display: flex;
+      min-height: 100vh;
     }
 
     /* Login Styles */
@@ -52,13 +45,14 @@
       align-items: center;
       justify-content: center;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      width: 100%;
     }
 
     .login-card {
       background: white;
-      border-radius: var(--border-radius);
+      border-radius: 12px;
       padding: 32px;
-      box-shadow: var(--shadow-hover);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
       width: 100%;
       max-width: 400px;
       animation: fadeIn 0.5s ease;
@@ -81,14 +75,8 @@
       margin-bottom: 24px;
     }
 
-    /* Admin Panel Layout */
-    .admin-container {
-      display: flex;
-      min-height: 100vh;
-    }
-
     /* Sidebar Styles */
-    .admin-sidebar {
+    .sidebar {
       width: var(--sidebar-width);
       background: var(--dark);
       color: white;
@@ -99,7 +87,7 @@
       overflow-y: auto;
     }
 
-    .admin-brand {
+    .sidebar-header {
       padding: 20px;
       border-bottom: 1px solid #334155;
       display: flex;
@@ -107,47 +95,39 @@
       gap: 10px;
     }
 
-    .admin-brand h1 {
+    .sidebar-header h2 {
       font-size: 1.5rem;
-      font-weight: 700;
     }
 
-    .chip {
-      background: var(--primary);
-      color: white;
-      font-weight: 700;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 12px;
-    }
-
-    .admin-nav {
-      list-style: none;
+    .sidebar-menu {
       padding: 15px 0;
+      list-style: none;
     }
 
-    .admin-nav li {
-      margin-bottom: 4px;
-    }
-
-    .admin-nav a {
+    .menu-item {
+      padding: 12px 20px;
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 12px 20px;
-      color: #94a3b8;
+      cursor: pointer;
       transition: all 0.2s ease;
-      text-decoration: none;
       border-left: 3px solid transparent;
+      text-decoration: none;
+      color: #94a3b8;
     }
 
-    .admin-nav a:hover, .admin-nav a.active {
+    .menu-item:hover {
       background-color: #1e293b;
       color: white;
-      border-left-color: var(--primary);
     }
 
-    .admin-nav i {
+    .menu-item.active {
+      background-color: #1e293b;
+      border-left-color: var(--primary);
+      color: white;
+    }
+
+    .menu-item i {
       width: 20px;
       text-align: center;
     }
@@ -165,17 +145,17 @@
     }
 
     /* Main Content */
-    .admin-main {
+    .main-content {
       flex: 1;
       margin-left: var(--sidebar-width);
       transition: all 0.3s ease;
     }
 
     /* Header */
-    .admin-header {
+    .header {
       height: var(--header-height);
       background: white;
-      box-shadow: var(--shadow);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -185,10 +165,10 @@
       z-index: 100;
     }
 
-    .admin-title {
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--dark);
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
     }
 
     .menu-toggle {
@@ -198,20 +178,32 @@
       border: none;
       width: 40px;
       height: 40px;
-      border-radius: var(--border-radius);
+      border-radius: 8px;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       font-size: 20px;
     }
 
-    .admin-user {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .header-left h1 {
+      font-size: 1.8rem;
+      color: var(--dark);
     }
 
-    .admin-avatar {
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .user-avatar {
       width: 40px;
       height: 40px;
       border-radius: 50%;
@@ -220,7 +212,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 600;
+      font-weight: bold;
     }
 
     /* Content Area */
@@ -229,7 +221,7 @@
     }
 
     /* Dashboard Stats */
-    .stats-grid {
+    .stats-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 20px;
@@ -238,478 +230,39 @@
 
     .stat-card {
       background: white;
-      border-radius: var(--border-radius);
-      padding: 24px;
-      box-shadow: var(--shadow);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      gap: 15px;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .stat-card:hover {
       transform: translateY(-5px);
-      box-shadow: var(--shadow-hover);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
     }
 
     .stat-icon {
       width: 60px;
       height: 60px;
-      border-radius: 12px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 16px;
       font-size: 24px;
-    }
-
-    .stat-icon.blue {
-      background: var(--primary-light);
-      color: var(--primary);
-    }
-
-    .stat-icon.green {
-      background: var(--success-light);
-      color: var(--success);
-    }
-
-    .stat-icon.orange {
-      background: var(--warning-light);
-      color: var(--warning);
-    }
-
-    .stat-icon.red {
-      background: var(--danger-light);
-      color: var(--danger);
-    }
-
-    .stat-value {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .stat-label {
-      color: var(--secondary);
-      font-size: 14px;
-    }
-
-    /* Content Cards */
-    .content-card {
-      background: white;
-      border-radius: var(--border-radius);
-      padding: 24px;
-      box-shadow: var(--shadow);
-      margin-bottom: 24px;
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .card-title {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    /* Tables */
-    .admin-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    .admin-table th,
-    .admin-table td {
-      padding: 12px 16px;
-      text-align: left;
-    }
-
-    .admin-table th {
-      background: #f8fafc;
-      font-weight: 600;
-      color: var(--secondary);
-      font-size: 14px;
-    }
-
-    .admin-table tr {
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .admin-table tr:last-child {
-      border-bottom: none;
-    }
-
-    .table-responsive {
-      overflow-x: auto;
-    }
-
-    /* Product Image in Table */
-    .product-image {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
-      border-radius: 6px;
-      border: 1px solid #e2e8f0;
-    }
-
-    /* Buttons */
-    .btn {
-      background: var(--primary);
-      color: white;
-      border: 0;
-      padding: 10px 16px;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-      transition: all 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .btn:hover {
-      background: var(--primary-dark);
-      transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-      background: #f1f5f9;
-      color: #334155;
-    }
-
-    .btn-secondary:hover {
-      background: #e2e8f0;
-    }
-
-    .btn-success {
-      background: var(--success);
-    }
-
-    .btn-success:hover {
-      background: #16a34a;
-    }
-
-    .btn-danger {
-      background: var(--danger);
-    }
-
-    .btn-danger:hover {
-      background: #dc2626;
-    }
-
-    .btn-warning {
-      background: var(--warning);
-    }
-
-    .btn-warning:hover {
-      background: #d97706;
-    }
-
-    .btn-sm {
-      padding: 6px 12px;
-      font-size: 13px;
-    }
-
-    /* Badges */
-    .badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .badge-success {
-      background: var(--success-light);
-      color: #166534;
-    }
-
-    .badge-warning {
-      background: var(--warning-light);
-      color: #92400e;
-    }
-
-    .badge-danger {
-      background: var(--danger-light);
-      color: #991b1b;
-    }
-
-    .badge-info {
-      background: var(--primary-light);
-      color: #1e40af;
-    }
-
-    /* Forms */
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    label {
-      display: block;
-      font-size: 14px;
-      color: var(--secondary);
-      margin-bottom: 6px;
-      font-weight: 500;
-    }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 12px;
-      border-radius: var(--border-radius);
-      border: 1px solid #e2e8f0;
-      background: #fff;
-      outline: none;
-      font-family: inherit;
-      font-size: 14px;
-      transition: all 0.2s ease;
-    }
-
-    input:focus, select:focus, textarea:focus {
-      box-shadow: 0 0 0 3px var(--primary-light);
-      border-color: var(--primary);
-    }
-
-    .form-row {
-      display: flex;
-      gap: 16px;
-    }
-
-    .form-col {
-      flex: 1;
-    }
-
-    /* Tabs */
-    .admin-tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-      border-bottom: 1px solid #e2e8f0;
-      padding-bottom: 16px;
-    }
-
-    .tab {
-      padding: 8px 16px;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      font-weight: 500;
-      color: var(--secondary);
-      transition: all 0.2s ease;
-    }
-
-    .tab.active {
-      background: var(--primary);
       color: white;
     }
 
-    .tab-content {
-      display: none;
+    .stat-info h3 {
+      font-size: 1.8rem;
+      margin-bottom: 5px;
     }
 
-    .tab-content.active {
-      display: block;
-    }
-
-    /* Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-    }
-    
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-    
-    .admin-modal {
-      background: white;
-      border-radius: var(--border-radius);
-      padding: 24px;
-      box-shadow: var(--shadow-hover);
-      max-width: 500px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-    
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    
-    .modal-title {
-      font-size: 18px;
-      font-weight: 600;
-    }
-    
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
+    .stat-info p {
       color: var(--secondary);
-    }
-    
-    .modal-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-      margin-top: 24px;
-    }
-
-    /* Search and filters */
-    .table-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-
-    .search-box {
-      position: relative;
-      flex: 1;
-      min-width: 250px;
-    }
-
-    .search-box input {
-      padding-left: 40px;
-    }
-
-    .search-icon {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--secondary);
-    }
-
-    .filters {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    /* Action buttons */
-    .action-buttons {
-      display: flex;
-      gap: 8px;
-    }
-
-    /* Pagination */
-    .pagination {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      margin-top: 24px;
-    }
-
-    .page-item {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--border-radius);
-      background: #f1f5f9;
-      color: #334155;
-      font-weight: 500;
-      cursor: pointer;
-    }
-
-    .page-item.active {
-      background: var(--primary);
-      color: white;
-    }
-
-    /* Image Upload */
-    .image-upload {
-      border: 2px dashed #e2e8f0;
-      border-radius: var(--border-radius);
-      padding: 20px;
-      text-align: center;
-      margin-bottom: 16px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .image-upload:hover {
-      border-color: var(--primary);
-    }
-
-    .upload-icon {
-      font-size: 32px;
-      color: var(--secondary);
-      margin-bottom: 8px;
-    }
-
-    .image-preview {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    .preview-item {
-      width: 100px;
-      height: 100px;
-      border-radius: 8px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .preview-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .remove-image {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      background: var(--danger);
-      color: white;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    /* Checkbox */
-    .checkbox-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .checkbox-group input {
-      width: auto;
+      font-size: 0.9rem;
     }
 
     /* Earnings Section */
@@ -737,9 +290,9 @@
 
     .earnings-card {
       background: white;
-      border-radius: var(--border-radius);
+      border-radius: 10px;
       padding: 20px;
-      box-shadow: var(--shadow);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     }
 
     .earnings-value {
@@ -774,18 +327,399 @@
       color: var(--danger);
     }
 
+    /* Tables */
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 20px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-header h2 {
+      font-size: 1.3rem;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    th {
+      background-color: #f8fafc;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    tr:hover {
+      background-color: #f8fafc;
+    }
+
+    /* Product Image in Table */
+    .product-image {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-warning {
+      background: var(--warning);
+      color: white;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+    }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 15px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-footer {
+      padding: 20px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--secondary);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 12px 20px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .tab.active {
+      border-bottom-color: var(--primary);
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Status Badges */
+    .badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    /* Image Preview */
+    .image-preview {
+      width: 100px;
+      height: 100px;
+      border: 1px dashed #d1d5db;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .image-preview img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    /* Search and Filters */
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      flex: 1;
+    }
+
+    /* Alert Messages */
+    .alert {
+      padding: 12px 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    .alert-success {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .alert-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    /* Bulk Actions */
+    .bulk-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 5px;
+    }
+
+    .page-item {
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .page-item.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Multiple Image Upload */
+    .image-upload-container {
+      border: 1px dashed #d1d5db;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 10px;
+    }
+
+    .image-preview-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .image-preview-item {
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
+
+    .image-preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .image-preview-item .remove-image {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--danger);
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Checkbox */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .checkbox-group input {
+      width: auto;
+    }
+
     /* Responsive */
     @media (max-width: 1024px) {
-      .admin-sidebar {
+      .sidebar {
         transform: translateX(-100%);
         width: 280px;
       }
       
-      .admin-sidebar.active {
+      .sidebar.active {
         transform: translateX(0);
       }
       
-      .admin-main {
+      .main-content {
         margin-left: 0;
       }
       
@@ -799,36 +733,25 @@
     }
 
     @media (max-width: 768px) {
-      .admin-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
+      .header {
+        padding: 0 15px;
       }
-      
+
+      .content {
+        padding: 15px;
+      }
+
+      .stats-container {
+        grid-template-columns: 1fr;
+      }
+
       .form-row {
         flex-direction: column;
         gap: 0;
       }
       
-      .admin-table {
-        display: block;
-        overflow-x: auto;
-      }
-      
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-
       .earnings-cards {
         grid-template-columns: 1fr;
-      }
-
-      .content {
-        padding: 16px;
-      }
-      
-      .content-card {
-        padding: 16px;
       }
     }
 
@@ -854,151 +777,154 @@
       
       <div class="form-group">
         <label for="adminEmail">Email</label>
-        <input type="email" id="adminEmail" placeholder="admin@example.com">
+        <input type="email" id="adminEmail" placeholder="admin@example.com" class="form-control">
       </div>
       
       <div class="form-group">
         <label for="adminPassword">Password</label>
-        <input type="password" id="adminPassword" placeholder="Enter your password">
+        <input type="password" id="adminPassword" placeholder="Enter your password" class="form-control">
       </div>
       
-      <button class="btn" style="width: 100%" onclick="adminLogin()">Login</button>
+      <button class="btn btn-primary" style="width: 100%" onclick="adminLogin()">Login</button>
     </div>
   </div>
 
   <!-- Admin Panel (initially hidden) -->
   <div id="adminPanel" style="display: none">
-    <div class="admin-container">
-      <!-- Sidebar -->
-      <div class="admin-sidebar" id="adminSidebar">
-        <div class="admin-brand">
-          <div class="chip">BUYZO</div>
-          <h1>Admin Panel</h1>
-          <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
-        </div>
-        
-        <ul class="admin-nav">
-          <li><a href="#" class="active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-          <li><a href="#" data-tab="products"><i class="fas fa-box"></i> Products</a></li>
-          <li><a href="#" data-tab="categories"><i class="fas fa-tags"></i> Categories</a></li>
-          <li><a href="#" data-tab="orders"><i class="fas fa-shopping-cart"></i> Orders</a></li>
-          <li><a href="#" data-tab="trending"><i class="fas fa-fire"></i> Trending Products</a></li>
-          <li><a href="#" data-tab="customers"><i class="fas fa-users"></i> Customers</a></li>
-          <li><a href="#" data-tab="banners"><i class="fas fa-image"></i> Banners</a></li>
-          <li><a href="#" data-tab="policies"><i class="fas fa-file-alt"></i> Policies</a></li>
-          <li><a href="#" data-tab="settings"><i class="fas fa-cog"></i> Settings</a></li>
-          <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
+    <!-- Sidebar -->
+    <div class="sidebar" id="adminSidebar">
+      <div class="sidebar-header">
+        <i class="fas fa-shopping-cart"></i>
+        <h2>Buyzo Admin</h2>
+        <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
       </div>
-      
-      <!-- Main Content -->
-      <div class="admin-main">
-        <div class="admin-header">
-          <div>
-            <button class="menu-toggle" onclick="toggleSidebar()">
-              <i class="fas fa-bars"></i>
-            </button>
-            <h1 class="admin-title" id="adminPageTitle">Dashboard</h1>
+      <ul class="sidebar-menu">
+        <li><a href="#" class="menu-item active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="products"><i class="fas fa-box"></i><span>Products</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="categories"><i class="fas fa-tags"></i><span>Categories</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="orders"><i class="fas fa-shopping-bag"></i><span>Orders</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="trending"><i class="fas fa-fire"></i><span>Trending Products</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="customers"><i class="fas fa-users"></i><span>Customers</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="banners"><i class="fas fa-image"></i><span>Banners</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="policies"><i class="fas fa-file-alt"></i><span>Policies</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        <li><a href="#" class="menu-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+      </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-left">
+          <button class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1 id="adminPageTitle">Dashboard</h1>
+        </div>
+        <div class="header-right">
+          <div class="user-profile">
+            <div class="user-avatar">A</div>
+            <div>Admin User</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div class="content">
+        <!-- Dashboard Tab -->
+        <div class="tab-content active" id="dashboard">
+          <div class="stats-container">
+            <div class="stat-card">
+              <div class="stat-icon" style="background: var(--primary);">
+                <i class="fas fa-box"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="totalProducts">0</h3>
+                <p>Total Products</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: var(--success);">
+                <i class="fas fa-shopping-cart"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="totalOrders">0</h3>
+                <p>Total Orders</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: var(--warning);">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="pendingOrders">0</h3>
+                <p>Pending Orders</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: var(--danger);">
+                <i class="fas fa-fire"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="trendingProducts">0</h3>
+                <p>Trending Products</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Earnings Section -->
+          <div class="earnings-section">
+            <div class="earnings-header">
+              <h2 class="earnings-title">Revenue & Earnings</h2>
+            </div>
+            <div class="earnings-cards">
+              <div class="earnings-card">
+                <div class="earnings-value" id="totalEarnings">₹0</div>
+                <div class="earnings-label">Total Earnings</div>
+                <div class="earnings-comparison">
+                  <span class="earnings-trend" id="totalEarningsTrend">
+                    <i class="fas fa-caret-up trend-up"></i>
+                    <span>0%</span>
+                  </span>
+                  <span>vs lifetime</span>
+                </div>
+              </div>
+              
+              <div class="earnings-card">
+                <div class="earnings-value" id="lastWeekEarnings">₹0</div>
+                <div class="earnings-label">Last Week Earnings</div>
+                <div class="earnings-comparison">
+                  <span class="earnings-trend" id="lastWeekTrend">
+                    <i class="fas fa-caret-up trend-up"></i>
+                    <span>0%</span>
+                  </span>
+                  <span>vs previous week</span>
+                </div>
+              </div>
+              
+              <div class="earnings-card">
+                <div class="earnings-value" id="lastMonthEarnings">₹0</div>
+                <div class="earnings-label">Last Month Earnings</div>
+                <div class="earnings-comparison">
+                  <span class="earnings-trend" id="lastMonthTrend">
+                    <i class="fas fa-caret-up trend-up"></i>
+                    <span>0%</span>
+                  </span>
+                  <span>vs previous month</span>
+                </div>
+              </div>
+            </div>
           </div>
           
-          <div class="admin-user">
-            <div class="admin-avatar">A</div>
-            <div>
-              <div style="font-weight: 600">Admin User</div>
-              <div style="font-size: 14px; color: var(--secondary)">Super Admin</div>
+          <div class="card">
+            <div class="card-header">
+              <h2>Recent Orders</h2>
+              <button class="btn btn-primary" onclick="showTab('orders')">View All</button>
             </div>
-          </div>
-        </div>
-        
-        <div class="content">
-          <!-- Dashboard Tab -->
-          <div class="tab-content active" id="dashboard">
-            <div class="stats-grid">
-              <div class="stat-card">
-                <div class="stat-icon blue">
-                  <i class="fas fa-box"></i>
-                </div>
-                <div class="stat-value" id="totalProducts">0</div>
-                <div class="stat-label">Total Products</div>
-              </div>
-              
-              <div class="stat-card">
-                <div class="stat-icon green">
-                  <i class="fas fa-shopping-cart"></i>
-                </div>
-                <div class="stat-value" id="totalOrders">0</div>
-                <div class="stat-label">Total Orders</div>
-              </div>
-              
-              <div class="stat-card">
-                <div class="stat-icon orange">
-                  <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-value" id="pendingOrders">0</div>
-                <div class="stat-label">Pending Orders</div>
-              </div>
-              
-              <div class="stat-card">
-                <div class="stat-icon red">
-                  <i class="fas fa-fire"></i>
-                </div>
-                <div class="stat-value" id="trendingProducts">0</div>
-                <div class="stat-label">Trending Products</div>
-              </div>
-            </div>
-
-            <!-- Earnings Section -->
-            <div class="earnings-section">
-              <div class="earnings-header">
-                <h2 class="earnings-title">Revenue & Earnings</h2>
-              </div>
-              <div class="earnings-cards">
-                <div class="earnings-card">
-                  <div class="earnings-value" id="totalEarnings">₹0</div>
-                  <div class="earnings-label">Total Earnings</div>
-                  <div class="earnings-comparison">
-                    <span class="earnings-trend" id="totalEarningsTrend">
-                      <i class="fas fa-caret-up trend-up"></i>
-                      <span>0%</span>
-                    </span>
-                    <span>vs lifetime</span>
-                  </div>
-                </div>
-                
-                <div class="earnings-card">
-                  <div class="earnings-value" id="lastWeekEarnings">₹0</div>
-                  <div class="earnings-label">Last Week Earnings</div>
-                  <div class="earnings-comparison">
-                    <span class="earnings-trend" id="lastWeekTrend">
-                      <i class="fas fa-caret-up trend-up"></i>
-                      <span>0%</span>
-                    </span>
-                    <span>vs previous week</span>
-                  </div>
-                </div>
-                
-                <div class="earnings-card">
-                  <div class="earnings-value" id="lastMonthEarnings">₹0</div>
-                  <div class="earnings-label">Last Month Earnings</div>
-                  <div class="earnings-comparison">
-                    <span class="earnings-trend" id="lastMonthTrend">
-                      <i class="fas fa-caret-up trend-up"></i>
-                      <span>0%</span>
-                    </span>
-                    <span>vs previous month</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="content-card">
-              <div class="card-header">
-                <h2 class="card-title">Recent Orders</h2>
-                <a href="#" onclick="showTab('orders'); return false;" class="btn btn-secondary btn-sm">View All</a>
-              </div>
-              
+            <div class="card-body">
               <div class="table-responsive">
-                <table class="admin-table">
+                <table id="recentOrdersTable">
                   <thead>
                     <tr>
                       <th>Order ID</th>
@@ -1016,78 +942,61 @@
               </div>
             </div>
           </div>
-          
-          <!-- Products Tab -->
-          <div class="tab-content" id="products">
+        </div>
+        
+        <!-- Products Tab -->
+        <div class="tab-content" id="products">
+          <div class="card">
             <div class="card-header">
-              <h2 class="card-title">Product Management</h2>
-              <button class="btn" onclick="showAddProductModal()"><i class="fas fa-plus"></i> Add Product</button>
+              <h2>Product Management</h2>
+              <button class="btn btn-primary" onclick="showAddProductModal()"><i class="fas fa-plus"></i> Add Product</button>
             </div>
-            
-            <div class="table-controls">
+            <div class="card-body">
               <div class="search-box">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" placeholder="Search products..." id="productSearch">
+                <input type="text" class="form-control" id="productSearch" placeholder="Search products...">
+                <button class="btn btn-primary" onclick="filterProducts()">Search</button>
               </div>
-              
-              <div class="filters">
-                <select id="categoryFilter">
-                  <option value="">All Categories</option>
-                  <option value="Topwear">Topwear</option>
-                  <option value="Sarees">Sarees</option>
-                  <option value="Bottomwear">Bottomwear</option>
-                  <option value="Watches">Watches</option>
-                  <option value="Backt">Backt</option>
-                  <option value="Kurta Sets">Kurta Sets</option>
-                  <option value="Winter Wear">Winter Wear</option>
-                  <option value="Casual shoes">Casual shoes</option>
-                  <option value="Trolley Bags">Trolley Bags</option>
-                  <option value="Men's Acc">Men's Acc</option>
-                  <option value="Bottor">Bottor</option>
-                </select>
-              </div>
-            </div>
-            
-            <div class="content-card">
               <div class="table-responsive">
-                <table class="admin-table">
+                <table id="productsTable">
                   <thead>
                     <tr>
                       <th>Image</th>
                       <th>Name</th>
                       <th>Category</th>
                       <th>Price</th>
+                      <th>Delivery Charge</th>
                       <th>Stock</th>
                       <th>Trending</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
-                  <tbody id="productsTable">
+                  <tbody id="productsTableBody">
                     <!-- Will be populated by JavaScript -->
                   </tbody>
                 </table>
               </div>
-              
               <div class="pagination" id="productsPagination">
-                <!-- Pagination will be added here -->
+                <!-- Pagination will be generated here -->
               </div>
             </div>
           </div>
-          
-          <!-- Categories Tab -->
-          <div class="tab-content" id="categories">
+        </div>
+        
+        <!-- Categories Tab -->
+        <div class="tab-content" id="categories">
+          <div class="card">
             <div class="card-header">
-              <h2 class="card-title">Category Management</h2>
-              <button class="btn" onclick="showAddCategoryModal()"><i class="fas fa-plus"></i> Add Category</button>
+              <h2>Category Management</h2>
+              <button class="btn btn-primary" onclick="showAddCategoryModal()"><i class="fas fa-plus"></i> Add Category</button>
             </div>
-            
-            <div class="content-card">
+            <div class="card-body">
               <div class="table-responsive">
-                <table class="admin-table">
+                <table id="categoriesTable">
                   <thead>
                     <tr>
                       <th>ID</th>
+                      <th>Image</th>
                       <th>Category Name</th>
                       <th>Description</th>
                       <th>Products</th>
@@ -1095,44 +1004,29 @@
                       <th>Actions</th>
                     </tr>
                   </thead>
-                  <tbody id="categoriesTable">
+                  <tbody id="categoriesTableBody">
                     <!-- Will be populated by JavaScript -->
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
-          
-          <!-- Orders Tab -->
-          <div class="tab-content" id="orders">
+        </div>
+        
+        <!-- Orders Tab -->
+        <div class="tab-content" id="orders">
+          <div class="card">
             <div class="card-header">
-              <h2 class="card-title">Order Management</h2>
-              <button class="btn btn-secondary" onclick="exportOrders()"><i class="fas fa-download"></i> Export</button>
+              <h2>Order Management</h2>
+              <button class="btn btn-primary" onclick="exportOrders()"><i class="fas fa-download"></i> Export</button>
             </div>
-            
-            <div class="table-controls">
+            <div class="card-body">
               <div class="search-box">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" placeholder="Search orders..." id="orderSearch">
+                <input type="text" class="form-control" id="orderSearch" placeholder="Search orders...">
+                <button class="btn btn-primary" onclick="filterOrders()">Search</button>
               </div>
-              
-              <div class="filters">
-                <select id="statusFilter">
-                  <option value="">All Status</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Confirmed">Confirmed</option>
-                  <option value="Shipped">Shipped</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-                
-                <input type="date" id="dateFilter">
-              </div>
-            </div>
-            
-            <div class="content-card">
               <div class="table-responsive">
-                <table class="admin-table">
+                <table id="ordersTable">
                   <thead>
                     <tr>
                       <th><input type="checkbox" id="selectAllOrders"></th>
@@ -1145,40 +1039,38 @@
                       <th>Actions</th>
                     </tr>
                   </thead>
-                  <tbody id="ordersTable">
+                  <tbody id="ordersTableBody">
                     <!-- Will be populated by JavaScript -->
                   </tbody>
                 </table>
               </div>
-              
               <div style="margin-top: 16px">
-                <select id="bulkStatusAction" style="width: auto; margin-right: 12px">
+                <select id="bulkStatusAction" style="width: auto; margin-right: 12px" class="form-control">
                   <option value="">Bulk Action</option>
                   <option value="Confirmed">Mark as Confirmed</option>
                   <option value="Shipped">Mark as Shipped</option>
                   <option value="Delivered">Mark as Delivered</option>
                   <option value="Cancelled">Mark as Cancelled</option>
                 </select>
-                <button class="btn" onclick="applyBulkAction()">Apply</button>
+                <button class="btn btn-primary" onclick="applyBulkAction()">Apply</button>
               </div>
-              
               <div class="pagination" id="ordersPagination">
-                <!-- Pagination will be added here -->
+                <!-- Pagination will be generated here -->
               </div>
             </div>
           </div>
-          
-          <!-- Trending Tab -->
-          <div class="tab-content" id="trending">
+        </div>
+        
+        <!-- Trending Tab -->
+        <div class="tab-content" id="trending">
+          <div class="card">
             <div class="card-header">
-              <h2 class="card-title">Trending Products Control</h2>
+              <h2>Trending Products Control</h2>
             </div>
-            
-            <div class="content-card">
+            <div class="card-body">
               <p style="margin-bottom: 16px">Select products to feature in the "Trending Now" section on the website.</p>
-              
               <div class="table-responsive">
-                <table class="admin-table">
+                <table id="trendingTable">
                   <thead>
                     <tr>
                       <th>Image</th>
@@ -1188,31 +1080,29 @@
                       <th>Actions</th>
                     </tr>
                   </thead>
-                  <tbody id="trendingTable">
+                  <tbody id="trendingTableBody">
                     <!-- Will be populated by JavaScript -->
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
-          
-          <!-- Customers Tab -->
-          <div class="tab-content" id="customers">
+        </div>
+        
+        <!-- Customers Tab -->
+        <div class="tab-content" id="customers">
+          <div class="card">
             <div class="card-header">
-              <h2 class="card-title">Customer Data</h2>
-              <button class="btn btn-secondary" onclick="exportCustomers()"><i class="fas fa-download"></i> Export CSV</button>
+              <h2>Customer Data</h2>
+              <button class="btn btn-primary" onclick="exportCustomers()"><i class="fas fa-download"></i> Export CSV</button>
             </div>
-            
-            <div class="table-controls">
+            <div class="card-body">
               <div class="search-box">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" placeholder="Search customers..." id="customerSearch">
+                <input type="text" class="form-control" id="customerSearch" placeholder="Search customers...">
+                <button class="btn btn-primary" onclick="filterCustomers()">Search</button>
               </div>
-            </div>
-            
-            <div class="content-card">
               <div class="table-responsive">
-                <table class="admin-table">
+                <table id="customersTable">
                   <thead>
                     <tr>
                       <th>Name</th>
@@ -1223,28 +1113,28 @@
                       <th>Last Order</th>
                     </tr>
                   </thead>
-                  <tbody id="customersTable">
+                  <tbody id="customersTableBody">
                     <!-- Will be populated by JavaScript -->
                   </tbody>
                 </table>
               </div>
-              
               <div class="pagination" id="customersPagination">
-                <!-- Pagination will be added here -->
+                <!-- Pagination will be generated here -->
               </div>
             </div>
           </div>
-          
-          <!-- Banners Tab -->
-          <div class="tab-content" id="banners">
+        </div>
+        
+        <!-- Banners Tab -->
+        <div class="tab-content" id="banners">
+          <div class="card">
             <div class="card-header">
-              <h2 class="card-title">Banner Management</h2>
-              <button class="btn" onclick="showAddBannerModal()"><i class="fas fa-plus"></i> Add Banner</button>
+              <h2>Banner Management</h2>
+              <button class="btn btn-primary" onclick="showAddBannerModal()"><i class="fas fa-plus"></i> Add Banner</button>
             </div>
-            
-            <div class="content-card">
+            <div class="card-body">
               <div class="table-responsive">
-                <table class="admin-table">
+                <table id="bannersTable">
                   <thead>
                     <tr>
                       <th>ID</th>
@@ -1254,64 +1144,70 @@
                       <th>Actions</th>
                     </tr>
                   </thead>
-                  <tbody id="bannersTable">
+                  <tbody id="bannersTableBody">
                     <!-- Will be populated by JavaScript -->
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
-          
-          <!-- Policies Tab -->
-          <div class="tab-content" id="policies">
-            <div class="admin-tabs">
-              <div class="tab active" data-policy="about">About Us</div>
-              <div class="tab" data-policy="refund">Refund Policy</div>
-              <div class="tab" data-policy="terms">Terms & Conditions</div>
-              <div class="tab" data-policy="shipping">Shipping Policy</div>
-              <div class="tab" data-policy="privacy">Privacy Policy</div>
+        </div>
+        
+        <!-- Policies Tab -->
+        <div class="tab-content" id="policies">
+          <div class="card">
+            <div class="card-header">
+              <h2>Store Policies</h2>
             </div>
-            
-            <div class="content-card">
+            <div class="card-body">
+              <div class="tabs">
+                <div class="tab active" data-policy="about">About Us</div>
+                <div class="tab" data-policy="refund">Refund Policy</div>
+                <div class="tab" data-policy="terms">Terms & Conditions</div>
+                <div class="tab" data-policy="shipping">Shipping Policy</div>
+                <div class="tab" data-policy="privacy">Privacy Policy</div>
+              </div>
+              
               <div class="policy-content active" data-policy="about">
                 <h3>About Us Page Content</h3>
-                <textarea id="aboutContent" rows="10" style="width: 100%; margin-top: 16px"></textarea>
-                <button class="btn" style="margin-top: 16px" onclick="savePolicy('about')">Save Changes</button>
+                <textarea id="aboutContent" rows="10" style="width: 100%; margin-top: 16px" class="form-control"></textarea>
+                <button class="btn btn-primary" style="margin-top: 16px" onclick="savePolicy('about')">Save Changes</button>
               </div>
               
               <div class="policy-content" data-policy="refund">
                 <h3>Refund Policy Content</h3>
-                <textarea id="refundContent" rows="10" style="width: 100%; margin-top: 16px"></textarea>
-                <button class="btn" style="margin-top: 16px" onclick="savePolicy('refund')">Save Changes</button>
+                <textarea id="refundContent" rows="10" style="width: 100%; margin-top: 16px" class="form-control"></textarea>
+                <button class="btn btn-primary" style="margin-top: 16px" onclick="savePolicy('refund')">Save Changes</button>
               </div>
               
               <div class="policy-content" data-policy="terms">
                 <h3>Terms & Conditions Content</h3>
-                <textarea id="termsContent" rows="10" style="width: 100%; margin-top: 16px"></textarea>
-                <button class="btn" style="margin-top: 16px" onclick="savePolicy('terms')">Save Changes</button>
+                <textarea id="termsContent" rows="10" style="width: 100%; margin-top: 16px" class="form-control"></textarea>
+                <button class="btn btn-primary" style="margin-top: 16px" onclick="savePolicy('terms')">Save Changes</button>
               </div>
               
               <div class="policy-content" data-policy="shipping">
                 <h3>Shipping Policy Content</h3>
-                <textarea id="shippingContent" rows="10" style="width: 100%; margin-top: 16px"></textarea>
-                <button class="btn" style="margin-top: 16px" onclick="savePolicy('shipping')">Save Changes</button>
+                <textarea id="shippingContent" rows="10" style="width: 100%; margin-top: 16px" class="form-control"></textarea>
+                <button class="btn btn-primary" style="margin-top: 16px" onclick="savePolicy('shipping')">Save Changes</button>
               </div>
               
               <div class="policy-content" data-policy="privacy">
                 <h3>Privacy Policy Content</h3>
-                <textarea id="privacyContent" rows="10" style="width: 100%; margin-top: 16px"></textarea>
-                <button class="btn" style="margin-top: 16px" onclick="savePolicy('privacy')">Save Changes</button>
+                <textarea id="privacyContent" rows="10" style="width: 100%; margin-top: 16px" class="form-control"></textarea>
+                <button class="btn btn-primary" style="margin-top: 16px" onclick="savePolicy('privacy')">Save Changes</button>
               </div>
             </div>
           </div>
-          
-          <!-- Settings Tab -->
-          <div class="tab-content" id="settings">
-            <div class="content-card">
-              <div class="card-header">
-                <h2 class="card-title">Store Settings</h2>
-              </div>
-              
+        </div>
+        
+        <!-- Settings Tab -->
+        <div class="tab-content" id="settings">
+          <div class="card">
+            <div class="card-header">
+              <h2>Store Settings</h2>
+            </div>
+            <div class="card-body">
               <form id="settingsForm">
                 <div class="form-group">
                   <label for="storeName">Store Name</label>
@@ -1334,7 +1230,7 @@
                 </div>
                 
                 <div class="form-group">
-                  <label for="shippingCost">Shipping Cost (₹)</label>
+                  <label for="shippingCost">Default Shipping Cost (₹)</label>
                   <input type="number" id="shippingCost" class="form-control" value="50">
                 </div>
                 
@@ -1347,7 +1243,7 @@
                   </select>
                 </div>
                 
-                <button type="submit" class="btn">Save Settings</button>
+                <button type="submit" class="btn btn-primary">Save Settings</button>
               </form>
             </div>
           </div>
@@ -1357,245 +1253,252 @@
   </div>
 
   <!-- Add Product Modal -->
-  <div class="modal-overlay" id="addProductModal">
-    <div class="admin-modal">
+  <div class="modal" id="addProductModal">
+    <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title">Add New Product</h2>
-        <button class="modal-close" onclick="closeModal('addProductModal')">&times;</button>
+        <h3>Add New Product</h3>
+        <button class="close">&times;</button>
       </div>
-      
-      <div class="form-group">
-        <label for="productName">Product Name</label>
-        <input type="text" id="productName" placeholder="Enter product name">
-      </div>
-      
-      <div class="form-group">
-        <label for="productPrice">Price (₹)</label>
-        <input type="number" id="productPrice" placeholder="Enter price">
-      </div>
-      
-      <div class="form-group">
-        <label for="productStock">Stock Quantity</label>
-        <input type="number" id="productStock" placeholder="Enter stock quantity">
-      </div>
-      
-      <div class="form-group">
-        <label for="productCategory">Category</label>
-        <input list="categoryOptions" id="productCategory" placeholder="Select or type category">
-        <datalist id="categoryOptions">
-          <option value="Topwear">
-          <option value="Sarees">
-          <option value="Bottomwear">
-          <option value="Watches">
-          <option value="Backt">
-          <option value="Kurta Sets">
-          <option value="Winter Wear">
-          <option value="Casual shoes">
-          <option value="Trolley Bags">
-          <option value="Men's Acc">
-          <option value="Bottor">
-        </datalist>
-      </div>
-      
-      <div class="form-group">
-        <label for="productDesc">Short Description</label>
-        <input type="text" id="productDesc" placeholder="Enter short description">
-      </div>
-      
-      <div class="form-group">
-        <label for="productFullDesc">Full Description</label>
-        <textarea id="productFullDesc" placeholder="Enter full description"></textarea>
-      </div>
-      
-      <div class="form-group">
-        <label>Sizes (comma separated)</label>
-        <input type="text" id="productSizes" placeholder="S, M, L, XL">
-      </div>
-      
-      <div class="form-group">
-        <label>Product Images</label>
-        <div class="image-upload" onclick="document.getElementById('productImages').click()">
-          <div class="upload-icon">
-            <i class="fas fa-cloud-upload-alt"></i>
-          </div>
-          <p>Click to upload images</p>
-          <input type="file" id="productImages" multiple style="display: none" onchange="handleImageUpload(this)">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="productName">Product Name</label>
+          <input type="text" id="productName" class="form-control" placeholder="Enter product name">
         </div>
         
-        <div class="image-preview" id="imagePreview">
-          <!-- Image previews will be added here -->
+        <div class="form-group">
+          <label for="productPrice">Price (₹)</label>
+          <input type="number" id="productPrice" class="form-control" placeholder="Enter price">
+        </div>
+        
+        <div class="form-group">
+          <label for="productDeliveryCharge">Delivery Charge (₹)</label>
+          <input type="number" id="productDeliveryCharge" class="form-control" placeholder="Enter delivery charge">
+        </div>
+        
+        <div class="form-group">
+          <label for="productStock">Stock Quantity</label>
+          <input type="number" id="productStock" class="form-control" placeholder="Enter stock quantity">
+        </div>
+        
+        <div class="form-group">
+          <label for="productCategory">Category</label>
+          <input list="categoryOptions" id="productCategory" class="form-control" placeholder="Select or type category">
+          <datalist id="categoryOptions">
+            <option value="Topwear">
+            <option value="Sarees">
+            <option value="Bottomwear">
+            <option value="Watches">
+            <option value="Backt">
+            <option value="Kurta Sets">
+            <option value="Winter Wear">
+            <option value="Casual shoes">
+            <option value="Trolley Bags">
+            <option value="Men's Acc">
+            <option value="Bottor">
+          </datalist>
+        </div>
+        
+        <div class="form-group">
+          <label for="productDesc">Short Description</label>
+          <input type="text" id="productDesc" class="form-control" placeholder="Enter short description">
+        </div>
+        
+        <div class="form-group">
+          <label for="productFullDesc">Full Description</label>
+          <textarea id="productFullDesc" class="form-control" placeholder="Enter full description"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Sizes (comma separated)</label>
+          <input type="text" id="productSizes" class="form-control" placeholder="S, M, L, XL">
+        </div>
+        
+        <div class="form-group">
+          <label>Product Images</label>
+          <div class="image-upload-container">
+            <input type="file" id="productImages" class="form-control" multiple accept="image/*">
+            <small class="text-muted">You can select multiple images</small>
+            <div class="image-preview-container" id="productImagePreviews">
+              <!-- Image previews will be added here -->
+            </div>
+          </div>
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="productTrending">
+          <label for="productTrending">Mark as Trending Product</label>
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="productStatus" checked>
+          <label for="productStatus">Active Product</label>
         </div>
       </div>
-      
-      <div class="checkbox-group">
-        <input type="checkbox" id="productTrending">
-        <label for="productTrending">Mark as Trending Product</label>
-      </div>
-      
-      <div class="checkbox-group">
-        <input type="checkbox" id="productStatus" checked>
-        <label for="productStatus">Active Product</label>
-      </div>
-      
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeModal('addProductModal')">Cancel</button>
-        <button class="btn" onclick="saveProduct()">Save Product</button>
+      <div class="modal-footer">
+        <button class="btn btn-secondary close">Cancel</button>
+        <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
       </div>
     </div>
   </div>
 
   <!-- Add Category Modal -->
-  <div class="modal-overlay" id="addCategoryModal">
-    <div class="admin-modal">
+  <div class="modal" id="addCategoryModal">
+    <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title">Add New Category</h2>
-        <button class="modal-close" onclick="closeModal('addCategoryModal')">&times;</button>
+        <h3>Add New Category</h3>
+        <button class="close">&times;</button>
       </div>
-      
-      <div class="form-group">
-        <label for="categoryName">Category Name</label>
-        <input type="text" id="categoryName" placeholder="Enter category name">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="categoryName">Category Name</label>
+          <input type="text" id="categoryName" class="form-control" placeholder="Enter category name">
+        </div>
+        
+        <div class="form-group">
+          <label for="categoryDescription">Description</label>
+          <textarea id="categoryDescription" class="form-control" placeholder="Enter category description"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="categoryImage">Category Image</label>
+          <input type="file" id="categoryImage" class="form-control">
+          <div class="image-preview" id="categoryImagePreview">
+            <span>No image selected</span>
+          </div>
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="categoryStatus" checked>
+          <label for="categoryStatus">Active Category</label>
+        </div>
       </div>
-      
-      <div class="form-group">
-        <label for="categoryDescription">Description</label>
-        <textarea id="categoryDescription" placeholder="Enter category description"></textarea>
-      </div>
-      
-      <div class="checkbox-group">
-        <input type="checkbox" id="categoryStatus" checked>
-        <label for="categoryStatus">Active Category</label>
-      </div>
-      
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeModal('addCategoryModal')">Cancel</button>
-        <button class="btn" onclick="saveCategory()">Save Category</button>
+      <div class="modal-footer">
+        <button class="btn btn-secondary close">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
       </div>
     </div>
   </div>
 
   <!-- Add Banner Modal -->
-  <div class="modal-overlay" id="addBannerModal">
-    <div class="admin-modal">
+  <div class="modal" id="addBannerModal">
+    <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title">Add New Banner</h2>
-        <button class="modal-close" onclick="closeModal('addBannerModal')">&times;</button>
+        <h3>Add New Banner</h3>
+        <button class="close">&times;</button>
       </div>
-      
-      <div class="form-group">
-        <label for="bannerTitle">Banner Title</label>
-        <input type="text" id="bannerTitle" placeholder="Enter banner title">
-      </div>
-      
-      <div class="form-group">
-        <label for="bannerLink">Banner Link (Optional)</label>
-        <input type="url" id="bannerLink" placeholder="https://example.com">
-      </div>
-      
-      <div class="form-group">
-        <label>Banner Image</label>
-        <div class="image-upload" onclick="document.getElementById('bannerImage').click()">
-          <div class="upload-icon">
-            <i class="fas fa-cloud-upload-alt"></i>
-          </div>
-          <p>Click to upload banner image</p>
-          <input type="file" id="bannerImage" style="display: none" onchange="handleBannerImageUpload(this)">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="bannerTitle">Banner Title</label>
+          <input type="text" id="bannerTitle" class="form-control" placeholder="Enter banner title">
         </div>
         
-        <div class="image-preview" id="bannerImagePreview">
-          <!-- Banner image preview will be added here -->
+        <div class="form-group">
+          <label for="bannerLink">Banner Link (Optional)</label>
+          <input type="url" id="bannerLink" class="form-control" placeholder="https://example.com">
+        </div>
+        
+        <div class="form-group">
+          <label for="bannerImage">Banner Image</label>
+          <input type="file" id="bannerImage" class="form-control">
+          <div class="image-preview" id="bannerImagePreview">
+            <span>No image selected</span>
+          </div>
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="bannerStatus" checked>
+          <label for="bannerStatus">Active Banner</label>
         </div>
       </div>
-      
-      <div class="checkbox-group">
-        <input type="checkbox" id="bannerStatus" checked>
-        <label for="bannerStatus">Active Banner</label>
-      </div>
-      
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeModal('addBannerModal')">Cancel</button>
-        <button class="btn" onclick="saveBanner()">Save Banner</button>
+      <div class="modal-footer">
+        <button class="btn btn-secondary close">Cancel</button>
+        <button class="btn btn-primary" onclick="saveBanner()">Save Banner</button>
       </div>
     </div>
   </div>
 
   <!-- Edit Product Modal -->
-  <div class="modal-overlay" id="editProductModal">
-    <div class="admin-modal">
+  <div class="modal" id="editProductModal">
+    <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title">Edit Product</h2>
-        <button class="modal-close" onclick="closeModal('editProductModal')">&times;</button>
+        <h3>Edit Product</h3>
+        <button class="close">&times;</button>
       </div>
-      
-      <input type="hidden" id="editProductId">
-      
-      <div class="form-group">
-        <label for="editProductName">Product Name</label>
-        <input type="text" id="editProductName" placeholder="Enter product name">
+      <div class="modal-body">
+        <input type="hidden" id="editProductId">
+        
+        <div class="form-group">
+          <label for="editProductName">Product Name</label>
+          <input type="text" id="editProductName" class="form-control" placeholder="Enter product name">
+        </div>
+        
+        <div class="form-group">
+          <label for="editProductPrice">Price (₹)</label>
+          <input type="number" id="editProductPrice" class="form-control" placeholder="Enter price">
+        </div>
+        
+        <div class="form-group">
+          <label for="editProductDeliveryCharge">Delivery Charge (₹)</label>
+          <input type="number" id="editProductDeliveryCharge" class="form-control" placeholder="Enter delivery charge">
+        </div>
+        
+        <div class="form-group">
+          <label for="editProductStock">Stock Quantity</label>
+          <input type="number" id="editProductStock" class="form-control" placeholder="Enter stock quantity">
+        </div>
+        
+        <div class="form-group">
+          <label for="editProductCategory">Category</label>
+          <select id="editProductCategory" class="form-control">
+            <option value="">Select Category</option>
+            <option value="Topwear">Topwear</option>
+            <option value="Sarees">Sarees</option>
+            <option value="Bottomwear">Bottomwear</option>
+            <option value="Watches">Watches</option>
+            <option value="Backt">Backt</option>
+            <option value="Kurta Sets">Kurta Sets</option>
+            <option value="Winter Wear">Winter Wear</option>
+            <option value="Casual shoes">Casual shoes</option>
+            <option value="Trolley Bags">Trolley Bags</option>
+            <option value="Men's Acc">Men's Acc</option>
+            <option value="Bottor">Bottor</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="editProductDesc">Short Description</label>
+          <input type="text" id="editProductDesc" class="form-control" placeholder="Enter short description">
+        </div>
+        
+        <div class="form-group">
+          <label for="editProductFullDesc">Full Description</label>
+          <textarea id="editProductFullDesc" class="form-control" placeholder="Enter full description"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Sizes (comma separated)</label>
+          <input type="text" id="editProductSizes" class="form-control" placeholder="S, M, L, XL">
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="editProductTrending">
+          <label for="editProductTrending">Mark as Trending Product</label>
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="editProductStatus">
+          <label for="editProductStatus">Active Product</label>
+        </div>
       </div>
-      
-      <div class="form-group">
-        <label for="editProductPrice">Price (₹)</label>
-        <input type="number" id="editProductPrice" placeholder="Enter price">
-      </div>
-      
-      <div class="form-group">
-        <label for="editProductStock">Stock Quantity</label>
-        <input type="number" id="editProductStock" placeholder="Enter stock quantity">
-      </div>
-      
-      <div class="form-group">
-        <label for="editProductCategory">Category</label>
-        <select id="editProductCategory">
-          <option value="">Select Category</option>
-          <option value="Topwear">Topwear</option>
-          <option value="Sarees">Sarees</option>
-          <option value="Bottomwear">Bottomwear</option>
-          <option value="Watches">Watches</option>
-          <option value="Backt">Backt</option>
-          <option value="Kurta Sets">Kurta Sets</option>
-          <option value="Winter Wear">Winter Wear</option>
-          <option value="Casual shoes">Casual shoes</option>
-          <option value="Trolley Bags">Trolley Bags</option>
-          <option value="Men's Acc">Men's Acc</option>
-          <option value="Bottor">Bottor</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label for="editProductDesc">Short Description</label>
-        <input type="text" id="editProductDesc" placeholder="Enter short description">
-      </div>
-      
-      <div class="form-group">
-        <label for="editProductFullDesc">Full Description</label>
-        <textarea id="editProductFullDesc" placeholder="Enter full description"></textarea>
-      </div>
-      
-      <div class="form-group">
-        <label>Sizes (comma separated)</label>
-        <input type="text" id="editProductSizes" placeholder="S, M, L, XL">
-      </div>
-      
-      <div class="checkbox-group">
-        <input type="checkbox" id="editProductTrending">
-        <label for="editProductTrending">Mark as Trending Product</label>
-      </div>
-      
-      <div class="checkbox-group">
-        <input type="checkbox" id="editProductStatus">
-        <label for="editProductStatus">Active Product</label>
-      </div>
-      
-      <div class="modal-actions">
+      <div class="modal-footer">
         <button class="btn btn-danger" onclick="deleteProduct()">Delete Product</button>
-        <button class="btn" onclick="updateProduct()">Update Product</button>
+        <button class="btn btn-primary" onclick="updateProduct()">Update Product</button>
       </div>
     </div>
   </div>
 
   <script>
-    // Firebase configuration
+    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAeB7VzIxJaNYagUPoKd-kN5HXmLbS2-Vw",
       authDomain: "videomanager-23d98.firebaseapp.com",
@@ -1620,6 +1523,7 @@
     let ordersPerPage = 10;
     let customersPerPage = 10;
     let uploadedImages = [];
+    let uploadedCategoryImage = null;
     let uploadedBannerImage = null;
 
     // Initialize admin panel
@@ -1645,7 +1549,7 @@
       }
       
       // Setup tab navigation
-      document.querySelectorAll('.admin-nav a').forEach(tab => {
+      document.querySelectorAll('.menu-item').forEach(tab => {
         tab.addEventListener('click', function(e) {
           e.preventDefault();
           if (this.dataset.tab) {
@@ -1655,7 +1559,7 @@
       });
       
       // Setup policy tabs
-      document.querySelectorAll('.admin-tabs .tab').forEach(tab => {
+      document.querySelectorAll('.tabs .tab').forEach(tab => {
         tab.addEventListener('click', function() {
           const policy = this.dataset.policy;
           showPolicyTab(policy);
@@ -1664,15 +1568,12 @@
       
       // Setup search and filters
       document.getElementById('productSearch').addEventListener('input', filterProducts);
-      document.getElementById('categoryFilter').addEventListener('change', filterProducts);
       document.getElementById('orderSearch').addEventListener('input', filterOrders);
-      document.getElementById('statusFilter').addEventListener('change', filterOrders);
-      document.getElementById('dateFilter').addEventListener('change', filterOrders);
       document.getElementById('customerSearch').addEventListener('input', filterCustomers);
       
       // Select all orders checkbox
       document.getElementById('selectAllOrders').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('#ordersTable input[type="checkbox"]');
+        const checkboxes = document.querySelectorAll('#ordersTableBody input[type="checkbox"]');
         checkboxes.forEach(checkbox => {
           checkbox.checked = this.checked;
         });
@@ -1682,6 +1583,43 @@
       document.getElementById('settingsForm').addEventListener('submit', function(e) {
         e.preventDefault();
         saveSettings();
+      });
+
+      // Modal Controls
+      const modals = document.querySelectorAll('.modal');
+      const closeButtons = document.querySelectorAll('.close');
+      
+      // Close Modals
+      closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          modals.forEach(modal => {
+            modal.classList.remove('active');
+          });
+        });
+      });
+      
+      // Close modal when clicking outside
+      modals.forEach(modal => {
+        modal.addEventListener('click', function(e) {
+          if (e.target === this) {
+            this.classList.remove('active');
+          }
+        });
+      });
+
+      // Product image upload preview
+      document.getElementById('productImages').addEventListener('change', function(e) {
+        handleProductImageUpload(e);
+      });
+
+      // Category image upload preview
+      document.getElementById('categoryImage').addEventListener('change', function(e) {
+        handleCategoryImageUpload(e);
+      });
+
+      // Banner image upload preview
+      document.getElementById('bannerImage').addEventListener('change', function(e) {
+        handleBannerImageUpload(e);
       });
     }
 
@@ -1721,7 +1659,7 @@
       });
       
       // Remove active class from all nav items
-      document.querySelectorAll('.admin-nav a').forEach(nav => {
+      document.querySelectorAll('.menu-item').forEach(nav => {
         nav.classList.remove('active');
       });
       
@@ -1729,7 +1667,7 @@
       document.getElementById(tabName).classList.add('active');
       
       // Set active nav item
-      document.querySelector(`.admin-nav a[data-tab="${tabName}"]`).classList.add('active');
+      document.querySelector(`.menu-item[data-tab="${tabName}"]`).classList.add('active');
       
       // Update page title
       document.getElementById('adminPageTitle').textContent = 
@@ -1762,7 +1700,7 @@
     // Show policy tab
     function showPolicyTab(policy) {
       // Remove active class from all policy tabs
-      document.querySelectorAll('.admin-tabs .tab').forEach(tab => {
+      document.querySelectorAll('.tabs .tab').forEach(tab => {
         tab.classList.remove('active');
       });
       
@@ -1940,12 +1878,13 @@
               <td>${product.title}</td>
               <td>${product.category}</td>
               <td>₹${product.price}</td>
+              <td>₹${product.deliveryCharge || 0}</td>
               <td>${product.stock || 0}</td>
               <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
               <td>${product.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
               <td>
-                <div class="action-buttons">
-                  <button class="btn btn-secondary btn-sm" onclick="editProduct(${product.id})"><i class="fas fa-edit"></i></button>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-primary btn-sm" onclick="editProduct(${product.id})"><i class="fas fa-edit"></i></button>
                   <button class="btn btn-danger btn-sm" onclick="deleteProductConfirm(${product.id})"><i class="fas fa-trash"></i></button>
                 </div>
               </td>
@@ -1953,21 +1892,19 @@
           `;
         }).join('');
         
-        document.getElementById('productsTable').innerHTML = productsHtml || '<tr><td colspan="8" style="text-align: center">No products found</td></tr>';
+        document.getElementById('productsTableBody').innerHTML = productsHtml || '<tr><td colspan="9" style="text-align: center">No products found</td></tr>';
       });
     }
 
     // Filter products list
     function filterProductsList(products) {
       const searchTerm = document.getElementById('productSearch').value.toLowerCase();
-      const category = document.getElementById('categoryFilter').value;
       
       return products.filter(product => {
         const matchesSearch = product.title.toLowerCase().includes(searchTerm) || 
                              product.desc.toLowerCase().includes(searchTerm);
-        const matchesCategory = !category || product.category === category;
         
-        return matchesSearch && matchesCategory;
+        return matchesSearch;
       });
     }
 
@@ -1989,13 +1926,19 @@
           return `
             <tr>
               <td>#${category.id}</td>
+              <td>
+                ${category.image ? 
+                  `<img src="${category.image}" width="50" height="50" class="product-image">` : 
+                  '<div class="product-image" style="background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8;"><i class="fas fa-image"></i></div>'
+                }
+              </td>
               <td>${category.name}</td>
               <td>${category.description || 'No description'}</td>
               <td>${category.productCount || 0}</td>
               <td>${category.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
               <td>
-                <div class="action-buttons">
-                  <button class="btn btn-secondary btn-sm" onclick="editCategory(${category.id})"><i class="fas fa-edit"></i></button>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-primary btn-sm" onclick="editCategory(${category.id})"><i class="fas fa-edit"></i></button>
                   <button class="btn btn-danger btn-sm" onclick="deleteCategoryConfirm(${category.id})"><i class="fas fa-trash"></i></button>
                 </div>
               </td>
@@ -2003,7 +1946,7 @@
           `;
         }).join('');
         
-        document.getElementById('categoriesTable').innerHTML = categoriesHtml || '<tr><td colspan="6" style="text-align: center">No categories found</td></tr>';
+        document.getElementById('categoriesTableBody').innerHTML = categoriesHtml || '<tr><td colspan="7" style="text-align: center">No categories found</td></tr>';
       });
     }
 
@@ -2039,7 +1982,7 @@
               <td>${product ? product.title : 'Unknown Product'} (x${order.qty})</td>
               <td>₹${product ? product.price * order.qty : 'N/A'}</td>
               <td>
-                <select onchange="updateOrderStatus(${order.id}, this.value)" class="status-select">
+                <select onchange="updateOrderStatus(${order.id}, this.value)" class="form-control">
                   <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
                   <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
                   <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
@@ -2049,21 +1992,19 @@
               </td>
               <td>${new Date(order.timestamp).toLocaleDateString()}</td>
               <td>
-                <button class="btn btn-secondary btn-sm" onclick="viewOrderDetails(${order.id})"><i class="fas fa-eye"></i></button>
+                <button class="btn btn-primary btn-sm" onclick="viewOrderDetails(${order.id})"><i class="fas fa-eye"></i></button>
               </td>
             </tr>
           `;
         }).join('');
         
-        document.getElementById('ordersTable').innerHTML = ordersHtml || '<tr><td colspan="8" style="text-align: center">No orders found</td></tr>';
+        document.getElementById('ordersTableBody').innerHTML = ordersHtml || '<tr><td colspan="8" style="text-align: center">No orders found</td></tr>';
       });
     }
 
     // Filter orders list
     function filterOrdersList(orders, products) {
       const searchTerm = document.getElementById('orderSearch').value.toLowerCase();
-      const status = document.getElementById('statusFilter').value;
-      const date = document.getElementById('dateFilter').value;
       
       return orders.filter(order => {
         const product = products.find(p => p.id === order.productId);
@@ -2071,10 +2012,8 @@
         const matchesSearch = order.fullname.toLowerCase().includes(searchTerm) || 
                              order.mobile.includes(searchTerm) ||
                              productName.includes(searchTerm);
-        const matchesStatus = !status || order.status === status;
-        const matchesDate = !date || new Date(order.timestamp).toLocaleDateString() === new Date(date).toLocaleDateString();
         
-        return matchesSearch && matchesStatus && matchesDate;
+        return matchesSearch;
       });
     }
 
@@ -2113,7 +2052,7 @@
         return;
       }
       
-      const checkboxes = document.querySelectorAll('#ordersTable input[type="checkbox"]:checked');
+      const checkboxes = document.querySelectorAll('#ordersTableBody input[type="checkbox"]:checked');
       if (checkboxes.length === 0) {
         alert('Please select at least one order');
         return;
@@ -2208,7 +2147,7 @@
               <td>₹${product.price}</td>
               <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
               <td>
-                <div class="action-buttons">
+                <div style="display: flex; gap: 8px;">
                   <button class="btn ${product.trending ? 'btn-danger' : 'btn-success'} btn-sm" onclick="toggleTrending(${product.id}, ${!product.trending})">
                     <i class="fas ${product.trending ? 'fa-times' : 'fa-fire'}"></i> 
                     ${product.trending ? 'Remove' : 'Add'}
@@ -2219,11 +2158,11 @@
           `;
         }).join('');
         
-        document.getElementById('trendingTable').innerHTML = trendingHtml || '<tr><td colspan="5" style="text-align: center">No products found</td></tr>';
+        document.getElementById('trendingTableBody').innerHTML = trendingHtml || '<tr><td colspan="5" style="text-align: center">No products found</td></tr>';
       });
     }
 
-    // Toggle trending status
+    // Toggle trending status - FIXED: This will update the real site
     function toggleTrending(productId, isTrending) {
       const productsRef = database.ref('products');
       productsRef.once('value', snapshot => {
@@ -2238,6 +2177,10 @@
               // If on dashboard, refresh it too
               if (currentAdminTab === 'dashboard') {
                 loadDashboardData();
+              }
+              // Also refresh products tab if active
+              if (currentAdminTab === 'products') {
+                loadProducts();
               }
             });
         }
@@ -2296,7 +2239,7 @@
           `;
         }).join('');
         
-        document.getElementById('customersTable').innerHTML = customersHtml || '<tr><td colspan="6" style="text-align: center">No customers found</td></tr>';
+        document.getElementById('customersTableBody').innerHTML = customersHtml || '<tr><td colspan="6" style="text-align: center">No customers found</td></tr>';
       });
     }
 
@@ -2334,8 +2277,8 @@
               <td>${banner.title}</td>
               <td>${banner.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
               <td>
-                <div class="action-buttons">
-                  <button class="btn btn-secondary btn-sm" onclick="editBanner(${banner.id})"><i class="fas fa-edit"></i></button>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-primary btn-sm" onclick="editBanner(${banner.id})"><i class="fas fa-edit"></i></button>
                   <button class="btn btn-danger btn-sm" onclick="deleteBannerConfirm(${banner.id})"><i class="fas fa-trash"></i></button>
                 </div>
               </td>
@@ -2343,7 +2286,7 @@
           `;
         }).join('');
         
-        document.getElementById('bannersTable').innerHTML = bannersHtml || '<tr><td colspan="5" style="text-align: center">No banners found</td></tr>';
+        document.getElementById('bannersTableBody').innerHTML = bannersHtml || '<tr><td colspan="5" style="text-align: center">No banners found</td></tr>';
       });
     }
 
@@ -2410,6 +2353,7 @@
       // Reset form
       document.getElementById('productName').value = '';
       document.getElementById('productPrice').value = '';
+      document.getElementById('productDeliveryCharge').value = '';
       document.getElementById('productStock').value = '';
       document.getElementById('productCategory').value = '';
       document.getElementById('productDesc').value = '';
@@ -2417,7 +2361,7 @@
       document.getElementById('productSizes').value = '';
       document.getElementById('productTrending').checked = false;
       document.getElementById('productStatus').checked = true;
-      document.getElementById('imagePreview').innerHTML = '';
+      document.getElementById('productImagePreviews').innerHTML = '';
       uploadedImages = [];
       
       // Show modal
@@ -2430,6 +2374,8 @@
       document.getElementById('categoryName').value = '';
       document.getElementById('categoryDescription').value = '';
       document.getElementById('categoryStatus').checked = true;
+      document.getElementById('categoryImagePreview').innerHTML = '<span>No image selected</span>';
+      uploadedCategoryImage = null;
       
       // Show modal
       document.getElementById('addCategoryModal').classList.add('active');
@@ -2441,46 +2387,85 @@
       document.getElementById('bannerTitle').value = '';
       document.getElementById('bannerLink').value = '';
       document.getElementById('bannerStatus').checked = true;
-      document.getElementById('bannerImagePreview').innerHTML = '';
+      document.getElementById('bannerImagePreview').innerHTML = '<span>No image selected</span>';
       uploadedBannerImage = null;
       
       // Show modal
       document.getElementById('addBannerModal').classList.add('active');
     }
 
-    // Handle image upload
-    function handleImageUpload(input) {
-      if (input.files && input.files.length > 0) {
-        const preview = document.getElementById('imagePreview');
+    // Handle product image upload
+    function handleProductImageUpload(e) {
+      const files = e.target.files;
+      const previewContainer = document.getElementById('productImagePreviews');
+      
+      // Clear existing previews
+      previewContainer.innerHTML = '';
+      
+      // Create preview for each selected file
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
         
-        Array.from(input.files).forEach(file => {
-          const reader = new FileReader();
+        reader.onload = function(e) {
+          // Store image data
+          uploadedImages.push(e.target.result);
           
-          reader.onload = function(e) {
-            // Store image data
-            uploadedImages.push(e.target.result);
-            
-            // Create preview
-            const previewItem = document.createElement('div');
-            previewItem.className = 'preview-item';
-            previewItem.innerHTML = `
-              <img src="${e.target.result}" alt="Preview">
-              <div class="remove-image" onclick="removeImage(this)">&times;</div>
-            `;
-            
-            preview.appendChild(previewItem);
+          const previewItem = document.createElement('div');
+          previewItem.className = 'image-preview-item';
+          
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.alt = 'Product Image Preview';
+          
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-image';
+          removeBtn.innerHTML = '&times;';
+          removeBtn.onclick = function() {
+            const index = uploadedImages.indexOf(e.target.result);
+            if (index !== -1) {
+              uploadedImages.splice(index, 1);
+            }
+            previewItem.remove();
           };
           
-          reader.readAsDataURL(file);
-        });
+          previewItem.appendChild(img);
+          previewItem.appendChild(removeBtn);
+          previewContainer.appendChild(previewItem);
+        };
+        
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // Handle category image upload
+    function handleCategoryImageUpload(e) {
+      const files = e.target.files;
+      const preview = document.getElementById('categoryImagePreview');
+      
+      if (files && files.length > 0) {
+        const file = files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          // Store image data
+          uploadedCategoryImage = e.target.result;
+          
+          // Create preview
+          preview.innerHTML = `<img src="${e.target.result}" alt="Category Image">`;
+        };
+        
+        reader.readAsDataURL(file);
       }
     }
 
     // Handle banner image upload
-    function handleBannerImageUpload(input) {
-      if (input.files && input.files.length > 0) {
-        const preview = document.getElementById('bannerImagePreview');
-        const file = input.files[0];
+    function handleBannerImageUpload(e) {
+      const files = e.target.files;
+      const preview = document.getElementById('bannerImagePreview');
+      
+      if (files && files.length > 0) {
+        const file = files[0];
         const reader = new FileReader();
         
         reader.onload = function(e) {
@@ -2488,41 +2473,18 @@
           uploadedBannerImage = e.target.result;
           
           // Create preview
-          preview.innerHTML = `
-            <div class="preview-item">
-              <img src="${e.target.result}" alt="Banner Preview">
-              <div class="remove-image" onclick="removeBannerImage()">&times;</div>
-            </div>
-          `;
+          preview.innerHTML = `<img src="${e.target.result}" alt="Banner Image">`;
         };
         
         reader.readAsDataURL(file);
       }
     }
 
-    // Remove image from upload preview
-    function removeImage(button) {
-      const previewItem = button.parentElement;
-      const imgSrc = previewItem.querySelector('img').src;
-      const index = uploadedImages.indexOf(imgSrc);
-      
-      if (index !== -1) {
-        uploadedImages.splice(index, 1);
-      }
-      
-      previewItem.remove();
-    }
-
-    // Remove banner image
-    function removeBannerImage() {
-      document.getElementById('bannerImagePreview').innerHTML = '';
-      uploadedBannerImage = null;
-    }
-
     // Save product
     function saveProduct() {
       const name = document.getElementById('productName').value;
       const price = document.getElementById('productPrice').value;
+      const deliveryCharge = document.getElementById('productDeliveryCharge').value;
       const stock = document.getElementById('productStock').value;
       const category = document.getElementById('productCategory').value;
       const desc = document.getElementById('productDesc').value;
@@ -2554,6 +2516,7 @@
           id: nextId,
           title: name,
           price: parseInt(price),
+          deliveryCharge: parseInt(deliveryCharge) || 0,
           stock: parseInt(stock) || 0,
           desc: desc,
           fullDesc: fullDesc,
@@ -2568,7 +2531,7 @@
         productsRef.push(newProduct)
           .then(() => {
             // Close modal and refresh products list
-            closeModal('addProductModal');
+            document.getElementById('addProductModal').classList.remove('active');
             loadProducts();
             loadTrendingProducts();
             
@@ -2606,6 +2569,7 @@
           id: nextId,
           name: name,
           description: description,
+          image: uploadedCategoryImage,
           status: status,
           productCount: 0
         };
@@ -2614,7 +2578,7 @@
         categoriesRef.push(newCategory)
           .then(() => {
             // Close modal and refresh categories list
-            closeModal('addCategoryModal');
+            document.getElementById('addCategoryModal').classList.remove('active');
             loadCategories();
             
             alert('Category added successfully!');
@@ -2659,7 +2623,7 @@
         bannersRef.push(newBanner)
           .then(() => {
             // Close modal and refresh banners list
-            closeModal('addBannerModal');
+            document.getElementById('addBannerModal').classList.remove('active');
             loadBanners();
             
             alert('Banner added successfully!');
@@ -2686,6 +2650,7 @@
         document.getElementById('editProductId').value = product.id;
         document.getElementById('editProductName').value = product.title;
         document.getElementById('editProductPrice').value = product.price;
+        document.getElementById('editProductDeliveryCharge').value = product.deliveryCharge || 0;
         document.getElementById('editProductStock').value = product.stock || 0;
         document.getElementById('editProductCategory').value = product.category;
         document.getElementById('editProductDesc').value = product.desc;
@@ -2704,6 +2669,7 @@
       const productId = parseInt(document.getElementById('editProductId').value);
       const name = document.getElementById('editProductName').value;
       const price = document.getElementById('editProductPrice').value;
+      const deliveryCharge = document.getElementById('editProductDeliveryCharge').value;
       const stock = document.getElementById('editProductStock').value;
       const category = document.getElementById('editProductCategory').value;
       const desc = document.getElementById('editProductDesc').value;
@@ -2733,6 +2699,7 @@
         const updates = {
           title: name,
           price: parseInt(price),
+          deliveryCharge: parseInt(deliveryCharge) || 0,
           stock: parseInt(stock) || 0,
           desc: desc,
           fullDesc: fullDesc,
@@ -2745,7 +2712,7 @@
         database.ref('products/' + productKey).update(updates)
           .then(() => {
             // Close modal and refresh products list
-            closeModal('editProductModal');
+            document.getElementById('editProductModal').classList.remove('active');
             loadProducts();
             loadTrendingProducts();
             
@@ -2782,7 +2749,7 @@
         database.ref('products/' + productKey).remove()
           .then(() => {
             // Close modal and refresh products list
-            closeModal('editProductModal');
+            document.getElementById('editProductModal').classList.remove('active');
             loadProducts();
             loadTrendingProducts();
             
@@ -2908,11 +2875,6 @@
         a.click();
         document.body.removeChild(a);
       });
-    }
-
-    // Close modal
-    function closeModal(modalId) {
-      document.getElementById(modalId).classList.remove('active');
     }
 
     // Update pagination
