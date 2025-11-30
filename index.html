@@ -463,6 +463,23 @@
       flex: 1;
     }
 
+    /* Currency Input */
+    .currency-input {
+      position: relative;
+    }
+
+    .currency-symbol {
+      position: absolute;
+      left: 12px;
+      top: 10px;
+      color: var(--secondary);
+      font-weight: 500;
+    }
+
+    .currency-input .form-control {
+      padding-left: 30px;
+    }
+
     /* Modal */
     .modal {
       display: none;
@@ -1265,13 +1282,15 @@
           <input type="text" id="productName" class="form-control" placeholder="Enter product name">
         </div>
         
-        <div class="form-group">
-          <label for="productPrice">Price (₹)</label>
+        <div class="form-group currency-input">
+          <label for="productPrice">Price</label>
+          <span class="currency-symbol">₹</span>
           <input type="number" id="productPrice" class="form-control" placeholder="Enter price">
         </div>
         
-        <div class="form-group">
-          <label for="productDeliveryCharge">Delivery Charge (₹)</label>
+        <div class="form-group currency-input">
+          <label for="productDeliveryCharge">Delivery Charge</label>
+          <span class="currency-symbol">₹</span>
           <input type="number" id="productDeliveryCharge" class="form-control" placeholder="Enter delivery charge">
         </div>
         
@@ -1432,13 +1451,15 @@
           <input type="text" id="editProductName" class="form-control" placeholder="Enter product name">
         </div>
         
-        <div class="form-group">
-          <label for="editProductPrice">Price (₹)</label>
+        <div class="form-group currency-input">
+          <label for="editProductPrice">Price</label>
+          <span class="currency-symbol">₹</span>
           <input type="number" id="editProductPrice" class="form-control" placeholder="Enter price">
         </div>
         
-        <div class="form-group">
-          <label for="editProductDeliveryCharge">Delivery Charge (₹)</label>
+        <div class="form-group currency-input">
+          <label for="editProductDeliveryCharge">Delivery Charge</label>
+          <span class="currency-symbol">₹</span>
           <input type="number" id="editProductDeliveryCharge" class="form-control" placeholder="Enter delivery charge">
         </div>
         
@@ -2480,7 +2501,7 @@
       }
     }
 
-    // Save product
+    // Save product - FIXED: This will now save to the real site
     function saveProduct() {
       const name = document.getElementById('productName').value;
       const price = document.getElementById('productPrice').value;
@@ -2524,11 +2545,12 @@
           sizes: sizes,
           category: category,
           trending: trending,
-          status: status
+          status: status,
+          timestamp: Date.now()
         };
         
-        // Add to Firebase
-        productsRef.push(newProduct)
+        // Add to Firebase - FIXED: Using child() instead of push() to ensure consistent structure
+        productsRef.child(nextId).set(newProduct)
           .then(() => {
             // Close modal and refresh products list
             document.getElementById('addProductModal').classList.remove('active');
@@ -2575,7 +2597,7 @@
         };
         
         // Add to Firebase
-        categoriesRef.push(newCategory)
+        categoriesRef.child(nextId).set(newCategory)
           .then(() => {
             // Close modal and refresh categories list
             document.getElementById('addCategoryModal').classList.remove('active');
@@ -2620,7 +2642,7 @@
         };
         
         // Add to Firebase
-        bannersRef.push(newBanner)
+        bannersRef.child(nextId).set(newBanner)
           .then(() => {
             // Close modal and refresh banners list
             document.getElementById('addBannerModal').classList.remove('active');
@@ -2638,13 +2660,11 @@
         const productsData = snapshot.val();
         if (!productsData) return;
         
-        const productKey = Object.keys(productsData).find(key => productsData[key].id === productId);
-        if (!productKey) {
+        const product = productsData[productId];
+        if (!product) {
           alert('Product not found');
           return;
         }
-        
-        const product = productsData[productKey];
         
         // Fill form with product data
         document.getElementById('editProductId').value = product.id;
@@ -2655,7 +2675,7 @@
         document.getElementById('editProductCategory').value = product.category;
         document.getElementById('editProductDesc').value = product.desc;
         document.getElementById('editProductFullDesc').value = product.fullDesc;
-        document.getElementById('editProductSizes').value = product.sizes.join(', ');
+        document.getElementById('editProductSizes').value = product.sizes ? product.sizes.join(', ') : '';
         document.getElementById('editProductTrending').checked = product.trending;
         document.getElementById('editProductStatus').checked = product.status === 'active';
         
@@ -2684,46 +2704,34 @@
         return;
       }
       
-      const productsRef = database.ref('products');
-      productsRef.once('value', snapshot => {
-        const productsData = snapshot.val();
-        if (!productsData) return;
-        
-        const productKey = Object.keys(productsData).find(key => productsData[key].id === productId);
-        if (!productKey) {
-          alert('Product not found');
-          return;
-        }
-        
-        // Update product
-        const updates = {
-          title: name,
-          price: parseInt(price),
-          deliveryCharge: parseInt(deliveryCharge) || 0,
-          stock: parseInt(stock) || 0,
-          desc: desc,
-          fullDesc: fullDesc,
-          sizes: sizes,
-          category: category,
-          trending: trending,
-          status: status
-        };
-        
-        database.ref('products/' + productKey).update(updates)
-          .then(() => {
-            // Close modal and refresh products list
-            document.getElementById('editProductModal').classList.remove('active');
-            loadProducts();
-            loadTrendingProducts();
-            
-            // If on dashboard, refresh it too
-            if (currentAdminTab === 'dashboard') {
-              loadDashboardData();
-            }
-            
-            alert('Product updated successfully!');
-          });
-      });
+      // Update product
+      const updates = {
+        title: name,
+        price: parseInt(price),
+        deliveryCharge: parseInt(deliveryCharge) || 0,
+        stock: parseInt(stock) || 0,
+        desc: desc,
+        fullDesc: fullDesc,
+        sizes: sizes,
+        category: category,
+        trending: trending,
+        status: status
+      };
+      
+      database.ref('products/' + productId).update(updates)
+        .then(() => {
+          // Close modal and refresh products list
+          document.getElementById('editProductModal').classList.remove('active');
+          loadProducts();
+          loadTrendingProducts();
+          
+          // If on dashboard, refresh it too
+          if (currentAdminTab === 'dashboard') {
+            loadDashboardData();
+          }
+          
+          alert('Product updated successfully!');
+        });
     }
 
     // Delete product confirmation
@@ -2736,31 +2744,21 @@
     // Delete product
     function deleteProduct(productId) {
       const productsRef = database.ref('products');
-      productsRef.once('value', snapshot => {
-        const productsData = snapshot.val();
-        if (!productsData) return;
-        
-        const productKey = Object.keys(productsData).find(key => productsData[key].id === productId);
-        if (!productKey) {
-          alert('Product not found');
-          return;
-        }
-        
-        database.ref('products/' + productKey).remove()
-          .then(() => {
-            // Close modal and refresh products list
-            document.getElementById('editProductModal').classList.remove('active');
-            loadProducts();
-            loadTrendingProducts();
-            
-            // If on dashboard, refresh it too
-            if (currentAdminTab === 'dashboard') {
-              loadDashboardData();
-            }
-            
-            alert('Product deleted successfully!');
-          });
-      });
+      
+      productsRef.child(productId).remove()
+        .then(() => {
+          // Close modal and refresh products list
+          document.getElementById('editProductModal').classList.remove('active');
+          loadProducts();
+          loadTrendingProducts();
+          
+          // If on dashboard, refresh it too
+          if (currentAdminTab === 'dashboard') {
+            loadDashboardData();
+          }
+          
+          alert('Product deleted successfully!');
+        });
     }
 
     // Edit category
@@ -2769,12 +2767,22 @@
       alert('Edit category functionality would be implemented here');
     }
 
-    // Delete category confirmation
+    // Delete category confirmation - FIXED: Now actually deletes the category
     function deleteCategoryConfirm(categoryId) {
       if (confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
-        // Implementation for delete category
-        alert('Delete category functionality would be implemented here');
+        deleteCategory(categoryId);
       }
+    }
+
+    // Delete category - FIXED: Now actually deletes the category
+    function deleteCategory(categoryId) {
+      const categoriesRef = database.ref('categories');
+      
+      categoriesRef.child(categoryId).remove()
+        .then(() => {
+          loadCategories();
+          alert('Category deleted successfully!');
+        });
     }
 
     // Edit banner
@@ -2783,12 +2791,22 @@
       alert('Edit banner functionality would be implemented here');
     }
 
-    // Delete banner confirmation
+    // Delete banner confirmation - FIXED: Now actually deletes the banner
     function deleteBannerConfirm(bannerId) {
       if (confirm('Are you sure you want to delete this banner? This action cannot be undone.')) {
-        // Implementation for delete banner
-        alert('Delete banner functionality would be implemented here');
+        deleteBanner(bannerId);
       }
+    }
+
+    // Delete banner - FIXED: Now actually deletes the banner
+    function deleteBanner(bannerId) {
+      const bannersRef = database.ref('banners');
+      
+      bannersRef.child(bannerId).remove()
+        .then(() => {
+          loadBanners();
+          alert('Banner deleted successfully!');
+        });
     }
 
     // Export orders
