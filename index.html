@@ -725,6 +725,53 @@
       width: auto;
     }
 
+    /* Similar Products Styles */
+    .selected-similar-products {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+      padding: 10px;
+      border: 1px dashed #d1d5db;
+      border-radius: 6px;
+      min-height: 60px;
+    }
+
+    .similar-product-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #e0f2fe;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+
+    .similar-product-chip img {
+      width: 30px;
+      height: 30px;
+      border-radius: 4px;
+      object-fit: cover;
+    }
+
+    .similar-product-chip .remove-chip {
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .similar-product-chip .remove-chip:hover {
+      color: #ef4444;
+    }
+
     /* Responsive */
     @media (max-width: 1024px) {
       .sidebar {
@@ -821,6 +868,7 @@
         <li><a href="#" class="menu-item" data-tab="categories"><i class="fas fa-tags"></i><span>Categories</span></a></li>
         <li><a href="#" class="menu-item" data-tab="orders"><i class="fas fa-shopping-bag"></i><span>Orders</span></a></li>
         <li><a href="#" class="menu-item" data-tab="trending"><i class="fas fa-fire"></i><span>Trending Products</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="similar-products"><i class="fas fa-random"></i><span>Similar Products</span></a></li>
         <li><a href="#" class="menu-item" data-tab="customers"><i class="fas fa-users"></i><span>Customers</span></a></li>
         <li><a href="#" class="menu-item" data-tab="banners"><i class="fas fa-image"></i><span>Banners</span></a></li>
         <li><a href="#" class="menu-item" data-tab="policies"><i class="fas fa-file-alt"></i><span>Policies</span></a></li>
@@ -1106,6 +1154,43 @@
           </div>
         </div>
         
+        <!-- Similar Products Tab (NEW ADDITION) -->
+        <div class="tab-content" id="similar-products">
+          <div class="card">
+            <div class="card-header">
+              <h2>Similar Products Management</h2>
+              <button class="btn btn-primary" onclick="showAddSimilarProductsModal()">
+                <i class="fas fa-plus"></i> Link Similar Products
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="search-box">
+                <input type="text" class="form-control" id="similarProductsSearch" placeholder="Search main product...">
+                <button class="btn btn-primary" onclick="filterSimilarProducts()">Search</button>
+              </div>
+              <div class="table-responsive">
+                <table id="similarProductsTable">
+                  <thead>
+                    <tr>
+                      <th>Main Product</th>
+                      <th>Main Product Image</th>
+                      <th>Similar Products Count</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="similarProductsTableBody">
+                    <!-- Will be populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="pagination" id="similarProductsPagination">
+                <!-- Pagination will be generated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <!-- Customers Tab -->
         <div class="tab-content" id="customers">
           <div class="card">
@@ -1301,20 +1386,10 @@
         
         <div class="form-group">
           <label for="productCategory">Category</label>
-          <input list="categoryOptions" id="productCategory" class="form-control" placeholder="Select or type category">
-          <datalist id="categoryOptions">
-            <option value="Topwear">
-            <option value="Sarees">
-            <option value="Bottomwear">
-            <option value="Watches">
-            <option value="Backt">
-            <option value="Kurta Sets">
-            <option value="Winter Wear">
-            <option value="Casual shoes">
-            <option value="Trolley Bags">
-            <option value="Men's Acc">
-            <option value="Bottor">
-          </datalist>
+          <select id="productCategory" class="form-control">
+            <option value="">-- Select Category --</option>
+            <!-- Categories will be populated by JavaScript -->
+          </select>
         </div>
         
         <div class="form-group">
@@ -1436,6 +1511,59 @@
     </div>
   </div>
 
+  <!-- Add Similar Products Modal (NEW ADDITION) -->
+  <div class="modal" id="addSimilarProductsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Link Similar Products</h3>
+        <button class="close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="mainProductSelect">Select Main Product</label>
+          <select id="mainProductSelect" class="form-control" onchange="loadProductDetails(this.value)">
+            <option value="">-- Select Product --</option>
+            <!-- Options will be populated by JavaScript -->
+          </select>
+        </div>
+        
+        <div class="selected-product-info" id="selectedProductInfo" style="display: none; background: #f8fafc; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <img id="selectedProductImage" src="" width="60" height="60" style="border-radius: 4px; object-fit: cover;">
+            <div>
+              <h4 id="selectedProductName" style="margin: 0 0 5px 0;"></h4>
+              <p id="selectedProductDetails" style="margin: 0; color: #64748b;"></p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="similarProductsSelect">Select Similar Products</label>
+          <div style="margin-bottom: 10px;">
+            <input type="text" id="searchSimilarProducts" class="form-control" placeholder="Search products..." onkeyup="searchProductsForSimilar()">
+          </div>
+          <select id="similarProductsSelect" class="form-control" multiple style="height: 200px;">
+            <!-- Options will be populated by JavaScript -->
+          </select>
+          <small class="text-muted">Hold Ctrl/Cmd to select multiple products</small>
+        </div>
+        
+        <div class="selected-similar-products" id="selectedSimilarProductsPreview">
+          <!-- Selected products will be shown here -->
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="autoSuggestSimilar" checked>
+          <label for="autoSuggestSimilar">Auto-suggest similar products (by category)</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary close">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSimilarProducts()">Save Similar Products</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Product Modal -->
   <div class="modal" id="editProductModal">
     <div class="modal-content">
@@ -1471,18 +1599,8 @@
         <div class="form-group">
           <label for="editProductCategory">Category</label>
           <select id="editProductCategory" class="form-control">
-            <option value="">Select Category</option>
-            <option value="Topwear">Topwear</option>
-            <option value="Sarees">Sarees</option>
-            <option value="Bottomwear">Bottomwear</option>
-            <option value="Watches">Watches</option>
-            <option value="Backt">Backt</option>
-            <option value="Kurta Sets">Kurta Sets</option>
-            <option value="Winter Wear">Winter Wear</option>
-            <option value="Casual shoes">Casual shoes</option>
-            <option value="Trolley Bags">Trolley Bags</option>
-            <option value="Men's Acc">Men's Acc</option>
-            <option value="Bottor">Bottor</option>
+            <option value="">-- Select Category --</option>
+            <!-- Categories will be populated by JavaScript -->
           </select>
         </div>
         
@@ -1518,17 +1636,52 @@
     </div>
   </div>
 
+  <!-- Edit Similar Products Modal (NEW ADDITION) -->
+  <div class="modal" id="editSimilarProductsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Edit Similar Products</h3>
+        <button class="close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editMainProductId">
+        
+        <div class="selected-product-info" id="editProductInfo" style="background: #f8fafc; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+          <!-- Product info will be loaded here -->
+        </div>
+        
+        <div class="form-group">
+          <label for="editSimilarProductsSelect">Similar Products</label>
+          <div style="margin-bottom: 10px;">
+            <input type="text" id="editSearchSimilarProducts" class="form-control" placeholder="Search products..." onkeyup="editSearchProductsForSimilar()">
+          </div>
+          <select id="editSimilarProductsSelect" class="form-control" multiple style="height: 200px;">
+            <!-- Options will be populated by JavaScript -->
+          </select>
+          <small class="text-muted">Hold Ctrl/Cmd to select multiple products</small>
+        </div>
+        
+        <div class="selected-similar-products" id="editSelectedSimilarProductsPreview">
+          <!-- Selected products will be shown here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" onclick="deleteSimilarProducts()">Remove All Links</button>
+        <button class="btn btn-primary" onclick="updateSimilarProducts()">Update Similar Products</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Firebase Configuration
+    // Firebase Configuration - UPDATED WITH YOUR CONFIG
     const firebaseConfig = {
-      apiKey: "AIzaSyAeB7VzIxJaNYagUPoKd-kN5HXmLbS2-Vw",
-      authDomain: "videomanager-23d98.firebaseapp.com",
-      databaseURL: "https://videomanager-23d98-default-rtdb.firebaseio.com",
-      projectId: "videomanager-23d98",
-      storageBucket: "videomanager-23d98.firebasestorage.app",
-      messagingSenderId: "847321523576",
-      appId: "1:847321523576:web:bda3f5026e3e163603548d",
-      measurementId: "G-YBSJ1KMPV4"
+      apiKey: "AIzaSyCHFUx3Y1L3mvyLyDMHVKQE6eXi50_fewE",
+      authDomain: "buyzocart.firebaseapp.com",
+      databaseURL: "https://buyzocart-default-rtdb.firebaseio.com",
+      projectId: "buyzocart",
+      storageBucket: "buyzocart.firebasestorage.app",
+      messagingSenderId: "640560737762",
+      appId: "1:640560737762:web:7fe368df6486d6da759dbb"
     };
 
     // Initialize Firebase
@@ -1540,12 +1693,20 @@
     let currentProductsPage = 1;
     let currentOrdersPage = 1;
     let currentCustomersPage = 1;
+    let currentSimilarProductsPage = 1;
     let productsPerPage = 10;
     let ordersPerPage = 10;
     let customersPerPage = 10;
+    let similarProductsPerPage = 10;
     let uploadedImages = [];
     let uploadedCategoryImage = null;
     let uploadedBannerImage = null;
+    
+    // Global Categories Array
+    let allCategories = [];
+    
+    // Similar Products Variables
+    let allProductsForSimilar = [];
 
     // Initialize admin panel
     function initAdminPanel() {
@@ -1560,10 +1721,14 @@
         loadCategories();
         loadOrders();
         loadTrendingProducts();
+        loadSimilarProducts();
         loadCustomers();
         loadBanners();
         loadPolicies();
         loadSettings();
+        
+        // Load categories for dropdown
+        loadCategoriesForDropdown();
       } else {
         document.getElementById('adminLoginPage').style.display = 'flex';
         document.getElementById('adminPanel').style.display = 'none';
@@ -1591,6 +1756,7 @@
       document.getElementById('productSearch').addEventListener('input', filterProducts);
       document.getElementById('orderSearch').addEventListener('input', filterOrders);
       document.getElementById('customerSearch').addEventListener('input', filterCustomers);
+      document.getElementById('similarProductsSearch').addEventListener('input', filterSimilarProducts);
       
       // Select all orders checkbox
       document.getElementById('selectAllOrders').addEventListener('change', function() {
@@ -1642,6 +1808,73 @@
       document.getElementById('bannerImage').addEventListener('change', function(e) {
         handleBannerImageUpload(e);
       });
+      
+      // Similar products select change events
+      document.getElementById('similarProductsSelect').addEventListener('change', updateSelectedSimilarProductsPreview);
+      document.getElementById('editSimilarProductsSelect').addEventListener('change', updateEditSelectedSimilarProductsPreview);
+    }
+
+    // Load categories for dropdown
+    function loadCategoriesForDropdown() {
+      const categoriesRef = database.ref('categories');
+      categoriesRef.once('value', snapshot => {
+        const categoriesData = snapshot.val();
+        if (categoriesData) {
+          allCategories = Object.entries(categoriesData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+          
+          // Update category dropdowns
+          updateCategoryDropdowns();
+        }
+      }).catch(error => {
+        console.error('Error loading categories for dropdown:', error);
+      });
+    }
+
+    // Update category dropdowns
+    function updateCategoryDropdowns() {
+      // Update add product modal dropdown
+      const addProductCategory = document.getElementById('productCategory');
+      if (addProductCategory) {
+        // Clear existing options except first one
+        const firstOption = addProductCategory.options[0];
+        addProductCategory.innerHTML = '';
+        if (firstOption) {
+          addProductCategory.appendChild(firstOption);
+        }
+        
+        // Add active categories
+        allCategories.forEach(category => {
+          if (category.status === 'active') {
+            const option = document.createElement('option');
+            option.value = category.name;
+            option.textContent = category.name;
+            addProductCategory.appendChild(option);
+          }
+        });
+      }
+      
+      // Update edit product modal dropdown
+      const editProductCategory = document.getElementById('editProductCategory');
+      if (editProductCategory) {
+        // Clear existing options except first one
+        const firstOption = editProductCategory.options[0];
+        editProductCategory.innerHTML = '';
+        if (firstOption) {
+          editProductCategory.appendChild(firstOption);
+        }
+        
+        // Add active categories
+        allCategories.forEach(category => {
+          if (category.status === 'active') {
+            const option = document.createElement('option');
+            option.value = category.name;
+            option.textContent = category.name;
+            editProductCategory.appendChild(option);
+          }
+        });
+      }
     }
 
     // Admin login function
@@ -1655,6 +1888,7 @@
         document.getElementById('adminLoginPage').style.display = 'none';
         document.getElementById('adminPanel').style.display = 'block';
         loadDashboardData();
+        loadCategoriesForDropdown();
       } else {
         alert('Invalid credentials. Try admin@buyzo.com / admin123');
       }
@@ -1707,6 +1941,8 @@
         loadOrders();
       } else if (tabName === 'trending') {
         loadTrendingProducts();
+      } else if (tabName === 'similar-products') {
+        loadSimilarProducts();
       } else if (tabName === 'customers') {
         loadCustomers();
       } else if (tabName === 'banners') {
@@ -1807,8 +2043,23 @@
         new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val()))),
         new Promise(resolve => ordersRef.once('value', snapshot => resolve(snapshot.val())))
       ]).then(([productsData, ordersData]) => {
-        const products = productsData ? Object.values(productsData) : [];
-        const orders = ordersData ? Object.values(ordersData) : [];
+        let products = [];
+        let orders = [];
+        
+        // Process products data
+        if (productsData) {
+          products = Object.entries(productsData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+        }
+        
+        // Process orders data
+        if (ordersData) {
+          orders = Object.entries(ordersData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+        }
+        
         const trendingProducts = products.filter(p => p.trending);
         
         // Update stats
@@ -1844,6 +2095,9 @@
         }).join('');
         
         document.getElementById('recentOrders').innerHTML = recentOrdersHtml || '<tr><td colspan="6" style="text-align: center">No orders found</td></tr>';
+      }).catch(error => {
+        console.error('Error loading dashboard data:', error);
+        alert('Error loading dashboard data. Please check console for details.');
       });
     }
 
@@ -1880,7 +2134,14 @@
       const productsRef = database.ref('products');
       productsRef.once('value', snapshot => {
         const productsData = snapshot.val();
-        const products = productsData ? Object.values(productsData) : [];
+        let products = [];
+        
+        if (productsData) {
+          products = Object.entries(productsData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+        }
+        
         const filteredProducts = filterProductsList(products);
         const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
         
@@ -1893,20 +2154,23 @@
         
         // Render products table
         const productsHtml = paginatedProducts.map(product => {
+          const images = product.images || [];
+          const mainImage = images.length > 0 ? images[0] : '';
+          
           return `
             <tr>
-              <td><img src="${product.images[0]}" width="50" height="50" class="product-image"></td>
-              <td>${product.title}</td>
-              <td>${product.category}</td>
-              <td>₹${product.price}</td>
+              <td><img src="${mainImage}" width="50" height="50" class="product-image"></td>
+              <td>${product.title || 'No Name'}</td>
+              <td>${product.category || 'Uncategorized'}</td>
+              <td>₹${product.price || 0}</td>
               <td>₹${product.deliveryCharge || 0}</td>
               <td>${product.stock || 0}</td>
               <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
               <td>${product.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
               <td>
                 <div style="display: flex; gap: 8px;">
-                  <button class="btn btn-primary btn-sm" onclick="editProduct(${product.id})"><i class="fas fa-edit"></i></button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteProductConfirm(${product.id})"><i class="fas fa-trash"></i></button>
+                  <button class="btn btn-primary btn-sm" onclick="editProduct('${product.id}')"><i class="fas fa-edit"></i></button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteProductConfirm('${product.id}')"><i class="fas fa-trash"></i></button>
                 </div>
               </td>
             </tr>
@@ -1914,6 +2178,9 @@
         }).join('');
         
         document.getElementById('productsTableBody').innerHTML = productsHtml || '<tr><td colspan="9" style="text-align: center">No products found</td></tr>';
+      }).catch(error => {
+        console.error('Error loading products:', error);
+        document.getElementById('productsTableBody').innerHTML = '<tr><td colspan="9" style="text-align: center; color: red;">Error loading products</td></tr>';
       });
     }
 
@@ -1922,8 +2189,8 @@
       const searchTerm = document.getElementById('productSearch').value.toLowerCase();
       
       return products.filter(product => {
-        const matchesSearch = product.title.toLowerCase().includes(searchTerm) || 
-                             product.desc.toLowerCase().includes(searchTerm);
+        const matchesSearch = (product.title || '').toLowerCase().includes(searchTerm) || 
+                             (product.desc || '').toLowerCase().includes(searchTerm);
         
         return matchesSearch;
       });
@@ -1940,7 +2207,19 @@
       const categoriesRef = database.ref('categories');
       categoriesRef.once('value', snapshot => {
         const categoriesData = snapshot.val();
-        const categories = categoriesData ? Object.values(categoriesData) : [];
+        let categories = [];
+        
+        if (categoriesData) {
+          categories = Object.entries(categoriesData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+        }
+        
+        // Update global categories array
+        allCategories = categories;
+        
+        // Update dropdowns
+        updateCategoryDropdowns();
         
         // Render categories table
         const categoriesHtml = categories.map(category => {
@@ -1953,14 +2232,14 @@
                   '<div class="product-image" style="background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8;"><i class="fas fa-image"></i></div>'
                 }
               </td>
-              <td>${category.name}</td>
+              <td>${category.name || 'No Name'}</td>
               <td>${category.description || 'No description'}</td>
               <td>${category.productCount || 0}</td>
               <td>${category.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
               <td>
                 <div style="display: flex; gap: 8px;">
-                  <button class="btn btn-primary btn-sm" onclick="editCategory(${category.id})"><i class="fas fa-edit"></i></button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteCategoryConfirm(${category.id})"><i class="fas fa-trash"></i></button>
+                  <button class="btn btn-primary btn-sm" onclick="editCategory('${category.id}')"><i class="fas fa-edit"></i></button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteCategoryConfirm('${category.id}')"><i class="fas fa-trash"></i></button>
                 </div>
               </td>
             </tr>
@@ -1968,6 +2247,8 @@
         }).join('');
         
         document.getElementById('categoriesTableBody').innerHTML = categoriesHtml || '<tr><td colspan="7" style="text-align: center">No categories found</td></tr>';
+      }).catch(error => {
+        console.error('Error loading categories:', error);
       });
     }
 
@@ -1980,8 +2261,23 @@
         new Promise(resolve => ordersRef.once('value', snapshot => resolve(snapshot.val()))),
         new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val())))
       ]).then(([ordersData, productsData]) => {
-        const orders = ordersData ? Object.values(ordersData) : [];
-        const products = productsData ? Object.values(productsData) : [];
+        let orders = [];
+        let products = [];
+        
+        // Process orders data
+        if (ordersData) {
+          orders = Object.entries(ordersData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+        }
+        
+        // Process products data
+        if (productsData) {
+          products = Object.entries(productsData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+        }
+        
         const filteredOrders = filterOrdersList(orders, products);
         const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
         
@@ -1999,11 +2295,11 @@
             <tr>
               <td><input type="checkbox" value="${order.id}"></td>
               <td>#${order.id || 'N/A'}</td>
-              <td>${order.fullname}<br><small>${order.mobile}</small></td>
-              <td>${product ? product.title : 'Unknown Product'} (x${order.qty})</td>
-              <td>₹${product ? product.price * order.qty : 'N/A'}</td>
+              <td>${order.fullname || 'N/A'}<br><small>${order.mobile || 'N/A'}</small></td>
+              <td>${product ? product.title : 'Unknown Product'} (x${order.qty || 1})</td>
+              <td>₹${product ? product.price * (order.qty || 1) : 'N/A'}</td>
               <td>
-                <select onchange="updateOrderStatus(${order.id}, this.value)" class="form-control">
+                <select onchange="updateOrderStatus('${order.id}', this.value)" class="form-control">
                   <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
                   <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
                   <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
@@ -2011,15 +2307,17 @@
                   <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                 </select>
               </td>
-              <td>${new Date(order.timestamp).toLocaleDateString()}</td>
+              <td>${order.timestamp ? new Date(order.timestamp).toLocaleDateString() : 'N/A'}</td>
               <td>
-                <button class="btn btn-primary btn-sm" onclick="viewOrderDetails(${order.id})"><i class="fas fa-eye"></i></button>
+                <button class="btn btn-primary btn-sm" onclick="viewOrderDetails('${order.id}')"><i class="fas fa-eye"></i></button>
               </td>
             </tr>
           `;
         }).join('');
         
         document.getElementById('ordersTableBody').innerHTML = ordersHtml || '<tr><td colspan="8" style="text-align: center">No orders found</td></tr>';
+      }).catch(error => {
+        console.error('Error loading orders:', error);
       });
     }
 
@@ -2029,9 +2327,9 @@
       
       return orders.filter(order => {
         const product = products.find(p => p.id === order.productId);
-        const productName = product ? product.title.toLowerCase() : '';
-        const matchesSearch = order.fullname.toLowerCase().includes(searchTerm) || 
-                             order.mobile.includes(searchTerm) ||
+        const productName = product ? (product.title || '').toLowerCase() : '';
+        const matchesSearch = (order.fullname || '').toLowerCase().includes(searchTerm) || 
+                             (order.mobile || '').includes(searchTerm) ||
                              productName.includes(searchTerm);
         
         return matchesSearch;
@@ -2047,22 +2345,19 @@
     // Update order status
     function updateOrderStatus(orderId, status) {
       const ordersRef = database.ref('orders');
-      ordersRef.once('value', snapshot => {
-        const ordersData = snapshot.val();
-        if (!ordersData) return;
-        
-        const orderKey = Object.keys(ordersData).find(key => ordersData[key].id === orderId);
-        if (orderKey) {
-          database.ref('orders/' + orderKey).update({ status: status })
-            .then(() => {
-              loadOrders();
-              // If on dashboard, refresh it too
-              if (currentAdminTab === 'dashboard') {
-                loadDashboardData();
-              }
-            });
-        }
-      });
+      ordersRef.child(orderId).update({ status: status })
+        .then(() => {
+          loadOrders();
+          // If on dashboard, refresh it too
+          if (currentAdminTab === 'dashboard') {
+            loadDashboardData();
+          }
+          alert('Order status updated successfully!');
+        })
+        .catch(error => {
+          console.error('Error updating order status:', error);
+          alert('Error updating order status');
+        });
     }
 
     // Apply bulk action to orders
@@ -2079,42 +2374,31 @@
         return;
       }
       
-      // Check if trying to update more than 100 orders
-      if (checkboxes.length > 100) {
-        alert('You can only update up to 100 orders at a time');
-        return;
-      }
-      
       if (!confirm(`Are you sure you want to update ${checkboxes.length} order(s) to ${status}?`)) {
         return;
       }
       
-      const ordersRef = database.ref('orders');
-      ordersRef.once('value', snapshot => {
-        const ordersData = snapshot.val();
-        if (!ordersData) return;
-        
-        const orderIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
-        const updates = {};
-        
-        Object.keys(ordersData).forEach(key => {
-          if (orderIds.includes(ordersData[key].id)) {
-            updates['orders/' + key + '/status'] = status;
-          }
-        });
-        
-        database.ref().update(updates)
-          .then(() => {
-            loadOrders();
-            // If on dashboard, refresh it too
-            if (currentAdminTab === 'dashboard') {
-              loadDashboardData();
-            }
-            
-            // Uncheck select all
-            document.getElementById('selectAllOrders').checked = false;
-          });
+      const updates = {};
+      checkboxes.forEach(checkbox => {
+        updates[`orders/${checkbox.value}/status`] = status;
       });
+      
+      database.ref().update(updates)
+        .then(() => {
+          loadOrders();
+          // If on dashboard, refresh it too
+          if (currentAdminTab === 'dashboard') {
+            loadDashboardData();
+          }
+          
+          // Uncheck select all
+          document.getElementById('selectAllOrders').checked = false;
+          alert('Bulk update successful!');
+        })
+        .catch(error => {
+          console.error('Error in bulk update:', error);
+          alert('Error updating orders');
+        });
     }
 
     // View order details
@@ -2123,33 +2407,39 @@
       const productsRef = database.ref('products');
       
       Promise.all([
-        new Promise(resolve => ordersRef.once('value', snapshot => resolve(snapshot.val()))),
+        new Promise(resolve => ordersRef.child(orderId).once('value', snapshot => resolve(snapshot.val()))),
         new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val())))
-      ]).then(([ordersData, productsData]) => {
-        const orders = ordersData ? Object.values(ordersData) : [];
-        const products = productsData ? Object.values(productsData) : [];
-        const order = orders.find(o => o.id === orderId);
-        
+      ]).then(([order, productsData]) => {
         if (!order) {
           alert('Order not found');
           return;
+        }
+        
+        let products = [];
+        if (productsData) {
+          products = Object.entries(productsData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
         }
         
         const product = products.find(p => p.id === order.productId);
         
         const detailsHtml = `
           <h3>Order Details #${order.id}</h3>
-          <p><strong>Customer:</strong> ${order.fullname}</p>
-          <p><strong>Mobile:</strong> ${order.mobile}</p>
-          <p><strong>Address:</strong> ${order.house}, ${order.city}, ${order.state} - ${order.pincode}</p>
-          <p><strong>Product:</strong> ${product ? product.title : 'Unknown'} (x${order.qty})</p>
-          <p><strong>Amount:</strong> ₹${product ? product.price * order.qty : 'N/A'}</p>
+          <p><strong>Customer:</strong> ${order.fullname || 'N/A'}</p>
+          <p><strong>Mobile:</strong> ${order.mobile || 'N/A'}</p>
+          <p><strong>Address:</strong> ${order.house || ''}, ${order.city || ''}, ${order.state || ''} - ${order.pincode || ''}</p>
+          <p><strong>Product:</strong> ${product ? product.title : 'Unknown'} (x${order.qty || 1})</p>
+          <p><strong>Amount:</strong> ₹${product ? product.price * (order.qty || 1) : 'N/A'}</p>
           <p><strong>Status:</strong> ${order.status || 'Pending'}</p>
-          <p><strong>Order Date:</strong> ${new Date(order.timestamp).toLocaleString()}</p>
+          <p><strong>Order Date:</strong> ${order.timestamp ? new Date(order.timestamp).toLocaleString() : 'N/A'}</p>
           <p><strong>Payment Method:</strong> ${order.payment === 'prepaid' ? 'Prepaid' : 'Cash on Delivery'}</p>
         `;
         
         alert(detailsHtml);
+      }).catch(error => {
+        console.error('Error loading order details:', error);
+        alert('Error loading order details');
       });
     }
 
@@ -2158,18 +2448,27 @@
       const productsRef = database.ref('products');
       productsRef.once('value', snapshot => {
         const productsData = snapshot.val();
-        const products = productsData ? Object.values(productsData) : [];
+        let products = [];
+        
+        if (productsData) {
+          products = Object.entries(productsData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+        }
         
         const trendingHtml = products.map(product => {
+          const images = product.images || [];
+          const mainImage = images.length > 0 ? images[0] : '';
+          
           return `
             <tr>
-              <td><img src="${product.images[0]}" width="50" height="50" class="product-image"></td>
-              <td>${product.title}</td>
-              <td>₹${product.price}</td>
+              <td><img src="${mainImage}" width="50" height="50" class="product-image"></td>
+              <td>${product.title || 'No Name'}</td>
+              <td>₹${product.price || 0}</td>
               <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
               <td>
                 <div style="display: flex; gap: 8px;">
-                  <button class="btn ${product.trending ? 'btn-danger' : 'btn-success'} btn-sm" onclick="toggleTrending(${product.id}, ${!product.trending})">
+                  <button class="btn ${product.trending ? 'btn-danger' : 'btn-success'} btn-sm" onclick="toggleTrending('${product.id}', ${!product.trending})">
                     <i class="fas ${product.trending ? 'fa-times' : 'fa-fire'}"></i> 
                     ${product.trending ? 'Remove' : 'Add'}
                   </button>
@@ -2180,32 +2479,125 @@
         }).join('');
         
         document.getElementById('trendingTableBody').innerHTML = trendingHtml || '<tr><td colspan="5" style="text-align: center">No products found</td></tr>';
+      }).catch(error => {
+        console.error('Error loading trending products:', error);
       });
     }
 
-    // Toggle trending status - FIXED: This will update the real site
+    // Toggle trending status
     function toggleTrending(productId, isTrending) {
+      database.ref('products/' + productId).update({ trending: isTrending })
+        .then(() => {
+          loadTrendingProducts();
+          // If on dashboard, refresh it too
+          if (currentAdminTab === 'dashboard') {
+            loadDashboardData();
+          }
+          // Also refresh products tab if active
+          if (currentAdminTab === 'products') {
+            loadProducts();
+          }
+          alert('Trending status updated!');
+        })
+        .catch(error => {
+          console.error('Error updating trending status:', error);
+          alert('Error updating trending status');
+        });
+    }
+
+    // Load similar products (NEW FUNCTION)
+    function loadSimilarProducts() {
+      const similarProductsRef = database.ref('similarProducts');
       const productsRef = database.ref('products');
-      productsRef.once('value', snapshot => {
-        const productsData = snapshot.val();
-        if (!productsData) return;
+      
+      Promise.all([
+        new Promise(resolve => similarProductsRef.once('value', snapshot => resolve(snapshot.val()))),
+        new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val())))
+      ]).then(([similarData, productsData]) => {
+        let similarProducts = [];
+        let products = [];
         
-        const productKey = Object.keys(productsData).find(key => productsData[key].id === productId);
-        if (productKey) {
-          database.ref('products/' + productKey).update({ trending: isTrending })
-            .then(() => {
-              loadTrendingProducts();
-              // If on dashboard, refresh it too
-              if (currentAdminTab === 'dashboard') {
-                loadDashboardData();
-              }
-              // Also refresh products tab if active
-              if (currentAdminTab === 'products') {
-                loadProducts();
-              }
-            });
+        // Process similar products data
+        if (similarData) {
+          similarProducts = Object.entries(similarData).map(([key, value]) => ({ 
+            key, 
+            ...value,
+            mainProductId: value.mainProductId || key 
+          }));
         }
+        
+        // Process products data
+        if (productsData) {
+          products = Object.entries(productsData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+        }
+        
+        const filteredSimilarProducts = filterSimilarProductsList(similarProducts, products);
+        const totalPages = Math.ceil(filteredSimilarProducts.length / similarProductsPerPage);
+        
+        // Update pagination
+        updatePagination('similarProductsPagination', currentSimilarProductsPage, totalPages, 'similar-products');
+        
+        // Get similar products for current page
+        const startIndex = (currentSimilarProductsPage - 1) * similarProductsPerPage;
+        const paginatedSimilarProducts = filteredSimilarProducts.slice(startIndex, startIndex + similarProductsPerPage);
+        
+        // Render similar products table
+        const similarProductsHtml = paginatedSimilarProducts.map(item => {
+          const mainProduct = products.find(p => p.id === item.mainProductId);
+          const similarCount = item.similarProductIds ? item.similarProductIds.length : 0;
+          const images = mainProduct ? (mainProduct.images || []) : [];
+          const mainImage = images.length > 0 ? images[0] : '';
+          
+          return `
+            <tr>
+              <td>${mainProduct ? mainProduct.title : 'Product ID: ' + item.mainProductId}</td>
+              <td>
+                ${mainImage ? 
+                  `<img src="${mainImage}" width="50" height="50" class="product-image">` : 
+                  '<div class="product-image" style="background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8;"><i class="fas fa-image"></i></div>'
+                }
+              </td>
+              <td>${similarCount}</td>
+              <td>${item.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-warning">Inactive</span>'}</td>
+              <td>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-primary btn-sm" onclick="editSimilarProducts('${item.mainProductId}')">
+                    <i class="fas fa-edit"></i> Edit
+                  </button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteSimilarProductsConfirm('${item.mainProductId}')">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+        
+        document.getElementById('similarProductsTableBody').innerHTML = 
+          similarProductsHtml || '<tr><td colspan="5" style="text-align: center">No similar products configured</td></tr>';
+      }).catch(error => {
+        console.error('Error loading similar products:', error);
       });
+    }
+
+    // Filter similar products list (NEW FUNCTION)
+    function filterSimilarProductsList(similarProducts, products) {
+      const searchTerm = document.getElementById('similarProductsSearch').value.toLowerCase();
+      
+      return similarProducts.filter(item => {
+        const mainProduct = products.find(p => p.id === item.mainProductId);
+        if (!mainProduct) return false;
+        
+        return (mainProduct.title || '').toLowerCase().includes(searchTerm);
+      });
+    }
+
+    // Filter similar products (NEW FUNCTION)
+    function filterSimilarProducts() {
+      currentSimilarProductsPage = 1;
+      loadSimilarProducts();
     }
 
     // Load customers
@@ -2213,21 +2605,25 @@
       const ordersRef = database.ref('orders');
       ordersRef.once('value', snapshot => {
         const ordersData = snapshot.val();
-        const orders = ordersData ? Object.values(ordersData) : [];
+        let orders = [];
+        
+        if (ordersData) {
+          orders = Object.values(ordersData);
+        }
         
         // Extract unique customers based on mobile number
         const customersMap = {};
         orders.forEach(order => {
-          if (!customersMap[order.mobile]) {
+          if (order.mobile && !customersMap[order.mobile]) {
             customersMap[order.mobile] = {
-              name: order.fullname,
+              name: order.fullname || 'Unknown',
               mobile: order.mobile,
               email: order.email || 'N/A',
-              location: `${order.city}, ${order.state}`,
+              location: `${order.city || ''}, ${order.state || ''}`,
               orderCount: 1,
               lastOrder: order.timestamp
             };
-          } else {
+          } else if (order.mobile) {
             customersMap[order.mobile].orderCount++;
             if (new Date(order.timestamp) > new Date(customersMap[order.mobile].lastOrder)) {
               customersMap[order.mobile].lastOrder = order.timestamp;
@@ -2255,12 +2651,14 @@
               <td>${customer.email}</td>
               <td>${customer.location}</td>
               <td>${customer.orderCount}</td>
-              <td>${new Date(customer.lastOrder).toLocaleDateString()}</td>
+              <td>${customer.lastOrder ? new Date(customer.lastOrder).toLocaleDateString() : 'N/A'}</td>
             </tr>
           `;
         }).join('');
         
         document.getElementById('customersTableBody').innerHTML = customersHtml || '<tr><td colspan="6" style="text-align: center">No customers found</td></tr>';
+      }).catch(error => {
+        console.error('Error loading customers:', error);
       });
     }
 
@@ -2269,10 +2667,10 @@
       const searchTerm = document.getElementById('customerSearch').value.toLowerCase();
       
       return customers.filter(customer => {
-        return customer.name.toLowerCase().includes(searchTerm) || 
-               customer.mobile.includes(searchTerm) ||
-               customer.email.toLowerCase().includes(searchTerm) ||
-               customer.location.toLowerCase().includes(searchTerm);
+        return (customer.name || '').toLowerCase().includes(searchTerm) || 
+               (customer.mobile || '').includes(searchTerm) ||
+               (customer.email || '').toLowerCase().includes(searchTerm) ||
+               (customer.location || '').toLowerCase().includes(searchTerm);
       });
     }
 
@@ -2287,20 +2685,26 @@
       const bannersRef = database.ref('banners');
       bannersRef.once('value', snapshot => {
         const bannersData = snapshot.val();
-        const banners = bannersData ? Object.values(bannersData) : [];
+        let banners = [];
+        
+        if (bannersData) {
+          banners = Object.entries(bannersData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+        }
         
         // Render banners table
         const bannersHtml = banners.map(banner => {
           return `
             <tr>
               <td>#${banner.id}</td>
-              <td><img src="${banner.image}" width="100" height="50" style="object-fit: cover; border-radius: 6px"></td>
-              <td>${banner.title}</td>
+              <td><img src="${banner.image || ''}" width="100" height="50" style="object-fit: cover; border-radius: 6px"></td>
+              <td>${banner.title || 'No Title'}</td>
               <td>${banner.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
               <td>
                 <div style="display: flex; gap: 8px;">
-                  <button class="btn btn-primary btn-sm" onclick="editBanner(${banner.id})"><i class="fas fa-edit"></i></button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteBannerConfirm(${banner.id})"><i class="fas fa-trash"></i></button>
+                  <button class="btn btn-primary btn-sm" onclick="editBanner('${banner.id}')"><i class="fas fa-edit"></i></button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteBannerConfirm('${banner.id}')"><i class="fas fa-trash"></i></button>
                 </div>
               </td>
             </tr>
@@ -2308,6 +2712,8 @@
         }).join('');
         
         document.getElementById('bannersTableBody').innerHTML = bannersHtml || '<tr><td colspan="5" style="text-align: center">No banners found</td></tr>';
+      }).catch(error => {
+        console.error('Error loading banners:', error);
       });
     }
 
@@ -2323,6 +2729,8 @@
         document.getElementById('termsContent').value = policies.terms || '';
         document.getElementById('shippingContent').value = policies.shipping || '';
         document.getElementById('privacyContent').value = policies.privacy || '';
+      }).catch(error => {
+        console.error('Error loading policies:', error);
       });
     }
 
@@ -2333,6 +2741,10 @@
       database.ref('policies/' + policyType).set(content)
         .then(() => {
           alert(`${policyType.charAt(0).toUpperCase() + policyType.slice(1)} policy saved successfully!`);
+        })
+        .catch(error => {
+          console.error('Error saving policy:', error);
+          alert('Error saving policy');
         });
     }
 
@@ -2349,6 +2761,8 @@
         if (settings.storeAddress) document.getElementById('storeAddress').value = settings.storeAddress;
         if (settings.shippingCost) document.getElementById('shippingCost').value = settings.shippingCost;
         if (settings.currency) document.getElementById('currency').value = settings.currency;
+      }).catch(error => {
+        console.error('Error loading settings:', error);
       });
     }
 
@@ -2366,6 +2780,10 @@
       database.ref('settings').set(settings)
         .then(() => {
           alert('Settings saved successfully!');
+        })
+        .catch(error => {
+          console.error('Error saving settings:', error);
+          alert('Error saving settings');
         });
     }
 
@@ -2384,6 +2802,9 @@
       document.getElementById('productStatus').checked = true;
       document.getElementById('productImagePreviews').innerHTML = '';
       uploadedImages = [];
+      
+      // Make sure categories dropdown is updated
+      updateCategoryDropdowns();
       
       // Show modal
       document.getElementById('addProductModal').classList.add('active');
@@ -2413,6 +2834,47 @@
       
       // Show modal
       document.getElementById('addBannerModal').classList.add('active');
+    }
+
+    // Show add similar products modal (NEW FUNCTION)
+    function showAddSimilarProductsModal() {
+      const productsRef = database.ref('products');
+      productsRef.once('value', snapshot => {
+        const productsData = snapshot.val();
+        let products = [];
+        
+        if (productsData) {
+          products = Object.entries(productsData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+        }
+        
+        allProductsForSimilar = products;
+        
+        // Populate main product dropdown
+        const mainProductSelect = document.getElementById('mainProductSelect');
+        mainProductSelect.innerHTML = '<option value="">-- Select Product --</option>' +
+          products.map(product => 
+            `<option value="${product.id}">${product.title || 'No Name'} (₹${product.price || 0})</option>`
+          ).join('');
+        
+        // Populate similar products multi-select
+        const similarProductsSelect = document.getElementById('similarProductsSelect');
+        similarProductsSelect.innerHTML = products.map(product => 
+          `<option value="${product.id}">${product.title || 'No Name'} (₹${product.price || 0}) - ${product.category || 'Uncategorized'}</option>`
+        ).join('');
+        
+        // Reset form
+        document.getElementById('selectedProductInfo').style.display = 'none';
+        document.getElementById('selectedSimilarProductsPreview').innerHTML = '';
+        document.getElementById('autoSuggestSimilar').checked = true;
+        
+        // Show modal
+        document.getElementById('addSimilarProductsModal').classList.add('active');
+      }).catch(error => {
+        console.error('Error loading products for similar modal:', error);
+        alert('Error loading products');
+      });
     }
 
     // Handle product image upload
@@ -2501,7 +2963,7 @@
       }
     }
 
-    // Save product - FIXED: This will now save to the real site
+    // Save product
     function saveProduct() {
       const name = document.getElementById('productName').value;
       const price = document.getElementById('productPrice').value;
@@ -2525,18 +2987,32 @@
         return;
       }
       
+      if (category === "") {
+        alert('Please select a category');
+        return;
+      }
+      
       // Get next available ID
       const productsRef = database.ref('products');
       productsRef.once('value', snapshot => {
         const productsData = snapshot.val();
-        const products = productsData ? Object.values(productsData) : [];
-        const nextId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+        let products = [];
+        
+        if (productsData) {
+          products = Object.values(productsData);
+        }
+        
+        let nextId = 1;
+        if (products.length > 0) {
+          const ids = products.map(p => parseInt(p.id)).filter(id => !isNaN(id));
+          nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+        }
         
         // Create new product
         const newProduct = {
-          id: nextId,
+          id: nextId.toString(),
           title: name,
-          price: parseInt(price),
+          price: parseInt(price) || 0,
           deliveryCharge: parseInt(deliveryCharge) || 0,
           stock: parseInt(stock) || 0,
           desc: desc,
@@ -2549,8 +3025,9 @@
           timestamp: Date.now()
         };
         
-        // Add to Firebase - FIXED: Using child() instead of push() to ensure consistent structure
-        productsRef.child(nextId).set(newProduct)
+        // Add to Firebase
+        const newProductKey = nextId.toString();
+        productsRef.child(newProductKey).set(newProduct)
           .then(() => {
             // Close modal and refresh products list
             document.getElementById('addProductModal').classList.remove('active');
@@ -2563,6 +3040,10 @@
             }
             
             alert('Product added successfully!');
+          })
+          .catch(error => {
+            console.error('Error saving product:', error);
+            alert('Error saving product');
           });
       });
     }
@@ -2579,16 +3060,37 @@
         return;
       }
       
+      if (!uploadedCategoryImage) {
+        alert('Please upload a category image');
+        return;
+      }
+      
+      // Check if category already exists
+      const existingCategory = allCategories.find(cat => cat.name.toLowerCase() === name.toLowerCase());
+      if (existingCategory) {
+        alert('Category with this name already exists!');
+        return;
+      }
+      
       // Get next available ID
       const categoriesRef = database.ref('categories');
       categoriesRef.once('value', snapshot => {
         const categoriesData = snapshot.val();
-        const categories = categoriesData ? Object.values(categoriesData) : [];
-        const nextId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
+        let categories = [];
+        
+        if (categoriesData) {
+          categories = Object.values(categoriesData);
+        }
+        
+        let nextId = 1;
+        if (categories.length > 0) {
+          const ids = categories.map(c => parseInt(c.id)).filter(id => !isNaN(id));
+          nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+        }
         
         // Create new category
         const newCategory = {
-          id: nextId,
+          id: nextId.toString(),
           name: name,
           description: description,
           image: uploadedCategoryImage,
@@ -2597,13 +3099,24 @@
         };
         
         // Add to Firebase
-        categoriesRef.child(nextId).set(newCategory)
+        const newCategoryKey = nextId.toString();
+        categoriesRef.child(newCategoryKey).set(newCategory)
           .then(() => {
+            // Add to local array
+            allCategories.push(newCategory);
+            
+            // Update dropdowns
+            updateCategoryDropdowns();
+            
             // Close modal and refresh categories list
             document.getElementById('addCategoryModal').classList.remove('active');
             loadCategories();
             
             alert('Category added successfully!');
+          })
+          .catch(error => {
+            console.error('Error saving category:', error);
+            alert('Error saving category');
           });
       });
     }
@@ -2629,12 +3142,21 @@
       const bannersRef = database.ref('banners');
       bannersRef.once('value', snapshot => {
         const bannersData = snapshot.val();
-        const banners = bannersData ? Object.values(bannersData) : [];
-        const nextId = banners.length > 0 ? Math.max(...banners.map(b => b.id)) + 1 : 1;
+        let banners = [];
+        
+        if (bannersData) {
+          banners = Object.values(bannersData);
+        }
+        
+        let nextId = 1;
+        if (banners.length > 0) {
+          const ids = banners.map(b => parseInt(b.id)).filter(id => !isNaN(id));
+          nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+        }
         
         // Create new banner
         const newBanner = {
-          id: nextId,
+          id: nextId.toString(),
           title: title,
           link: link,
           image: uploadedBannerImage,
@@ -2642,51 +3164,211 @@
         };
         
         // Add to Firebase
-        bannersRef.child(nextId).set(newBanner)
+        const newBannerKey = nextId.toString();
+        bannersRef.child(newBannerKey).set(newBanner)
           .then(() => {
             // Close modal and refresh banners list
             document.getElementById('addBannerModal').classList.remove('active');
             loadBanners();
             
             alert('Banner added successfully!');
+          })
+          .catch(error => {
+            console.error('Error saving banner:', error);
+            alert('Error saving banner');
           });
       });
+    }
+
+    // Load product details when main product is selected (NEW FUNCTION)
+    function loadProductDetails(productId) {
+      const product = allProductsForSimilar.find(p => p.id === productId);
+      if (!product) return;
+      
+      const infoDiv = document.getElementById('selectedProductInfo');
+      const productImage = document.getElementById('selectedProductImage');
+      const productName = document.getElementById('selectedProductName');
+      const productDetails = document.getElementById('selectedProductDetails');
+      
+      const images = product.images || [];
+      const mainImage = images.length > 0 ? images[0] : '';
+      
+      productImage.src = mainImage;
+      productName.textContent = product.title || 'No Name';
+      productDetails.textContent = `${product.category || 'Uncategorized'} | ₹${product.price || 0} | Stock: ${product.stock || 0}`;
+      
+      infoDiv.style.display = 'block';
+      
+      // Auto-select similar products by category
+      const autoSuggest = document.getElementById('autoSuggestSimilar').checked;
+      if (autoSuggest) {
+        const similarProductsSelect = document.getElementById('similarProductsSelect');
+        const similarProducts = allProductsForSimilar.filter(p => 
+          p.id !== productId && 
+          p.category === product.category
+        );
+        
+        // Select options with same category
+        Array.from(similarProductsSelect.options).forEach(option => {
+          const optionProductId = option.value;
+          const isSimilar = similarProducts.some(p => p.id === optionProductId);
+          option.selected = isSimilar;
+        });
+        
+        // Update preview
+        updateSelectedSimilarProductsPreview();
+      }
+    }
+
+    // Search products for similar products selection (NEW FUNCTION)
+    function searchProductsForSimilar() {
+      const searchTerm = document.getElementById('searchSimilarProducts').value.toLowerCase();
+      const selectElement = document.getElementById('similarProductsSelect');
+      
+      Array.from(selectElement.options).forEach(option => {
+        const text = option.text.toLowerCase();
+        option.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    }
+
+    // Edit search products (NEW FUNCTION)
+    function editSearchProductsForSimilar() {
+      const searchTerm = document.getElementById('editSearchSimilarProducts').value.toLowerCase();
+      const selectElement = document.getElementById('editSimilarProductsSelect');
+      
+      Array.from(selectElement.options).forEach(option => {
+        const text = option.text.toLowerCase();
+        option.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    }
+
+    // Update selected similar products preview (NEW FUNCTION)
+    function updateSelectedSimilarProductsPreview() {
+      const selectElement = document.getElementById('similarProductsSelect');
+      const selectedOptions = Array.from(selectElement.selectedOptions);
+      const previewDiv = document.getElementById('selectedSimilarProductsPreview');
+      
+      previewDiv.innerHTML = '';
+      
+      selectedOptions.forEach(option => {
+        const productId = option.value;
+        const product = allProductsForSimilar.find(p => p.id === productId);
+        
+        if (product) {
+          const images = product.images || [];
+          const mainImage = images.length > 0 ? images[0] : '';
+          
+          const chip = document.createElement('div');
+          chip.className = 'similar-product-chip';
+          chip.innerHTML = `
+            <img src="${mainImage}" alt="${product.title || 'No Name'}">
+            <span>${product.title || 'No Name'}</span>
+            <button class="remove-chip" onclick="removeFromSimilarSelection('${productId}')">&times;</button>
+          `;
+          previewDiv.appendChild(chip);
+        }
+      });
+    }
+
+    // Remove product from selection (NEW FUNCTION)
+    function removeFromSimilarSelection(productId) {
+      const selectElement = document.getElementById('similarProductsSelect');
+      const option = Array.from(selectElement.options).find(opt => opt.value === productId);
+      if (option) {
+        option.selected = false;
+        updateSelectedSimilarProductsPreview();
+      }
+    }
+
+    // Save similar products (NEW FUNCTION)
+    function saveSimilarProducts() {
+      const mainProductId = document.getElementById('mainProductSelect').value;
+      const similarProductsSelect = document.getElementById('similarProductsSelect');
+      const selectedOptions = Array.from(similarProductsSelect.selectedOptions);
+      
+      if (!mainProductId) {
+        alert('Please select a main product');
+        return;
+      }
+      
+      if (selectedOptions.length === 0) {
+        alert('Please select at least one similar product');
+        return;
+      }
+      
+      const similarProductIds = selectedOptions.map(option => option.value);
+      
+      // Check if main product is not in similar products
+      if (similarProductIds.includes(mainProductId)) {
+        alert('Main product cannot be in similar products list');
+        return;
+      }
+      
+      const similarProductsRef = database.ref('similarProducts');
+      
+      // Create similar products entry
+      const similarProductsEntry = {
+        mainProductId: mainProductId,
+        similarProductIds: similarProductIds,
+        status: 'active',
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      
+      // Save to Firebase
+      similarProductsRef.child(mainProductId).set(similarProductsEntry)
+        .then(() => {
+          // Close modal
+          document.getElementById('addSimilarProductsModal').classList.remove('active');
+          
+          // Refresh similar products list
+          loadSimilarProducts();
+          
+          alert('Similar products saved successfully!');
+        })
+        .catch(error => {
+          console.error('Error saving similar products:', error);
+          alert('Error saving similar products');
+        });
     }
 
     // Edit product
     function editProduct(productId) {
       const productsRef = database.ref('products');
-      productsRef.once('value', snapshot => {
-        const productsData = snapshot.val();
-        if (!productsData) return;
-        
-        const product = productsData[productId];
+      productsRef.child(productId).once('value', snapshot => {
+        const product = snapshot.val();
         if (!product) {
           alert('Product not found');
           return;
         }
         
+        // Make sure categories dropdown is updated
+        updateCategoryDropdowns();
+        
         // Fill form with product data
-        document.getElementById('editProductId').value = product.id;
-        document.getElementById('editProductName').value = product.title;
-        document.getElementById('editProductPrice').value = product.price;
+        document.getElementById('editProductId').value = productId;
+        document.getElementById('editProductName').value = product.title || '';
+        document.getElementById('editProductPrice').value = product.price || 0;
         document.getElementById('editProductDeliveryCharge').value = product.deliveryCharge || 0;
         document.getElementById('editProductStock').value = product.stock || 0;
-        document.getElementById('editProductCategory').value = product.category;
-        document.getElementById('editProductDesc').value = product.desc;
-        document.getElementById('editProductFullDesc').value = product.fullDesc;
+        document.getElementById('editProductCategory').value = product.category || '';
+        document.getElementById('editProductDesc').value = product.desc || '';
+        document.getElementById('editProductFullDesc').value = product.fullDesc || '';
         document.getElementById('editProductSizes').value = product.sizes ? product.sizes.join(', ') : '';
-        document.getElementById('editProductTrending').checked = product.trending;
+        document.getElementById('editProductTrending').checked = product.trending || false;
         document.getElementById('editProductStatus').checked = product.status === 'active';
         
         // Show modal
         document.getElementById('editProductModal').classList.add('active');
+      }).catch(error => {
+        console.error('Error loading product for edit:', error);
+        alert('Error loading product');
       });
     }
 
     // Update product
     function updateProduct() {
-      const productId = parseInt(document.getElementById('editProductId').value);
+      const productId = document.getElementById('editProductId').value;
       const name = document.getElementById('editProductName').value;
       const price = document.getElementById('editProductPrice').value;
       const deliveryCharge = document.getElementById('editProductDeliveryCharge').value;
@@ -2704,10 +3386,15 @@
         return;
       }
       
+      if (category === "") {
+        alert('Please select a category');
+        return;
+      }
+      
       // Update product
       const updates = {
         title: name,
-        price: parseInt(price),
+        price: parseInt(price) || 0,
         deliveryCharge: parseInt(deliveryCharge) || 0,
         stock: parseInt(stock) || 0,
         desc: desc,
@@ -2731,6 +3418,10 @@
           }
           
           alert('Product updated successfully!');
+        })
+        .catch(error => {
+          console.error('Error updating product:', error);
+          alert('Error updating product');
         });
     }
 
@@ -2758,7 +3449,199 @@
           }
           
           alert('Product deleted successfully!');
+        })
+        .catch(error => {
+          console.error('Error deleting product:', error);
+          alert('Error deleting product');
         });
+    }
+
+    // Edit similar products (NEW FUNCTION)
+    function editSimilarProducts(mainProductId) {
+      const similarProductsRef = database.ref('similarProducts');
+      const productsRef = database.ref('products');
+      
+      Promise.all([
+        new Promise(resolve => similarProductsRef.child(mainProductId).once('value', snapshot => resolve(snapshot.val()))),
+        new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val())))
+      ]).then(([similarProducts, productsData]) => {
+        let products = [];
+        
+        if (productsData) {
+          products = Object.entries(productsData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+        }
+        
+        allProductsForSimilar = products;
+        
+        if (!similarProducts) {
+          alert('Similar products not found for this product');
+          return;
+        }
+        
+        // Set main product ID
+        document.getElementById('editMainProductId').value = mainProductId;
+        
+        // Load main product info
+        const mainProduct = products.find(p => p.id === mainProductId);
+        const editProductInfo = document.getElementById('editProductInfo');
+        
+        if (mainProduct) {
+          const images = mainProduct.images || [];
+          const mainImage = images.length > 0 ? images[0] : '';
+          
+          editProductInfo.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 15px;">
+              <img src="${mainImage}" width="60" height="60" style="border-radius: 4px; object-fit: cover;">
+              <div>
+                <h4 style="margin: 0 0 5px 0;">${mainProduct.title || 'No Name'}</h4>
+                <p style="margin: 0; color: #64748b;">${mainProduct.category || 'Uncategorized'} | ₹${mainProduct.price || 0} | Stock: ${mainProduct.stock || 0}</p>
+              </div>
+            </div>
+          `;
+        }
+        
+        // Populate similar products multi-select
+        const editSimilarProductsSelect = document.getElementById('editSimilarProductsSelect');
+        editSimilarProductsSelect.innerHTML = products
+          .filter(p => p.id !== mainProductId)
+          .map(product => {
+            const isSelected = similarProducts.similarProductIds && similarProducts.similarProductIds.includes(product.id);
+            return `<option value="${product.id}" ${isSelected ? 'selected' : ''}>${product.title || 'No Name'} (₹${product.price || 0}) - ${product.category || 'Uncategorized'}</option>`;
+          }).join('');
+        
+        // Update preview
+        updateEditSelectedSimilarProductsPreview();
+        
+        // Show modal
+        document.getElementById('editSimilarProductsModal').classList.add('active');
+      }).catch(error => {
+        console.error('Error loading similar products for edit:', error);
+        alert('Error loading similar products');
+      });
+    }
+
+    // Update edit selected products preview (NEW FUNCTION)
+    function updateEditSelectedSimilarProductsPreview() {
+      const selectElement = document.getElementById('editSimilarProductsSelect');
+      const selectedOptions = Array.from(selectElement.selectedOptions);
+      const previewDiv = document.getElementById('editSelectedSimilarProductsPreview');
+      
+      previewDiv.innerHTML = '';
+      
+      selectedOptions.forEach(option => {
+        const productId = option.value;
+        const product = allProductsForSimilar.find(p => p.id === productId);
+        
+        if (product) {
+          const images = product.images || [];
+          const mainImage = images.length > 0 ? images[0] : '';
+          
+          const chip = document.createElement('div');
+          chip.className = 'similar-product-chip';
+          chip.innerHTML = `
+            <img src="${mainImage}" alt="${product.title || 'No Name'}">
+            <span>${product.title || 'No Name'}</span>
+            <button class="remove-chip" onclick="removeFromEditSimilarSelection('${productId}')">&times;</button>
+          `;
+          previewDiv.appendChild(chip);
+        }
+      });
+    }
+
+    // Remove from edit selection (NEW FUNCTION)
+    function removeFromEditSimilarSelection(productId) {
+      const selectElement = document.getElementById('editSimilarProductsSelect');
+      const option = Array.from(selectElement.options).find(opt => opt.value === productId);
+      if (option) {
+        option.selected = false;
+        updateEditSelectedSimilarProductsPreview();
+      }
+    }
+
+    // Update similar products (NEW FUNCTION)
+    function updateSimilarProducts() {
+      const mainProductId = document.getElementById('editMainProductId').value;
+      const editSimilarProductsSelect = document.getElementById('editSimilarProductsSelect');
+      const selectedOptions = Array.from(editSimilarProductsSelect.selectedOptions);
+      
+      const similarProductIds = selectedOptions.map(option => option.value);
+      
+      // Check if main product is not in similar products
+      if (similarProductIds.includes(mainProductId)) {
+        alert('Main product cannot be in similar products list');
+        return;
+      }
+      
+      const similarProductsRef = database.ref('similarProducts');
+      
+      // Update similar products entry
+      const updates = {
+        similarProductIds: similarProductIds,
+        updatedAt: Date.now()
+      };
+      
+      similarProductsRef.child(mainProductId).update(updates)
+        .then(() => {
+          // Close modal
+          document.getElementById('editSimilarProductsModal').classList.remove('active');
+          
+          // Refresh similar products list
+          loadSimilarProducts();
+          
+          alert('Similar products updated successfully!');
+        })
+        .catch(error => {
+          console.error('Error updating similar products:', error);
+          alert('Error updating similar products');
+        });
+    }
+
+    // Delete similar products confirmation (NEW FUNCTION)
+    function deleteSimilarProductsConfirm(mainProductId) {
+      if (confirm('Are you sure you want to delete all similar product links for this product?')) {
+        deleteSimilarProductsEntry(mainProductId);
+      }
+    }
+
+    // Delete similar products entry (NEW FUNCTION)
+    function deleteSimilarProductsEntry(mainProductId) {
+      const similarProductsRef = database.ref('similarProducts');
+      
+      similarProductsRef.child(mainProductId).remove()
+        .then(() => {
+          loadSimilarProducts();
+          alert('Similar products deleted successfully!');
+        })
+        .catch(error => {
+          console.error('Error deleting similar products:', error);
+          alert('Error deleting similar products');
+        });
+    }
+
+    // Delete similar products (from edit modal) (NEW FUNCTION)
+    function deleteSimilarProducts() {
+      const mainProductId = document.getElementById('editMainProductId').value;
+      
+      if (confirm('Are you sure you want to remove all similar product links?')) {
+        const similarProductsRef = database.ref('similarProducts');
+        
+        similarProductsRef.child(mainProductId).remove()
+          .then(() => {
+            // Close modal
+            document.getElementById('editSimilarProductsModal').classList.remove('active');
+            
+            // Refresh similar products list
+            loadSimilarProducts();
+            
+            alert('Similar products removed successfully!');
+          })
+          .catch(error => {
+            console.error('Error removing similar products:', error);
+            alert('Error removing similar products');
+          });
+      }
     }
 
     // Edit category
@@ -2767,21 +3650,31 @@
       alert('Edit category functionality would be implemented here');
     }
 
-    // Delete category confirmation - FIXED: Now actually deletes the category
+    // Delete category confirmation
     function deleteCategoryConfirm(categoryId) {
       if (confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
         deleteCategory(categoryId);
       }
     }
 
-    // Delete category - FIXED: Now actually deletes the category
+    // Delete category
     function deleteCategory(categoryId) {
       const categoriesRef = database.ref('categories');
       
       categoriesRef.child(categoryId).remove()
         .then(() => {
+          // Remove from local array
+          allCategories = allCategories.filter(cat => cat.id !== categoryId);
+          
+          // Update dropdowns
+          updateCategoryDropdowns();
+          
           loadCategories();
           alert('Category deleted successfully!');
+        })
+        .catch(error => {
+          console.error('Error deleting category:', error);
+          alert('Error deleting category');
         });
     }
 
@@ -2791,14 +3684,14 @@
       alert('Edit banner functionality would be implemented here');
     }
 
-    // Delete banner confirmation - FIXED: Now actually deletes the banner
+    // Delete banner confirmation
     function deleteBannerConfirm(bannerId) {
       if (confirm('Are you sure you want to delete this banner? This action cannot be undone.')) {
         deleteBanner(bannerId);
       }
     }
 
-    // Delete banner - FIXED: Now actually deletes the banner
+    // Delete banner
     function deleteBanner(bannerId) {
       const bannersRef = database.ref('banners');
       
@@ -2806,6 +3699,10 @@
         .then(() => {
           loadBanners();
           alert('Banner deleted successfully!');
+        })
+        .catch(error => {
+          console.error('Error deleting banner:', error);
+          alert('Error deleting banner');
         });
     }
 
@@ -2818,8 +3715,18 @@
         new Promise(resolve => ordersRef.once('value', snapshot => resolve(snapshot.val()))),
         new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val())))
       ]).then(([ordersData, productsData]) => {
-        const orders = ordersData ? Object.values(ordersData) : [];
-        const products = productsData ? Object.values(productsData) : [];
+        let orders = [];
+        let products = [];
+        
+        if (ordersData) {
+          orders = Object.values(ordersData);
+        }
+        
+        if (productsData) {
+          products = Object.entries(productsData).map(([key, value]) => {
+            return { ...value, id: value.id || key };
+          });
+        }
         
         if (orders.length === 0) {
           alert('No orders to export');
@@ -2831,7 +3738,7 @@
         
         orders.forEach(order => {
           const product = products.find(p => p.id === order.productId);
-          csv += `"${order.id || 'N/A'}","${order.fullname}","${product ? product.title : 'Unknown'}","${order.qty}","${product ? product.price * order.qty : 'N/A'}","${order.status || 'Pending'}","${new Date(order.timestamp).toLocaleDateString()}"\n`;
+          csv += `"${order.id || 'N/A'}","${order.fullname || 'N/A'}","${product ? product.title : 'Unknown'}","${order.qty || 1}","${product ? product.price * (order.qty || 1) : 'N/A'}","${order.status || 'Pending'}","${order.timestamp ? new Date(order.timestamp).toLocaleDateString() : 'N/A'}"\n`;
         });
         
         // Create download link
@@ -2843,6 +3750,9 @@
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+      }).catch(error => {
+        console.error('Error exporting orders:', error);
+        alert('Error exporting orders');
       });
     }
 
@@ -2851,7 +3761,11 @@
       const ordersRef = database.ref('orders');
       ordersRef.once('value', snapshot => {
         const ordersData = snapshot.val();
-        const orders = ordersData ? Object.values(ordersData) : [];
+        let orders = [];
+        
+        if (ordersData) {
+          orders = Object.values(ordersData);
+        }
         
         if (orders.length === 0) {
           alert('No customer data to export');
@@ -2861,15 +3775,15 @@
         // Extract unique customers based on mobile number
         const customersMap = {};
         orders.forEach(order => {
-          if (!customersMap[order.mobile]) {
+          if (order.mobile && !customersMap[order.mobile]) {
             customersMap[order.mobile] = {
-              name: order.fullname,
+              name: order.fullname || 'Unknown',
               mobile: order.mobile,
               email: order.email || 'N/A',
-              location: `${order.city}, ${order.state}`,
+              location: `${order.city || ''}, ${order.state || ''}`,
               orderCount: 1
             };
-          } else {
+          } else if (order.mobile) {
             customersMap[order.mobile].orderCount++;
           }
         });
@@ -2892,6 +3806,9 @@
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+      }).catch(error => {
+        console.error('Error exporting customers:', error);
+        alert('Error exporting customers');
       });
     }
 
@@ -2938,6 +3855,9 @@
       } else if (type === 'customers') {
         currentCustomersPage = page;
         loadCustomers();
+      } else if (type === 'similar-products') {
+        currentSimilarProductsPage = page;
+        loadSimilarProducts();
       }
       
       // Scroll to top
