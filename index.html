@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Buyzo Cart - Admin Panel</title>
+  <title>Buyzo Cart - Admin Panel v2.0</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
   
   <style>
     :root {
@@ -20,7 +21,7 @@
       --danger: #ef4444;
       --light: #f8fafc;
       --dark: #0f172a;
-      --sidebar-width: 250px;
+      --sidebar-width: 280px;
       --header-height: 70px;
     }
 
@@ -265,7 +266,55 @@
       font-size: 0.9rem;
     }
 
-    /* Earnings Section */
+    /* Search Tags Section */
+    .search-tags-section {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .search-tags-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .tag-item {
+      background: #f1f5f9;
+      padding: 8px 16px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .tag-item .remove-tag {
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .popular-search-item {
+      background: #f1f5f9;
+      padding: 8px 16px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
     .earnings-section {
       margin-bottom: 24px;
     }
@@ -377,7 +426,6 @@
       background-color: #f8fafc;
     }
 
-    /* Product Image in Table */
     .product-image {
       width: 50px;
       height: 50px;
@@ -463,23 +511,6 @@
       flex: 1;
     }
 
-    /* Currency Input */
-    .currency-input {
-      position: relative;
-    }
-
-    .currency-symbol {
-      position: absolute;
-      left: 12px;
-      top: 10px;
-      color: var(--secondary);
-      font-weight: 500;
-    }
-
-    .currency-input .form-control {
-      padding-left: 30px;
-    }
-
     /* Modal */
     .modal {
       display: none;
@@ -540,6 +571,7 @@
       display: flex;
       border-bottom: 1px solid #e2e8f0;
       margin-bottom: 20px;
+      flex-wrap: wrap;
     }
 
     .tab {
@@ -591,24 +623,6 @@
       color: #1e40af;
     }
 
-    /* Image Preview */
-    .image-preview {
-      width: 100px;
-      height: 100px;
-      border: 1px dashed #d1d5db;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      margin-top: 10px;
-    }
-
-    .image-preview img {
-      max-width: 100%;
-      max-height: 100%;
-    }
-
     /* Search and Filters */
     .search-box {
       display: flex;
@@ -652,6 +666,7 @@
       justify-content: center;
       margin-top: 20px;
       gap: 5px;
+      flex-wrap: wrap;
     }
 
     .page-item {
@@ -667,52 +682,6 @@
       border-color: var(--primary);
     }
 
-    /* Multiple Image Upload */
-    .image-upload-container {
-      border: 1px dashed #d1d5db;
-      border-radius: 6px;
-      padding: 15px;
-      margin-top: 10px;
-    }
-
-    .image-preview-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .image-preview-item {
-      position: relative;
-      width: 80px;
-      height: 80px;
-    }
-
-    .image-preview-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 4px;
-      border: 1px solid #e2e8f0;
-    }
-
-    .image-preview-item .remove-image {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      background: var(--danger);
-      color: white;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      cursor: pointer;
-      border: none;
-    }
-
     /* Checkbox */
     .checkbox-group {
       display: flex;
@@ -725,51 +694,20 @@
       width: auto;
     }
 
-    /* Similar Products Styles */
-    .selected-similar-products {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 15px;
-      padding: 10px;
-      border: 1px dashed #d1d5db;
-      border-radius: 6px;
-      min-height: 60px;
+    /* Mobile Overlay */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
     }
 
-    .similar-product-chip {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #e0f2fe;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 14px;
-    }
-
-    .similar-product-chip img {
-      width: 30px;
-      height: 30px;
-      border-radius: 4px;
-      object-fit: cover;
-    }
-
-    .similar-product-chip .remove-chip {
-      background: none;
-      border: none;
-      color: #64748b;
-      cursor: pointer;
-      font-size: 16px;
-      padding: 0;
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .similar-product-chip .remove-chip:hover {
-      color: #ef4444;
+    .sidebar-overlay.active {
+      display: block;
     }
 
     /* Responsive */
@@ -792,6 +730,10 @@
       }
       
       .sidebar-close {
+        display: block;
+      }
+
+      .sidebar-overlay.active {
         display: block;
       }
     }
@@ -817,9 +759,17 @@
       .earnings-cards {
         grid-template-columns: 1fr;
       }
+
+      .tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+      }
+
+      .tab {
+        white-space: nowrap;
+      }
     }
 
-    /* Animations */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
@@ -827,6 +777,243 @@
 
     .fade-in {
       animation: fadeIn 0.5s ease;
+    }
+
+    /* Order Details Modal Styles */
+    .order-details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .order-detail-item {
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 6px;
+    }
+
+    .order-detail-label {
+      font-size: 12px;
+      color: var(--secondary);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .order-detail-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .order-detail-value.address {
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    .order-products-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+
+    .order-products-table th {
+      background: #f1f5f9;
+      font-size: 13px;
+      padding: 8px;
+    }
+
+    .order-products-table td {
+      padding: 8px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .order-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-top: 2px solid #e2e8f0;
+      margin-top: 12px;
+      font-weight: 600;
+    }
+
+    .order-total-label {
+      font-size: 16px;
+    }
+
+    .order-total-value {
+      font-size: 18px;
+      color: var(--primary);
+    }
+
+    .order-status-timeline {
+      display: flex;
+      justify-content: space-between;
+      margin: 24px 0 16px;
+      padding: 0 8px;
+    }
+
+    .status-step {
+      flex: 1;
+      text-align: center;
+      position: relative;
+    }
+
+    .status-step:not(:last-child):before {
+      content: '';
+      position: absolute;
+      top: 15px;
+      right: -50%;
+      width: 100%;
+      height: 2px;
+      background: #e2e8f0;
+      z-index: 0;
+    }
+
+    .status-step.completed:not(:last-child):before {
+      background: var(--success);
+    }
+
+    .status-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .status-step.completed .status-icon {
+      background: var(--success);
+      color: white;
+    }
+
+    .status-step.active .status-icon {
+      background: var(--primary);
+      color: white;
+    }
+
+    .status-label {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .date-filter-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .date-filter-buttons .btn {
+      min-width: 100px;
+      justify-content: center;
+    }
+
+    .btn-outline {
+      background: white;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-outline.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .date-range {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .date-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .date-input-group label {
+      margin-bottom: 0;
+      white-space: nowrap;
+    }
+
+    .date-input-group input {
+      flex: 1;
+    }
+
+    /* Image Preview */
+    .image-preview-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .image-preview-item {
+      position: relative;
+      width: 80px;
+      height: 80px;
+    }
+
+    .image-preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .image-preview-item .remove-image {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      width: 20px;
+      height: 20px;
+      background: var(--danger);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Loading Spinner */
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
   </style>
 </head>
@@ -836,12 +1023,12 @@
     <div class="login-card">
       <div class="login-logo">
         <h1 class="login-title">Buyzo Cart</h1>
-        <p class="login-subtitle">Admin Panel Login</p>
+        <p class="login-subtitle">Admin Panel v2.0</p>
       </div>
       
       <div class="form-group">
         <label for="adminEmail">Email</label>
-        <input type="email" id="adminEmail" placeholder="admin@example.com" class="form-control">
+        <input type="email" id="adminEmail" placeholder="admin@buyzo.com" class="form-control">
       </div>
       
       <div class="form-group">
@@ -849,11 +1036,19 @@
         <input type="password" id="adminPassword" placeholder="Enter your password" class="form-control">
       </div>
       
+      <div class="checkbox-group">
+        <input type="checkbox" id="rememberMe">
+        <label for="rememberMe">Remember me</label>
+      </div>
+      
       <button class="btn btn-primary" style="width: 100%" onclick="adminLogin()">Login</button>
     </div>
   </div>
 
-  <!-- Admin Panel (initially hidden) -->
+  <!-- Sidebar Overlay (for mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- Admin Panel -->
   <div id="adminPanel" style="display: none">
     <!-- Sidebar -->
     <div class="sidebar" id="adminSidebar">
@@ -869,6 +1064,8 @@
         <li><a href="#" class="menu-item" data-tab="orders"><i class="fas fa-shopping-bag"></i><span>Orders</span></a></li>
         <li><a href="#" class="menu-item" data-tab="trending"><i class="fas fa-fire"></i><span>Trending Products</span></a></li>
         <li><a href="#" class="menu-item" data-tab="similar-products"><i class="fas fa-random"></i><span>Similar Products</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="search-tags"><i class="fas fa-search"></i><span>Search Tags</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="popular-searches"><i class="fas fa-chart-line"></i><span>Popular Searches</span></a></li>
         <li><a href="#" class="menu-item" data-tab="customers"><i class="fas fa-users"></i><span>Customers</span></a></li>
         <li><a href="#" class="menu-item" data-tab="banners"><i class="fas fa-image"></i><span>Banners</span></a></li>
         <li><a href="#" class="menu-item" data-tab="policies"><i class="fas fa-file-alt"></i><span>Policies</span></a></li>
@@ -935,6 +1132,32 @@
                 <h3 id="trendingProducts">0</h3>
                 <p>Trending Products</p>
               </div>
+            </div>
+          </div>
+
+          <!-- Search Tags Overview -->
+          <div class="search-tags-section">
+            <div class="search-tags-header">
+              <h3>Search Tags Overview</h3>
+              <button class="btn btn-primary" onclick="showTab('search-tags')">
+                <i class="fas fa-edit"></i> Manage Tags
+              </button>
+            </div>
+            <div id="dashboardSearchTags" class="tags-container">
+              <!-- Will be populated by JavaScript -->
+            </div>
+          </div>
+
+          <!-- Popular Searches Overview -->
+          <div class="search-tags-section">
+            <div class="search-tags-header">
+              <h3>Popular Searches Overview</h3>
+              <button class="btn btn-primary" onclick="showTab('popular-searches')">
+                <i class="fas fa-edit"></i> Manage Searches
+              </button>
+            </div>
+            <div id="dashboardPopularSearches" class="tags-container">
+              <!-- Will be populated by JavaScript -->
             </div>
           </div>
 
@@ -1029,7 +1252,6 @@
                       <th>Name</th>
                       <th>Category</th>
                       <th>Price</th>
-                      <th>Delivery Charge</th>
                       <th>Stock</th>
                       <th>Trending</th>
                       <th>Status</th>
@@ -1041,9 +1263,7 @@
                   </tbody>
                 </table>
               </div>
-              <div class="pagination" id="productsPagination">
-                <!-- Pagination will be generated here -->
-              </div>
+              <div class="pagination" id="productsPagination"></div>
             </div>
           </div>
         </div>
@@ -1086,10 +1306,31 @@
               <button class="btn btn-primary" onclick="exportOrders()"><i class="fas fa-download"></i> Export</button>
             </div>
             <div class="card-body">
+              <!-- Date Filter Section -->
+              <div class="date-filter-buttons">
+                <button class="btn btn-outline active" onclick="filterOrdersByDate('all', this)">All Orders</button>
+                <button class="btn btn-outline" onclick="filterOrdersByDate('today', this)">Today</button>
+                <button class="btn btn-outline" onclick="filterOrdersByDate('tomorrow', this)">Tomorrow</button>
+              </div>
+              
+              <div class="date-range">
+                <div class="date-input-group">
+                  <label for="startDate">From:</label>
+                  <input type="date" id="startDate" class="form-control">
+                </div>
+                <div class="date-input-group">
+                  <label for="endDate">To:</label>
+                  <input type="date" id="endDate" class="form-control">
+                </div>
+                <button class="btn btn-primary" onclick="filterOrdersByCustomDate()">Apply</button>
+                <button class="btn btn-secondary" onclick="clearDateFilter()">Clear</button>
+              </div>
+              
               <div class="search-box">
                 <input type="text" class="form-control" id="orderSearch" placeholder="Search orders...">
                 <button class="btn btn-primary" onclick="filterOrders()">Search</button>
               </div>
+              
               <div class="table-responsive">
                 <table id="ordersTable">
                   <thead>
@@ -1119,9 +1360,7 @@
                 </select>
                 <button class="btn btn-primary" onclick="applyBulkAction()">Apply</button>
               </div>
-              <div class="pagination" id="ordersPagination">
-                <!-- Pagination will be generated here -->
-              </div>
+              <div class="pagination" id="ordersPagination"></div>
             </div>
           </div>
         </div>
@@ -1154,7 +1393,7 @@
           </div>
         </div>
         
-        <!-- Similar Products Tab (NEW ADDITION) -->
+        <!-- Similar Products Tab -->
         <div class="tab-content" id="similar-products">
           <div class="card">
             <div class="card-header">
@@ -1184,8 +1423,88 @@
                   </tbody>
                 </table>
               </div>
-              <div class="pagination" id="similarProductsPagination">
-                <!-- Pagination will be generated here -->
+              <div class="pagination" id="similarProductsPagination"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Search Tags Tab -->
+        <div class="tab-content" id="search-tags">
+          <div class="card">
+            <div class="card-header">
+              <h2>Search Tags Management</h2>
+              <button class="btn btn-primary" onclick="showAddSearchTagModal()"><i class="fas fa-plus"></i> Add Search Tag</button>
+            </div>
+            <div class="card-body">
+              <p style="margin-bottom: 16px; color: var(--secondary);">
+                Search tags appear as clickable suggestions when users search on the website.
+              </p>
+              
+              <div class="search-tags-section" style="background: none; padding: 0;">
+                <div class="form-group">
+                  <label>Current Search Tags</label>
+                  <div id="searchTagsList" class="tags-container">
+                    <!-- Will be populated by JavaScript -->
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label>Bulk Add Tags</label>
+                  <div class="form-row">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <textarea id="bulkSearchTags" class="form-control" rows="3" placeholder="Enter tags separated by commas..."></textarea>
+                    </div>
+                    <div>
+                      <button class="btn btn-primary" onclick="bulkAddSearchTags()">Add All</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Popular Searches Tab -->
+        <div class="tab-content" id="popular-searches">
+          <div class="card">
+            <div class="card-header">
+              <h2>Popular Searches Management</h2>
+              <button class="btn btn-primary" onclick="showAddPopularSearchModal()"><i class="fas fa-plus"></i> Add Popular Search</button>
+            </div>
+            <div class="card-body">
+              <p style="margin-bottom: 16px; color: var(--secondary);">
+                Popular searches appear in the search panel and help users discover trending products.
+              </p>
+              
+              <div class="search-tags-section" style="background: none; padding: 0;">
+                <div class="form-group">
+                  <label>Current Popular Searches</label>
+                  <div id="popularSearchesList" class="tags-container">
+                    <!-- Will be populated by JavaScript -->
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label>Bulk Add Searches</label>
+                  <div class="form-row">
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <textarea id="bulkPopularSearches" class="form-control" rows="3" placeholder="Enter searches separated by commas..."></textarea>
+                    </div>
+                    <div>
+                      <button class="btn btn-primary" onclick="bulkAddPopularSearches()">Add All</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Auto-generate from Products</label>
+                  <button class="btn btn-success" onclick="generatePopularSearchesFromProducts()">
+                    <i class="fas fa-magic"></i> Generate from Top Products
+                  </button>
+                  <p style="margin-top: 8px; font-size: 12px; color: var(--secondary);">
+                    This will add popular product names and categories as popular searches.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -1220,9 +1539,7 @@
                   </tbody>
                 </table>
               </div>
-              <div class="pagination" id="customersPagination">
-                <!-- Pagination will be generated here -->
-              </div>
+              <div class="pagination" id="customersPagination"></div>
             </div>
           </div>
         </div>
@@ -1345,6 +1662,21 @@
                   </select>
                 </div>
                 
+                <div class="form-group">
+                  <label for="maxItemsPerOrder">Max Items Per Order</label>
+                  <input type="number" id="maxItemsPerOrder" class="form-control" value="3">
+                </div>
+                
+                <div class="form-group">
+                  <label for="freeShippingThreshold">Free Shipping Above (₹)</label>
+                  <input type="number" id="freeShippingThreshold" class="form-control" value="999">
+                </div>
+                
+                <div class="form-group">
+                  <label for="paymentGatewayCharge">Payment Gateway Charge (%)</label>
+                  <input type="number" id="paymentGatewayCharge" class="form-control" value="2" step="0.1">
+                </div>
+                
                 <button type="submit" class="btn btn-primary">Save Settings</button>
               </form>
             </div>
@@ -1354,7 +1686,7 @@
     </div>
   </div>
 
-  <!-- Add Product Modal -->
+  <!-- Add Product Modal (FIXED) -->
   <div class="modal" id="addProductModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1363,59 +1695,49 @@
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="productName">Product Name</label>
+          <label for="productName">Product Name *</label>
           <input type="text" id="productName" class="form-control" placeholder="Enter product name">
         </div>
         
-        <div class="form-group currency-input">
-          <label for="productPrice">Price</label>
-          <span class="currency-symbol">₹</span>
-          <input type="number" id="productPrice" class="form-control" placeholder="Enter price">
-        </div>
-        
-        <div class="form-group currency-input">
-          <label for="productDeliveryCharge">Delivery Charge</label>
-          <span class="currency-symbol">₹</span>
-          <input type="number" id="productDeliveryCharge" class="form-control" placeholder="Enter delivery charge">
-        </div>
-        
-        <div class="form-group">
-          <label for="productStock">Stock Quantity</label>
-          <input type="number" id="productStock" class="form-control" placeholder="Enter stock quantity">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="productPrice">Price (₹) *</label>
+            <input type="number" id="productPrice" class="form-control" placeholder="Enter price" min="0">
+          </div>
+          
+          <div class="form-group">
+            <label for="productStock">Stock Quantity *</label>
+            <input type="number" id="productStock" class="form-control" placeholder="Enter stock" min="0">
+          </div>
         </div>
         
         <div class="form-group">
-          <label for="productCategory">Category</label>
+          <label for="productCategory">Category *</label>
           <select id="productCategory" class="form-control">
             <option value="">-- Select Category --</option>
-            <!-- Categories will be populated by JavaScript -->
           </select>
         </div>
         
         <div class="form-group">
-          <label for="productDesc">Short Description</label>
+          <label for="productDesc">Short Description *</label>
           <input type="text" id="productDesc" class="form-control" placeholder="Enter short description">
         </div>
         
         <div class="form-group">
           <label for="productFullDesc">Full Description</label>
-          <textarea id="productFullDesc" class="form-control" placeholder="Enter full description"></textarea>
+          <textarea id="productFullDesc" class="form-control" placeholder="Enter full description" rows="3"></textarea>
         </div>
         
         <div class="form-group">
-          <label>Sizes (comma separated)</label>
+          <label for="productSizes">Sizes (comma separated)</label>
           <input type="text" id="productSizes" class="form-control" placeholder="S, M, L, XL">
         </div>
         
         <div class="form-group">
-          <label>Product Images</label>
-          <div class="image-upload-container">
-            <input type="file" id="productImages" class="form-control" multiple accept="image/*">
-            <small class="text-muted">You can select multiple images</small>
-            <div class="image-preview-container" id="productImagePreviews">
-              <!-- Image previews will be added here -->
-            </div>
-          </div>
+          <label>Product Images *</label>
+          <input type="file" id="productImages" class="form-control" multiple accept="image/*" onchange="handleProductImageUpload(event)">
+          <div class="image-preview-container" id="productImagePreviews"></div>
+          <small class="text-muted">You can select multiple images</small>
         </div>
         
         <div class="checkbox-group">
@@ -1430,7 +1752,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary close">Cancel</button>
-        <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+        <button class="btn btn-primary" onclick="saveProduct()" id="saveProductBtn">Save Product</button>
       </div>
     </div>
   </div>
@@ -1444,21 +1766,19 @@
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="categoryName">Category Name</label>
+          <label for="categoryName">Category Name *</label>
           <input type="text" id="categoryName" class="form-control" placeholder="Enter category name">
         </div>
         
         <div class="form-group">
           <label for="categoryDescription">Description</label>
-          <textarea id="categoryDescription" class="form-control" placeholder="Enter category description"></textarea>
+          <textarea id="categoryDescription" class="form-control" placeholder="Enter category description" rows="3"></textarea>
         </div>
         
         <div class="form-group">
-          <label for="categoryImage">Category Image</label>
-          <input type="file" id="categoryImage" class="form-control">
-          <div class="image-preview" id="categoryImagePreview">
-            <span>No image selected</span>
-          </div>
+          <label for="categoryImage">Category Image *</label>
+          <input type="file" id="categoryImage" class="form-control" accept="image/*" onchange="handleCategoryImageUpload(event)">
+          <div class="image-preview" id="categoryImagePreview" style="margin-top: 10px;"></div>
         </div>
         
         <div class="checkbox-group">
@@ -1482,7 +1802,7 @@
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="bannerTitle">Banner Title</label>
+          <label for="bannerTitle">Banner Title *</label>
           <input type="text" id="bannerTitle" class="form-control" placeholder="Enter banner title">
         </div>
         
@@ -1492,11 +1812,9 @@
         </div>
         
         <div class="form-group">
-          <label for="bannerImage">Banner Image</label>
-          <input type="file" id="bannerImage" class="form-control">
-          <div class="image-preview" id="bannerImagePreview">
-            <span>No image selected</span>
-          </div>
+          <label for="bannerImage">Banner Image *</label>
+          <input type="file" id="bannerImage" class="form-control" accept="image/*" onchange="handleBannerImageUpload(event)">
+          <div class="image-preview" id="bannerImagePreview" style="margin-top: 10px;"></div>
         </div>
         
         <div class="checkbox-group">
@@ -1511,7 +1829,7 @@
     </div>
   </div>
 
-  <!-- Add Similar Products Modal (NEW ADDITION) -->
+  <!-- Add Similar Products Modal -->
   <div class="modal" id="addSimilarProductsModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1520,10 +1838,9 @@
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="mainProductSelect">Select Main Product</label>
+          <label for="mainProductSelect">Select Main Product *</label>
           <select id="mainProductSelect" class="form-control" onchange="loadProductDetails(this.value)">
             <option value="">-- Select Product --</option>
-            <!-- Options will be populated by JavaScript -->
           </select>
         </div>
         
@@ -1542,15 +1859,11 @@
           <div style="margin-bottom: 10px;">
             <input type="text" id="searchSimilarProducts" class="form-control" placeholder="Search products..." onkeyup="searchProductsForSimilar()">
           </div>
-          <select id="similarProductsSelect" class="form-control" multiple style="height: 200px;">
-            <!-- Options will be populated by JavaScript -->
-          </select>
+          <select id="similarProductsSelect" class="form-control" multiple style="height: 200px;"></select>
           <small class="text-muted">Hold Ctrl/Cmd to select multiple products</small>
         </div>
         
-        <div class="selected-similar-products" id="selectedSimilarProductsPreview">
-          <!-- Selected products will be shown here -->
-        </div>
+        <div class="selected-similar-products" id="selectedSimilarProductsPreview"></div>
         
         <div class="checkbox-group">
           <input type="checkbox" id="autoSuggestSimilar" checked>
@@ -1576,46 +1889,40 @@
         
         <div class="form-group">
           <label for="editProductName">Product Name</label>
-          <input type="text" id="editProductName" class="form-control" placeholder="Enter product name">
+          <input type="text" id="editProductName" class="form-control">
         </div>
         
-        <div class="form-group currency-input">
-          <label for="editProductPrice">Price</label>
-          <span class="currency-symbol">₹</span>
-          <input type="number" id="editProductPrice" class="form-control" placeholder="Enter price">
-        </div>
-        
-        <div class="form-group currency-input">
-          <label for="editProductDeliveryCharge">Delivery Charge</label>
-          <span class="currency-symbol">₹</span>
-          <input type="number" id="editProductDeliveryCharge" class="form-control" placeholder="Enter delivery charge">
-        </div>
-        
-        <div class="form-group">
-          <label for="editProductStock">Stock Quantity</label>
-          <input type="number" id="editProductStock" class="form-control" placeholder="Enter stock quantity">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="editProductPrice">Price (₹)</label>
+            <input type="number" id="editProductPrice" class="form-control">
+          </div>
+          
+          <div class="form-group">
+            <label for="editProductStock">Stock Quantity</label>
+            <input type="number" id="editProductStock" class="form-control">
+          </div>
         </div>
         
         <div class="form-group">
           <label for="editProductCategory">Category</label>
           <select id="editProductCategory" class="form-control">
             <option value="">-- Select Category --</option>
-            <!-- Categories will be populated by JavaScript -->
           </select>
         </div>
         
         <div class="form-group">
           <label for="editProductDesc">Short Description</label>
-          <input type="text" id="editProductDesc" class="form-control" placeholder="Enter short description">
+          <input type="text" id="editProductDesc" class="form-control">
         </div>
         
         <div class="form-group">
           <label for="editProductFullDesc">Full Description</label>
-          <textarea id="editProductFullDesc" class="form-control" placeholder="Enter full description"></textarea>
+          <textarea id="editProductFullDesc" class="form-control" rows="3"></textarea>
         </div>
         
         <div class="form-group">
-          <label>Sizes (comma separated)</label>
+          <label for="editProductSizes">Sizes (comma separated)</label>
           <input type="text" id="editProductSizes" class="form-control" placeholder="S, M, L, XL">
         </div>
         
@@ -1630,13 +1937,13 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-danger" onclick="deleteProduct()">Delete Product</button>
+        <button class="btn btn-danger" onclick="deleteProductConfirm()">Delete Product</button>
         <button class="btn btn-primary" onclick="updateProduct()">Update Product</button>
       </div>
     </div>
   </div>
 
-  <!-- Edit Similar Products Modal (NEW ADDITION) -->
+  <!-- Edit Similar Products Modal -->
   <div class="modal" id="editSimilarProductsModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1646,24 +1953,18 @@
       <div class="modal-body">
         <input type="hidden" id="editMainProductId">
         
-        <div class="selected-product-info" id="editProductInfo" style="background: #f8fafc; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-          <!-- Product info will be loaded here -->
-        </div>
+        <div class="selected-product-info" id="editProductInfo" style="background: #f8fafc; padding: 15px; border-radius: 6px; margin-bottom: 20px;"></div>
         
         <div class="form-group">
           <label for="editSimilarProductsSelect">Similar Products</label>
           <div style="margin-bottom: 10px;">
             <input type="text" id="editSearchSimilarProducts" class="form-control" placeholder="Search products..." onkeyup="editSearchProductsForSimilar()">
           </div>
-          <select id="editSimilarProductsSelect" class="form-control" multiple style="height: 200px;">
-            <!-- Options will be populated by JavaScript -->
-          </select>
+          <select id="editSimilarProductsSelect" class="form-control" multiple style="height: 200px;"></select>
           <small class="text-muted">Hold Ctrl/Cmd to select multiple products</small>
         </div>
         
-        <div class="selected-similar-products" id="editSelectedSimilarProductsPreview">
-          <!-- Selected products will be shown here -->
-        </div>
+        <div class="selected-similar-products" id="editSelectedSimilarProductsPreview"></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-danger" onclick="deleteSimilarProducts()">Remove All Links</button>
@@ -1672,8 +1973,156 @@
     </div>
   </div>
 
+  <!-- Add Search Tag Modal -->
+  <div class="modal" id="addSearchTagModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add Search Tag</h3>
+        <button class="close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="searchTagName">Tag Name *</label>
+          <input type="text" id="searchTagName" class="form-control" placeholder="e.g., Summer Collection">
+        </div>
+        
+        <div class="form-group">
+          <label for="searchTagType">Tag Type</label>
+          <select id="searchTagType" class="form-control">
+            <option value="trending">Trending</option>
+            <option value="seasonal">Seasonal</option>
+            <option value="category">Category</option>
+            <option value="brand">Brand</option>
+          </select>
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="searchTagActive" checked>
+          <label for="searchTagActive">Active Tag</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary close">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSearchTag()">Save Tag</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Popular Search Modal -->
+  <div class="modal" id="addPopularSearchModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add Popular Search</h3>
+        <button class="close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="popularSearchTerm">Search Term *</label>
+          <input type="text" id="popularSearchTerm" class="form-control" placeholder="e.g., T-Shirt">
+        </div>
+        
+        <div class="form-group">
+          <label for="popularSearchCount">Search Count</label>
+          <input type="number" id="popularSearchCount" class="form-control" value="1" min="1">
+          <small class="text-muted">Number of times this term has been searched</small>
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="popularSearchActive" checked>
+          <label for="popularSearchActive">Active</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary close">Cancel</button>
+        <button class="btn btn-primary" onclick="savePopularSearch()">Save Search</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Details Modal -->
+  <div class="modal" id="orderDetailsModal">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3>Order Details <span id="orderDetailsId"></span></h3>
+        <button class="close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Status Timeline -->
+        <div class="order-status-timeline" id="orderStatusTimeline">
+          <!-- Will be populated by JavaScript -->
+        </div>
+        
+        <div class="order-details-grid">
+          <div class="order-detail-item">
+            <div class="order-detail-label">Customer Name</div>
+            <div class="order-detail-value" id="orderDetailsName"></div>
+          </div>
+          <div class="order-detail-item">
+            <div class="order-detail-label">Mobile Number</div>
+            <div class="order-detail-value" id="orderDetailsMobile"></div>
+          </div>
+          <div class="order-detail-item">
+            <div class="order-detail-label">Email</div>
+            <div class="order-detail-value" id="orderDetailsEmail"></div>
+          </div>
+          <div class="order-detail-item">
+            <div class="order-detail-label">Order Date</div>
+            <div class="order-detail-value" id="orderDetailsDate"></div>
+          </div>
+          <div class="order-detail-item" style="grid-column: span 2;">
+            <div class="order-detail-label">Shipping Address</div>
+            <div class="order-detail-value address" id="orderDetailsAddress"></div>
+          </div>
+        </div>
+        
+        <h4 style="margin: 20px 0 10px;">Order Items</h4>
+        <table class="order-products-table" id="orderProductsTable">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="orderProductsBody">
+            <!-- Will be populated by JavaScript -->
+          </tbody>
+        </table>
+        
+        <div class="order-total-row">
+          <span class="order-total-label">Subtotal:</span>
+          <span class="order-total-value" id="orderSubtotal"></span>
+        </div>
+        <div class="order-total-row">
+          <span class="order-total-label">Shipping:</span>
+          <span class="order-total-value" id="orderShipping"></span>
+        </div>
+        <div class="order-total-row">
+          <span class="order-total-label">Total Amount:</span>
+          <span class="order-total-value" id="orderTotal"></span>
+        </div>
+        
+        <div style="margin-top: 20px;">
+          <label for="orderDetailsStatus">Update Status:</label>
+          <select id="orderDetailsStatus" class="form-control" style="width: auto; margin-top: 5px;" onchange="updateOrderStatusFromDetails()">
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="printOrderDetails()"><i class="fas fa-print"></i> Print</button>
+        <button class="btn btn-secondary close">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Firebase Configuration - UPDATED WITH YOUR CONFIG
+    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCHFUx3Y1L3mvyLyDMHVKQE6eXi50_fewE",
       authDomain: "buyzocart.firebaseapp.com",
@@ -1687,6 +2136,7 @@
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
+    const storage = firebase.storage();
 
     // Admin State
     let currentAdminTab = 'dashboard';
@@ -1702,16 +2152,23 @@
     let uploadedCategoryImage = null;
     let uploadedBannerImage = null;
     
-    // Global Categories Array
+    // Global Arrays
     let allCategories = [];
-    
-    // Similar Products Variables
     let allProductsForSimilar = [];
+    let allSearchTags = [];
+    let allPopularSearches = [];
+    
+    // Date Filter State
+    let currentDateFilter = {
+      type: 'all', // 'all', 'today', 'tomorrow', 'custom'
+      startDate: null,
+      endDate: null
+    };
 
     // Initialize admin panel
     function initAdminPanel() {
       // Check if user is logged in
-      const isLoggedIn = localStorage.getItem('admin_logged_in') === 'true';
+      const isLoggedIn = localStorage.getItem('admin_logged_in') === 'true' || sessionStorage.getItem('admin_logged_in') === 'true';
       
       if (isLoggedIn) {
         document.getElementById('adminLoginPage').style.display = 'none';
@@ -1722,6 +2179,8 @@
         loadOrders();
         loadTrendingProducts();
         loadSimilarProducts();
+        loadSearchTags();
+        loadPopularSearches();
         loadCustomers();
         loadBanners();
         loadPolicies();
@@ -1740,6 +2199,10 @@
           e.preventDefault();
           if (this.dataset.tab) {
             showTab(this.dataset.tab);
+            // Close sidebar on mobile after clicking menu item
+            if (window.innerWidth <= 1024) {
+              toggleSidebar();
+            }
           }
         });
       });
@@ -1753,13 +2216,13 @@
       });
       
       // Setup search and filters
-      document.getElementById('productSearch').addEventListener('input', filterProducts);
-      document.getElementById('orderSearch').addEventListener('input', filterOrders);
-      document.getElementById('customerSearch').addEventListener('input', filterCustomers);
-      document.getElementById('similarProductsSearch').addEventListener('input', filterSimilarProducts);
+      document.getElementById('productSearch')?.addEventListener('input', filterProducts);
+      document.getElementById('orderSearch')?.addEventListener('input', filterOrders);
+      document.getElementById('customerSearch')?.addEventListener('input', filterCustomers);
+      document.getElementById('similarProductsSearch')?.addEventListener('input', filterSimilarProducts);
       
       // Select all orders checkbox
-      document.getElementById('selectAllOrders').addEventListener('change', function() {
+      document.getElementById('selectAllOrders')?.addEventListener('change', function() {
         const checkboxes = document.querySelectorAll('#ordersTableBody input[type="checkbox"]');
         checkboxes.forEach(checkbox => {
           checkbox.checked = this.checked;
@@ -1767,7 +2230,7 @@
       });
 
       // Settings form submission
-      document.getElementById('settingsForm').addEventListener('submit', function(e) {
+      document.getElementById('settingsForm')?.addEventListener('submit', function(e) {
         e.preventDefault();
         saveSettings();
       });
@@ -1794,24 +2257,19 @@
         });
       });
 
-      // Product image upload preview
-      document.getElementById('productImages').addEventListener('change', function(e) {
-        handleProductImageUpload(e);
+      // Close sidebar when clicking overlay
+      document.getElementById('sidebarOverlay')?.addEventListener('click', function() {
+        toggleSidebar();
       });
+    }
 
-      // Category image upload preview
-      document.getElementById('categoryImage').addEventListener('change', function(e) {
-        handleCategoryImageUpload(e);
-      });
-
-      // Banner image upload preview
-      document.getElementById('bannerImage').addEventListener('change', function(e) {
-        handleBannerImageUpload(e);
-      });
+    // Toggle sidebar with overlay
+    function toggleSidebar() {
+      const sidebar = document.getElementById('adminSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
       
-      // Similar products select change events
-      document.getElementById('similarProductsSelect').addEventListener('change', updateSelectedSimilarProductsPreview);
-      document.getElementById('editSimilarProductsSelect').addEventListener('change', updateEditSelectedSimilarProductsPreview);
+      sidebar.classList.toggle('active');
+      overlay.classList.toggle('active');
     }
 
     // Load categories for dropdown
@@ -1837,16 +2295,12 @@
       // Update add product modal dropdown
       const addProductCategory = document.getElementById('productCategory');
       if (addProductCategory) {
-        // Clear existing options except first one
         const firstOption = addProductCategory.options[0];
         addProductCategory.innerHTML = '';
-        if (firstOption) {
-          addProductCategory.appendChild(firstOption);
-        }
+        if (firstOption) addProductCategory.appendChild(firstOption);
         
-        // Add active categories
         allCategories.forEach(category => {
-          if (category.status === 'active') {
+          if (category.status === 'active' || category.status === undefined) {
             const option = document.createElement('option');
             option.value = category.name;
             option.textContent = category.name;
@@ -1858,16 +2312,12 @@
       // Update edit product modal dropdown
       const editProductCategory = document.getElementById('editProductCategory');
       if (editProductCategory) {
-        // Clear existing options except first one
         const firstOption = editProductCategory.options[0];
         editProductCategory.innerHTML = '';
-        if (firstOption) {
-          editProductCategory.appendChild(firstOption);
-        }
+        if (firstOption) editProductCategory.appendChild(firstOption);
         
-        // Add active categories
         allCategories.forEach(category => {
-          if (category.status === 'active') {
+          if (category.status === 'active' || category.status === undefined) {
             const option = document.createElement('option');
             option.value = category.name;
             option.textContent = category.name;
@@ -1881,10 +2331,14 @@
     function adminLogin() {
       const email = document.getElementById('adminEmail').value;
       const password = document.getElementById('adminPassword').value;
+      const rememberMe = document.getElementById('rememberMe').checked;
       
-      // Simple validation - in a real app, this would call an API
       if (email === 'admin@buyzo.com' && password === 'admin123') {
-        localStorage.setItem('admin_logged_in', 'true');
+        if (rememberMe) {
+          localStorage.setItem('admin_logged_in', 'true');
+        } else {
+          sessionStorage.setItem('admin_logged_in', 'true');
+        }
         document.getElementById('adminLoginPage').style.display = 'none';
         document.getElementById('adminPanel').style.display = 'block';
         loadDashboardData();
@@ -1897,13 +2351,9 @@
     // Logout function
     function logout() {
       localStorage.removeItem('admin_logged_in');
+      sessionStorage.removeItem('admin_logged_in');
       document.getElementById('adminLoginPage').style.display = 'flex';
       document.getElementById('adminPanel').style.display = 'none';
-    }
-
-    // Toggle sidebar on mobile
-    function toggleSidebar() {
-      document.getElementById('adminSidebar').classList.toggle('active');
     }
 
     // Show specific tab
@@ -1925,8 +2375,21 @@
       document.querySelector(`.menu-item[data-tab="${tabName}"]`).classList.add('active');
       
       // Update page title
-      document.getElementById('adminPageTitle').textContent = 
-        tabName.charAt(0).toUpperCase() + tabName.slice(1);
+      const titleMap = {
+        'dashboard': 'Dashboard',
+        'products': 'Products',
+        'categories': 'Categories',
+        'orders': 'Orders',
+        'trending': 'Trending Products',
+        'similar-products': 'Similar Products',
+        'search-tags': 'Search Tags',
+        'popular-searches': 'Popular Searches',
+        'customers': 'Customers',
+        'banners': 'Banners',
+        'policies': 'Policies',
+        'settings': 'Settings'
+      };
+      document.getElementById('adminPageTitle').textContent = titleMap[tabName] || tabName;
       
       currentAdminTab = tabName;
       
@@ -1943,6 +2406,10 @@
         loadTrendingProducts();
       } else if (tabName === 'similar-products') {
         loadSimilarProducts();
+      } else if (tabName === 'search-tags') {
+        loadSearchTags();
+      } else if (tabName === 'popular-searches') {
+        loadPopularSearches();
       } else if (tabName === 'customers') {
         loadCustomers();
       } else if (tabName === 'banners') {
@@ -1956,19 +2423,378 @@
 
     // Show policy tab
     function showPolicyTab(policy) {
-      // Remove active class from all policy tabs
-      document.querySelectorAll('.tabs .tab').forEach(tab => {
-        tab.classList.remove('active');
-      });
+      document.querySelectorAll('.tabs .tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.policy-content').forEach(content => content.classList.remove('active'));
       
-      // Hide all policy contents
-      document.querySelectorAll('.policy-content').forEach(content => {
-        content.classList.remove('active');
-      });
-      
-      // Activate selected tab and content
       document.querySelector(`.tab[data-policy="${policy}"]`).classList.add('active');
       document.querySelector(`.policy-content[data-policy="${policy}"]`).classList.add('active');
+    }
+
+    // Load Search Tags
+    function loadSearchTags() {
+      const searchTagsRef = database.ref('searchTags');
+      searchTagsRef.once('value', snapshot => {
+        const tagsData = snapshot.val();
+        allSearchTags = [];
+        
+        if (tagsData) {
+          allSearchTags = Object.entries(tagsData).map(([key, value]) => ({
+            id: key,
+            ...value
+          }));
+        }
+        
+        // Update dashboard view
+        updateDashboardSearchTags();
+        
+        // Update search tags list in admin panel
+        const tagsList = document.getElementById('searchTagsList');
+        if (tagsList) {
+          tagsList.innerHTML = allSearchTags.map(tag => `
+            <div class="tag-item">
+              <span>${tag.name}</span>
+              <span class="badge badge-info" style="margin-left: 8px;">${tag.type || 'general'}</span>
+              <i class="fas fa-times remove-tag" onclick="deleteSearchTag('${tag.id}')"></i>
+            </div>
+          `).join('');
+          
+          if (allSearchTags.length === 0) {
+            tagsList.innerHTML = '<p style="color: var(--secondary);">No search tags added yet.</p>';
+          }
+        }
+      }).catch(error => {
+        console.error('Error loading search tags:', error);
+      });
+    }
+
+    // Load Popular Searches
+    function loadPopularSearches() {
+      const popularSearchesRef = database.ref('popularSearches');
+      popularSearchesRef.once('value', snapshot => {
+        const searchesData = snapshot.val();
+        allPopularSearches = [];
+        
+        if (searchesData) {
+          allPopularSearches = Object.entries(searchesData).map(([key, value]) => ({
+            id: key,
+            ...value
+          }));
+          
+          // Sort by count descending
+          allPopularSearches.sort((a, b) => (b.count || 0) - (a.count || 0));
+        }
+        
+        // Update dashboard view
+        updateDashboardPopularSearches();
+        
+        // Update popular searches list in admin panel
+        const searchesList = document.getElementById('popularSearchesList');
+        if (searchesList) {
+          searchesList.innerHTML = allPopularSearches.map(search => `
+            <div class="popular-search-item">
+              <span>${search.term}</span>
+              <span class="badge badge-success" style="margin-left: 8px;">${search.count || 0} searches</span>
+              <i class="fas fa-times remove-tag" onclick="deletePopularSearch('${search.id}')"></i>
+            </div>
+          `).join('');
+          
+          if (allPopularSearches.length === 0) {
+            searchesList.innerHTML = '<p style="color: var(--secondary);">No popular searches added yet.</p>';
+          }
+        }
+      }).catch(error => {
+        console.error('Error loading popular searches:', error);
+      });
+    }
+
+    // Update dashboard search tags
+    function updateDashboardSearchTags() {
+      const dashboardTags = document.getElementById('dashboardSearchTags');
+      if (dashboardTags) {
+        const topTags = allSearchTags.slice(0, 10);
+        dashboardTags.innerHTML = topTags.map(tag => `
+          <div class="tag-item">
+            <span>${tag.name}</span>
+          </div>
+        `).join('');
+        
+        if (topTags.length === 0) {
+          dashboardTags.innerHTML = '<p style="color: var(--secondary);">No search tags</p>';
+        }
+      }
+    }
+
+    // Update dashboard popular searches
+    function updateDashboardPopularSearches() {
+      const dashboardPopular = document.getElementById('dashboardPopularSearches');
+      if (dashboardPopular) {
+        const topSearches = allPopularSearches.slice(0, 10);
+        dashboardPopular.innerHTML = topSearches.map(search => `
+          <div class="popular-search-item">
+            <span>${search.term}</span>
+            <span class="badge badge-success" style="margin-left: 8px;">${search.count || 0}</span>
+          </div>
+        `).join('');
+        
+        if (topSearches.length === 0) {
+          dashboardPopular.innerHTML = '<p style="color: var(--secondary);">No popular searches</p>';
+        }
+      }
+    }
+
+    // Show add search tag modal
+    function showAddSearchTagModal() {
+      document.getElementById('searchTagName').value = '';
+      document.getElementById('searchTagType').value = 'trending';
+      document.getElementById('searchTagActive').checked = true;
+      document.getElementById('addSearchTagModal').classList.add('active');
+    }
+
+    // Save search tag
+    function saveSearchTag() {
+      const name = document.getElementById('searchTagName').value.trim();
+      const type = document.getElementById('searchTagType').value;
+      const active = document.getElementById('searchTagActive').checked;
+      
+      if (!name) {
+        alert('Please enter a tag name');
+        return;
+      }
+      
+      const tagId = 'tag_' + Date.now();
+      const tagData = {
+        name: name,
+        type: type,
+        active: active,
+        createdAt: Date.now()
+      };
+      
+      database.ref('searchTags/' + tagId).set(tagData)
+        .then(() => {
+          document.getElementById('addSearchTagModal').classList.remove('active');
+          loadSearchTags();
+          alert('Search tag added successfully!');
+        })
+        .catch(error => {
+          console.error('Error saving search tag:', error);
+          alert('Error saving search tag');
+        });
+    }
+
+    // Delete search tag
+    function deleteSearchTag(tagId) {
+      if (confirm('Are you sure you want to delete this search tag?')) {
+        database.ref('searchTags/' + tagId).remove()
+          .then(() => {
+            loadSearchTags();
+            alert('Search tag deleted successfully!');
+          })
+          .catch(error => {
+            console.error('Error deleting search tag:', error);
+            alert('Error deleting search tag');
+          });
+      }
+    }
+
+    // Bulk add search tags
+    function bulkAddSearchTags() {
+      const bulkText = document.getElementById('bulkSearchTags').value.trim();
+      if (!bulkText) {
+        alert('Please enter tags to add');
+        return;
+      }
+      
+      const tags = bulkText.split(',').map(tag => tag.trim()).filter(tag => tag);
+      
+      if (tags.length === 0) {
+        alert('No valid tags found');
+        return;
+      }
+      
+      if (!confirm(`Add ${tags.length} search tags?`)) {
+        return;
+      }
+      
+      const updates = {};
+      tags.forEach(tag => {
+        const tagId = 'tag_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        updates[`searchTags/${tagId}`] = {
+          name: tag,
+          type: 'general',
+          active: true,
+          createdAt: Date.now()
+        };
+      });
+      
+      database.ref().update(updates)
+        .then(() => {
+          document.getElementById('bulkSearchTags').value = '';
+          loadSearchTags();
+          alert('Search tags added successfully!');
+        })
+        .catch(error => {
+          console.error('Error adding bulk tags:', error);
+          alert('Error adding tags');
+        });
+    }
+
+    // Show add popular search modal
+    function showAddPopularSearchModal() {
+      document.getElementById('popularSearchTerm').value = '';
+      document.getElementById('popularSearchCount').value = '1';
+      document.getElementById('popularSearchActive').checked = true;
+      document.getElementById('addPopularSearchModal').classList.add('active');
+    }
+
+    // Save popular search
+    function savePopularSearch() {
+      const term = document.getElementById('popularSearchTerm').value.trim();
+      const count = parseInt(document.getElementById('popularSearchCount').value) || 1;
+      const active = document.getElementById('popularSearchActive').checked;
+      
+      if (!term) {
+        alert('Please enter a search term');
+        return;
+      }
+      
+      const searchId = 'search_' + Date.now();
+      const searchData = {
+        term: term,
+        count: count,
+        active: active,
+        createdAt: Date.now()
+      };
+      
+      database.ref('popularSearches/' + searchId).set(searchData)
+        .then(() => {
+          document.getElementById('addPopularSearchModal').classList.remove('active');
+          loadPopularSearches();
+          alert('Popular search added successfully!');
+        })
+        .catch(error => {
+          console.error('Error saving popular search:', error);
+          alert('Error saving popular search');
+        });
+    }
+
+    // Delete popular search
+    function deletePopularSearch(searchId) {
+      if (confirm('Are you sure you want to delete this popular search?')) {
+        database.ref('popularSearches/' + searchId).remove()
+          .then(() => {
+            loadPopularSearches();
+            alert('Popular search deleted successfully!');
+          })
+          .catch(error => {
+            console.error('Error deleting popular search:', error);
+            alert('Error deleting popular search');
+          });
+      }
+    }
+
+    // Bulk add popular searches
+    function bulkAddPopularSearches() {
+      const bulkText = document.getElementById('bulkPopularSearches').value.trim();
+      if (!bulkText) {
+        alert('Please enter searches to add');
+        return;
+      }
+      
+      const searches = bulkText.split(',').map(s => s.trim()).filter(s => s);
+      
+      if (searches.length === 0) {
+        alert('No valid searches found');
+        return;
+      }
+      
+      if (!confirm(`Add ${searches.length} popular searches?`)) {
+        return;
+      }
+      
+      const updates = {};
+      searches.forEach(term => {
+        const searchId = 'search_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        updates[`popularSearches/${searchId}`] = {
+          term: term,
+          count: 1,
+          active: true,
+          createdAt: Date.now()
+        };
+      });
+      
+      database.ref().update(updates)
+        .then(() => {
+          document.getElementById('bulkPopularSearches').value = '';
+          loadPopularSearches();
+          alert('Popular searches added successfully!');
+        })
+        .catch(error => {
+          console.error('Error adding bulk searches:', error);
+          alert('Error adding searches');
+        });
+    }
+
+    // Generate popular searches from products
+    function generatePopularSearchesFromProducts() {
+      const productsRef = database.ref('products');
+      productsRef.once('value', snapshot => {
+        const productsData = snapshot.val();
+        let products = [];
+        
+        if (productsData) {
+          products = Object.entries(productsData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
+        }
+        
+        // Get top product names and categories
+        const searchTerms = new Set();
+        
+        // Add product names (first 20)
+        products.slice(0, 20).forEach(product => {
+          if (product.title) {
+            const words = product.title.split(' ');
+            words.forEach(word => {
+              if (word.length > 3) {
+                searchTerms.add(word);
+              }
+            });
+          }
+        });
+        
+        // Add categories
+        allCategories.forEach(category => {
+          if (category.name) {
+            searchTerms.add(category.name);
+          }
+        });
+        
+        // Add common terms
+        const commonTerms = ['T-Shirt', 'Jeans', 'Shoes', 'Watch', 'Mobile', 'Laptop', 'Headphones', 'Bag', 'Sunglasses', 'Jacket'];
+        commonTerms.forEach(term => searchTerms.add(term));
+        
+        const updates = {};
+        Array.from(searchTerms).slice(0, 30).forEach(term => {
+          const searchId = 'search_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+          updates[`popularSearches/${searchId}`] = {
+            term: term,
+            count: Math.floor(Math.random() * 50) + 10,
+            active: true,
+            createdAt: Date.now()
+          };
+        });
+        
+        database.ref().update(updates)
+          .then(() => {
+            loadPopularSearches();
+            alert('Popular searches generated successfully!');
+          })
+          .catch(error => {
+            console.error('Error generating searches:', error);
+            alert('Error generating searches');
+          });
+      });
     }
 
     // Calculate earnings data
@@ -1987,35 +2813,27 @@
       
       orders.forEach(order => {
         const product = products.find(p => p.id === order.productId);
-        if (product) {
-          const orderValue = product.price * order.qty;
+        if (product && order.status !== 'Cancelled') {
+          const orderValue = product.price * (order.qty || 1);
           const orderDate = new Date(order.timestamp);
           
           totalEarnings += orderValue;
           
-          // Last week earnings (last 7 days)
           if (orderDate >= oneWeekAgo) {
             lastWeekEarnings += orderValue;
           }
-          
-          // Previous week earnings (7-14 days ago)
           if (orderDate >= twoWeeksAgo && orderDate < oneWeekAgo) {
             previousWeekEarnings += orderValue;
           }
-          
-          // Last month earnings (last 30 days)
           if (orderDate >= oneMonthAgo) {
             lastMonthEarnings += orderValue;
           }
-          
-          // Previous month earnings (30-60 days ago)
           if (orderDate >= twoMonthsAgo && orderDate < oneMonthAgo) {
             previousMonthEarnings += orderValue;
           }
         }
       });
       
-      // Calculate trends
       const weeklyTrend = previousWeekEarnings > 0 
         ? ((lastWeekEarnings - previousWeekEarnings) / previousWeekEarnings) * 100 
         : lastWeekEarnings > 0 ? 100 : 0;
@@ -2035,7 +2853,6 @@
 
     // Load dashboard data
     function loadDashboardData() {
-      // Fetch products and orders from Firebase
       const productsRef = database.ref('products');
       const ordersRef = database.ref('orders');
       
@@ -2046,50 +2863,46 @@
         let products = [];
         let orders = [];
         
-        // Process products data
         if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          products = Object.entries(productsData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
-        // Process orders data
         if (ordersData) {
-          orders = Object.entries(ordersData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          orders = Object.entries(ordersData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
         const trendingProducts = products.filter(p => p.trending);
         
-        // Update stats
         document.getElementById('totalProducts').textContent = products.length;
         document.getElementById('totalOrders').textContent = orders.length;
         document.getElementById('pendingOrders').textContent = orders.filter(o => o.status === 'Pending').length;
         document.getElementById('trendingProducts').textContent = trendingProducts.length;
         
-        // Calculate and update earnings
         const earnings = calculateEarnings(orders, products);
         document.getElementById('totalEarnings').textContent = `₹${earnings.totalEarnings.toLocaleString()}`;
         document.getElementById('lastWeekEarnings').textContent = `₹${earnings.lastWeekEarnings.toLocaleString()}`;
         document.getElementById('lastMonthEarnings').textContent = `₹${earnings.lastMonthEarnings.toLocaleString()}`;
         
-        // Update trends
         updateTrendElement('lastWeekTrend', earnings.weeklyTrend);
         updateTrendElement('lastMonthTrend', earnings.monthlyTrend);
         
-        // Load recent orders
         const recentOrders = orders.slice(-5).reverse();
         const recentOrdersHtml = recentOrders.map(order => {
           const product = products.find(p => p.id === order.productId);
           return `
             <tr>
               <td>#${order.id || 'N/A'}</td>
-              <td>${order.fullname}</td>
-              <td>${product ? product.title : 'Unknown Product'}</td>
-              <td>₹${product ? product.price * order.qty : 'N/A'}</td>
+              <td>${order.fullname || 'N/A'}</td>
+              <td>${product ? product.title : 'Unknown'}</td>
+              <td>₹${product ? product.price * (order.qty || 1) : 'N/A'}</td>
               <td><span class="badge ${getStatusBadgeClass(order.status)}">${order.status || 'Pending'}</span></td>
-              <td>${new Date(order.timestamp).toLocaleDateString()}</td>
+              <td>${order.timestamp ? new Date(order.timestamp).toLocaleDateString() : 'N/A'}</td>
             </tr>
           `;
         }).join('');
@@ -2097,13 +2910,14 @@
         document.getElementById('recentOrders').innerHTML = recentOrdersHtml || '<tr><td colspan="6" style="text-align: center">No orders found</td></tr>';
       }).catch(error => {
         console.error('Error loading dashboard data:', error);
-        alert('Error loading dashboard data. Please check console for details.');
       });
     }
 
-    // Update trend element with appropriate icon and color
+    // Update trend element
     function updateTrendElement(elementId, trendValue) {
       const element = document.getElementById(elementId);
+      if (!element) return;
+      
       const valueElement = element.querySelector('span:last-child');
       const iconElement = element.querySelector('i');
       
@@ -2118,7 +2932,6 @@
       }
     }
 
-    // Get status badge class
     function getStatusBadgeClass(status) {
       switch(status) {
         case 'Delivered': return 'badge-success';
@@ -2137,66 +2950,57 @@
         let products = [];
         
         if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          products = Object.entries(productsData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
         const filteredProducts = filterProductsList(products);
         const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
         
-        // Update pagination
         updatePagination('productsPagination', currentProductsPage, totalPages, 'products');
         
-        // Get products for current page
         const startIndex = (currentProductsPage - 1) * productsPerPage;
         const paginatedProducts = filteredProducts.slice(startIndex, startIndex + productsPerPage);
         
-        // Render products table
         const productsHtml = paginatedProducts.map(product => {
           const images = product.images || [];
           const mainImage = images.length > 0 ? images[0] : '';
           
           return `
             <tr>
-              <td><img src="${mainImage}" width="50" height="50" class="product-image"></td>
+              <td><img src="${mainImage}" class="product-image" onerror="this.src='https://via.placeholder.com/50'"></td>
               <td>${product.title || 'No Name'}</td>
               <td>${product.category || 'Uncategorized'}</td>
               <td>₹${product.price || 0}</td>
-              <td>₹${product.deliveryCharge || 0}</td>
               <td>${product.stock || 0}</td>
               <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
               <td>${product.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
               <td>
                 <div style="display: flex; gap: 8px;">
                   <button class="btn btn-primary btn-sm" onclick="editProduct('${product.id}')"><i class="fas fa-edit"></i></button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteProductConfirm('${product.id}')"><i class="fas fa-trash"></i></button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteProduct('${product.id}')"><i class="fas fa-trash"></i></button>
                 </div>
               </td>
             </tr>
           `;
         }).join('');
         
-        document.getElementById('productsTableBody').innerHTML = productsHtml || '<tr><td colspan="9" style="text-align: center">No products found</td></tr>';
+        document.getElementById('productsTableBody').innerHTML = productsHtml || '<tr><td colspan="8" style="text-align: center">No products found</td></tr>';
       }).catch(error => {
         console.error('Error loading products:', error);
-        document.getElementById('productsTableBody').innerHTML = '<tr><td colspan="9" style="text-align: center; color: red;">Error loading products</td></tr>';
       });
     }
 
-    // Filter products list
     function filterProductsList(products) {
-      const searchTerm = document.getElementById('productSearch').value.toLowerCase();
-      
-      return products.filter(product => {
-        const matchesSearch = (product.title || '').toLowerCase().includes(searchTerm) || 
-                             (product.desc || '').toLowerCase().includes(searchTerm);
-        
-        return matchesSearch;
-      });
+      const searchTerm = document.getElementById('productSearch')?.value.toLowerCase() || '';
+      return products.filter(product => 
+        (product.title || '').toLowerCase().includes(searchTerm) || 
+        (product.desc || '').toLowerCase().includes(searchTerm)
+      );
     }
 
-    // Filter products
     function filterProducts() {
       currentProductsPage = 1;
       loadProducts();
@@ -2210,41 +3014,36 @@
         let categories = [];
         
         if (categoriesData) {
-          categories = Object.entries(categoriesData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          categories = Object.entries(categoriesData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
-        // Update global categories array
         allCategories = categories;
-        
-        // Update dropdowns
         updateCategoryDropdowns();
         
-        // Render categories table
-        const categoriesHtml = categories.map(category => {
-          return `
-            <tr>
-              <td>#${category.id}</td>
-              <td>
-                ${category.image ? 
-                  `<img src="${category.image}" width="50" height="50" class="product-image">` : 
-                  '<div class="product-image" style="background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8;"><i class="fas fa-image"></i></div>'
-                }
-              </td>
-              <td>${category.name || 'No Name'}</td>
-              <td>${category.description || 'No description'}</td>
-              <td>${category.productCount || 0}</td>
-              <td>${category.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
-              <td>
-                <div style="display: flex; gap: 8px;">
-                  <button class="btn btn-primary btn-sm" onclick="editCategory('${category.id}')"><i class="fas fa-edit"></i></button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteCategoryConfirm('${category.id}')"><i class="fas fa-trash"></i></button>
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
+        const categoriesHtml = categories.map(category => `
+          <tr>
+            <td>#${category.id}</td>
+            <td>
+              ${category.image ? 
+                `<img src="${category.image}" class="product-image" onerror="this.src='https://via.placeholder.com/50'">` : 
+                '<div class="product-image" style="background: #f1f5f9; display: flex; align-items: center; justify-content: center;"><i class="fas fa-image"></i></div>'
+              }
+            </td>
+            <td>${category.name || 'No Name'}</td>
+            <td>${category.description || 'No description'}</td>
+            <td>${category.productCount || 0}</td>
+            <td>${category.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
+            <td>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary btn-sm" onclick="editCategory('${category.id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="deleteCategory('${category.id}')"><i class="fas fa-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
         
         document.getElementById('categoriesTableBody').innerHTML = categoriesHtml || '<tr><td colspan="7" style="text-align: center">No categories found</td></tr>';
       }).catch(error => {
@@ -2252,7 +3051,7 @@
       });
     }
 
-    // Load orders
+    // Load orders with date filter
     function loadOrders() {
       const ordersRef = database.ref('orders');
       const productsRef = database.ref('products');
@@ -2264,31 +3063,29 @@
         let orders = [];
         let products = [];
         
-        // Process orders data
         if (ordersData) {
-          orders = Object.entries(ordersData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          orders = Object.entries(ordersData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
-        // Process products data
         if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          products = Object.entries(productsData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
-        const filteredOrders = filterOrdersList(orders, products);
+        // Apply date filter
+        const filteredOrders = applyDateFilter(orders, products);
         const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
         
-        // Update pagination
         updatePagination('ordersPagination', currentOrdersPage, totalPages, 'orders');
         
-        // Get orders for current page
         const startIndex = (currentOrdersPage - 1) * ordersPerPage;
         const paginatedOrders = filteredOrders.slice(startIndex, startIndex + ordersPerPage);
         
-        // Render orders table
         const ordersHtml = paginatedOrders.map(order => {
           const product = products.find(p => p.id === order.productId);
           return `
@@ -2296,10 +3093,10 @@
               <td><input type="checkbox" value="${order.id}"></td>
               <td>#${order.id || 'N/A'}</td>
               <td>${order.fullname || 'N/A'}<br><small>${order.mobile || 'N/A'}</small></td>
-              <td>${product ? product.title : 'Unknown Product'} (x${order.qty || 1})</td>
+              <td>${product ? product.title : 'Unknown'} (x${order.qty || 1})</td>
               <td>₹${product ? product.price * (order.qty || 1) : 'N/A'}</td>
               <td>
-                <select onchange="updateOrderStatus('${order.id}', this.value)" class="form-control">
+                <select onchange="updateOrderStatus('${order.id}', this.value)" class="form-control" style="width: auto;">
                   <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
                   <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
                   <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
@@ -2321,37 +3118,126 @@
       });
     }
 
-    // Filter orders list
-    function filterOrdersList(orders, products) {
-      const searchTerm = document.getElementById('orderSearch').value.toLowerCase();
-      
-      return orders.filter(order => {
+    // Apply date filter
+    function applyDateFilter(orders, products) {
+      // First apply search filter
+      const searchTerm = document.getElementById('orderSearch')?.value.toLowerCase() || '';
+      let filteredOrders = orders.filter(order => {
         const product = products.find(p => p.id === order.productId);
         const productName = product ? (product.title || '').toLowerCase() : '';
-        const matchesSearch = (order.fullname || '').toLowerCase().includes(searchTerm) || 
-                             (order.mobile || '').includes(searchTerm) ||
-                             productName.includes(searchTerm);
+        return (order.fullname || '').toLowerCase().includes(searchTerm) || 
+               (order.mobile || '').includes(searchTerm) ||
+               productName.includes(searchTerm);
+      });
+      
+      // Then apply date filter
+      if (currentDateFilter.type === 'all') {
+        return filteredOrders;
+      }
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      return filteredOrders.filter(order => {
+        if (!order.timestamp) return false;
         
-        return matchesSearch;
+        const orderDate = new Date(order.timestamp);
+        orderDate.setHours(0, 0, 0, 0);
+        
+        if (currentDateFilter.type === 'today') {
+          return orderDate.getTime() === today.getTime();
+        } else if (currentDateFilter.type === 'tomorrow') {
+          return orderDate.getTime() === tomorrow.getTime();
+        } else if (currentDateFilter.type === 'custom') {
+          if (currentDateFilter.startDate && currentDateFilter.endDate) {
+            const start = new Date(currentDateFilter.startDate);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(currentDateFilter.endDate);
+            end.setHours(23, 59, 59, 999);
+            return orderDate >= start && orderDate <= end;
+          }
+        }
+        return true;
       });
     }
 
-    // Filter orders
+    // Filter by date
+    function filterOrdersByDate(type, button) {
+      // Update button active state
+      document.querySelectorAll('.date-filter-buttons .btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      button.classList.add('active');
+      
+      // Update filter type
+      currentDateFilter.type = type;
+      currentDateFilter.startDate = null;
+      currentDateFilter.endDate = null;
+      
+      // Clear date inputs
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+      
+      currentOrdersPage = 1;
+      loadOrders();
+    }
+
+    // Filter by custom date range
+    function filterOrdersByCustomDate() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      
+      if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+      }
+      
+      // Update button active state
+      document.querySelectorAll('.date-filter-buttons .btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // Update filter type
+      currentDateFilter.type = 'custom';
+      currentDateFilter.startDate = startDate;
+      currentDateFilter.endDate = endDate;
+      
+      currentOrdersPage = 1;
+      loadOrders();
+    }
+
+    // Clear date filter
+    function clearDateFilter() {
+      currentDateFilter.type = 'all';
+      currentDateFilter.startDate = null;
+      currentDateFilter.endDate = null;
+      
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+      
+      // Update button active state
+      document.querySelectorAll('.date-filter-buttons .btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector('.date-filter-buttons .btn:first-child').classList.add('active');
+      
+      currentOrdersPage = 1;
+      loadOrders();
+    }
+
     function filterOrders() {
       currentOrdersPage = 1;
       loadOrders();
     }
 
-    // Update order status
     function updateOrderStatus(orderId, status) {
-      const ordersRef = database.ref('orders');
-      ordersRef.child(orderId).update({ status: status })
+      database.ref('orders/' + orderId).update({ status: status })
         .then(() => {
           loadOrders();
-          // If on dashboard, refresh it too
-          if (currentAdminTab === 'dashboard') {
-            loadDashboardData();
-          }
+          if (currentAdminTab === 'dashboard') loadDashboardData();
           alert('Order status updated successfully!');
         })
         .catch(error => {
@@ -2360,7 +3246,6 @@
         });
     }
 
-    // Apply bulk action to orders
     function applyBulkAction() {
       const status = document.getElementById('bulkStatusAction').value;
       if (!status) {
@@ -2374,9 +3259,7 @@
         return;
       }
       
-      if (!confirm(`Are you sure you want to update ${checkboxes.length} order(s) to ${status}?`)) {
-        return;
-      }
+      if (!confirm(`Update ${checkboxes.length} order(s) to ${status}?`)) return;
       
       const updates = {};
       checkboxes.forEach(checkbox => {
@@ -2386,12 +3269,7 @@
       database.ref().update(updates)
         .then(() => {
           loadOrders();
-          // If on dashboard, refresh it too
-          if (currentAdminTab === 'dashboard') {
-            loadDashboardData();
-          }
-          
-          // Uncheck select all
+          if (currentAdminTab === 'dashboard') loadDashboardData();
           document.getElementById('selectAllOrders').checked = false;
           alert('Bulk update successful!');
         })
@@ -2401,7 +3279,7 @@
         });
     }
 
-    // View order details
+    // View Order Details
     function viewOrderDetails(orderId) {
       const ordersRef = database.ref('orders');
       const productsRef = database.ref('products');
@@ -2417,30 +3295,184 @@
         
         let products = [];
         if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          products = Object.entries(productsData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
         const product = products.find(p => p.id === order.productId);
+        const orderDate = order.timestamp ? new Date(order.timestamp) : new Date();
         
-        const detailsHtml = `
-          <h3>Order Details #${order.id}</h3>
-          <p><strong>Customer:</strong> ${order.fullname || 'N/A'}</p>
-          <p><strong>Mobile:</strong> ${order.mobile || 'N/A'}</p>
-          <p><strong>Address:</strong> ${order.house || ''}, ${order.city || ''}, ${order.state || ''} - ${order.pincode || ''}</p>
-          <p><strong>Product:</strong> ${product ? product.title : 'Unknown'} (x${order.qty || 1})</p>
-          <p><strong>Amount:</strong> ₹${product ? product.price * (order.qty || 1) : 'N/A'}</p>
-          <p><strong>Status:</strong> ${order.status || 'Pending'}</p>
-          <p><strong>Order Date:</strong> ${order.timestamp ? new Date(order.timestamp).toLocaleString() : 'N/A'}</p>
-          <p><strong>Payment Method:</strong> ${order.payment === 'prepaid' ? 'Prepaid' : 'Cash on Delivery'}</p>
+        // Populate order details
+        document.getElementById('orderDetailsId').textContent = `#${order.id || ''}`;
+        document.getElementById('orderDetailsName').textContent = order.fullname || 'N/A';
+        document.getElementById('orderDetailsMobile').textContent = order.mobile || 'N/A';
+        document.getElementById('orderDetailsEmail').textContent = order.email || 'N/A';
+        document.getElementById('orderDetailsDate').textContent = orderDate.toLocaleString();
+        
+        const address = `${order.house || ''}, ${order.area || ''}, ${order.city || ''}, ${order.state || ''} - ${order.pincode || ''}`;
+        document.getElementById('orderDetailsAddress').textContent = address;
+        
+        // Populate order items
+        const orderProductsBody = document.getElementById('orderProductsBody');
+        const productPrice = product ? product.price : 0;
+        const quantity = order.qty || 1;
+        const subtotal = productPrice * quantity;
+        
+        orderProductsBody.innerHTML = `
+          <tr>
+            <td>${product ? product.title : 'Unknown'}</td>
+            <td>₹${productPrice}</td>
+            <td>${quantity}</td>
+            <td>₹${subtotal}</td>
+          </tr>
         `;
         
-        alert(detailsHtml);
+        // Calculate totals
+        document.getElementById('orderSubtotal').textContent = `₹${subtotal}`;
+        const shipping = order.shipping || 50;
+        document.getElementById('orderShipping').textContent = `₹${shipping}`;
+        document.getElementById('orderTotal').textContent = `₹${subtotal + shipping}`;
+        
+        // Set status dropdown
+        const statusSelect = document.getElementById('orderDetailsStatus');
+        statusSelect.value = order.status || 'Pending';
+        statusSelect.setAttribute('data-order-id', orderId);
+        
+        // Update status timeline
+        updateStatusTimeline(order.status || 'Pending');
+        
+        // Show modal
+        document.getElementById('orderDetailsModal').classList.add('active');
       }).catch(error => {
         console.error('Error loading order details:', error);
         alert('Error loading order details');
       });
+    }
+
+    // Update status timeline
+    function updateStatusTimeline(currentStatus) {
+      const statuses = ['Pending', 'Confirmed', 'Shipped', 'Delivered'];
+      const timeline = document.getElementById('orderStatusTimeline');
+      
+      let timelineHtml = '';
+      statuses.forEach((status, index) => {
+        const statusIndex = statuses.indexOf(currentStatus);
+        let statusClass = '';
+        
+        if (index < statusIndex) {
+          statusClass = 'completed';
+        } else if (index === statusIndex) {
+          statusClass = 'active';
+        }
+        
+        timelineHtml += `
+          <div class="status-step ${statusClass}">
+            <div class="status-icon">
+              ${index < statusIndex ? '<i class="fas fa-check"></i>' : ''}
+            </div>
+            <div class="status-label">${status}</div>
+          </div>
+        `;
+      });
+      
+      // Add cancelled status if applicable
+      if (currentStatus === 'Cancelled') {
+        timelineHtml += `
+          <div class="status-step active">
+            <div class="status-icon">
+              <i class="fas fa-times"></i>
+            </div>
+            <div class="status-label">Cancelled</div>
+          </div>
+        `;
+      }
+      
+      timeline.innerHTML = timelineHtml;
+    }
+
+    // Update order status from details modal
+    function updateOrderStatusFromDetails() {
+      const orderId = document.getElementById('orderDetailsStatus').getAttribute('data-order-id');
+      const status = document.getElementById('orderDetailsStatus').value;
+      
+      if (confirm(`Update order status to ${status}?`)) {
+        database.ref('orders/' + orderId).update({ status: status })
+          .then(() => {
+            updateStatusTimeline(status);
+            loadOrders();
+            if (currentAdminTab === 'dashboard') loadDashboardData();
+            alert('Order status updated successfully!');
+          })
+          .catch(error => {
+            console.error('Error updating order status:', error);
+            alert('Error updating order status');
+          });
+      }
+    }
+
+    // Print order details
+    function printOrderDetails() {
+      const orderId = document.getElementById('orderDetailsId').textContent;
+      const customerName = document.getElementById('orderDetailsName').textContent;
+      const customerMobile = document.getElementById('orderDetailsMobile').textContent;
+      const customerEmail = document.getElementById('orderDetailsEmail').textContent;
+      const orderDate = document.getElementById('orderDetailsDate').textContent;
+      const address = document.getElementById('orderDetailsAddress').textContent;
+      
+      const productsTable = document.getElementById('orderProductsBody').innerHTML;
+      const subtotal = document.getElementById('orderSubtotal').textContent;
+      const shipping = document.getElementById('orderShipping').textContent;
+      const total = document.getElementById('orderTotal').textContent;
+      
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Order ${orderId}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              h1 { color: #2563eb; }
+              .details { margin: 20px 0; }
+              .detail-row { margin: 10px 0; }
+              .label { font-weight: bold; color: #64748b; }
+              table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+              th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+              th { background: #f8fafc; }
+              .total { font-size: 18px; font-weight: bold; color: #2563eb; }
+            </style>
+          </head>
+          <body>
+            <h1>Order ${orderId}</h1>
+            <div class="details">
+              <div class="detail-row"><span class="label">Customer:</span> ${customerName}</div>
+              <div class="detail-row"><span class="label">Mobile:</span> ${customerMobile}</div>
+              <div class="detail-row"><span class="label">Email:</span> ${customerEmail}</div>
+              <div class="detail-row"><span class="label">Order Date:</span> ${orderDate}</div>
+              <div class="detail-row"><span class="label">Address:</span> ${address}</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${productsTable}
+              </tbody>
+            </table>
+            <div class="detail-row"><span class="label">Subtotal:</span> ${subtotal}</div>
+            <div class="detail-row"><span class="label">Shipping:</span> ${shipping}</div>
+            <div class="total">Total: ${total}</div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
     }
 
     // Load trending products
@@ -2451,9 +3483,10 @@
         let products = [];
         
         if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          products = Object.entries(productsData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
         const trendingHtml = products.map(product => {
@@ -2462,17 +3495,15 @@
           
           return `
             <tr>
-              <td><img src="${mainImage}" width="50" height="50" class="product-image"></td>
+              <td><img src="${mainImage}" class="product-image" onerror="this.src='https://via.placeholder.com/50'"></td>
               <td>${product.title || 'No Name'}</td>
               <td>₹${product.price || 0}</td>
               <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
               <td>
-                <div style="display: flex; gap: 8px;">
-                  <button class="btn ${product.trending ? 'btn-danger' : 'btn-success'} btn-sm" onclick="toggleTrending('${product.id}', ${!product.trending})">
-                    <i class="fas ${product.trending ? 'fa-times' : 'fa-fire'}"></i> 
-                    ${product.trending ? 'Remove' : 'Add'}
-                  </button>
-                </div>
+                <button class="btn ${product.trending ? 'btn-danger' : 'btn-success'} btn-sm" onclick="toggleTrending('${product.id}', ${!product.trending})">
+                  <i class="fas ${product.trending ? 'fa-times' : 'fa-fire'}"></i> 
+                  ${product.trending ? 'Remove' : 'Add'}
+                </button>
               </td>
             </tr>
           `;
@@ -2484,19 +3515,12 @@
       });
     }
 
-    // Toggle trending status
     function toggleTrending(productId, isTrending) {
       database.ref('products/' + productId).update({ trending: isTrending })
         .then(() => {
           loadTrendingProducts();
-          // If on dashboard, refresh it too
-          if (currentAdminTab === 'dashboard') {
-            loadDashboardData();
-          }
-          // Also refresh products tab if active
-          if (currentAdminTab === 'products') {
-            loadProducts();
-          }
+          if (currentAdminTab === 'dashboard') loadDashboardData();
+          if (currentAdminTab === 'products') loadProducts();
           alert('Trending status updated!');
         })
         .catch(error => {
@@ -2505,7 +3529,7 @@
         });
     }
 
-    // Load similar products (NEW FUNCTION)
+    // Load similar products
     function loadSimilarProducts() {
       const similarProductsRef = database.ref('similarProducts');
       const productsRef = database.ref('products');
@@ -2517,33 +3541,29 @@
         let similarProducts = [];
         let products = [];
         
-        // Process similar products data
         if (similarData) {
-          similarProducts = Object.entries(similarData).map(([key, value]) => ({ 
-            key, 
+          similarProducts = Object.entries(similarData).map(([key, value]) => ({
+            key,
             ...value,
-            mainProductId: value.mainProductId || key 
+            mainProductId: value.mainProductId || key
           }));
         }
         
-        // Process products data
         if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          products = Object.entries(productsData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
         const filteredSimilarProducts = filterSimilarProductsList(similarProducts, products);
         const totalPages = Math.ceil(filteredSimilarProducts.length / similarProductsPerPage);
         
-        // Update pagination
         updatePagination('similarProductsPagination', currentSimilarProductsPage, totalPages, 'similar-products');
         
-        // Get similar products for current page
         const startIndex = (currentSimilarProductsPage - 1) * similarProductsPerPage;
         const paginatedSimilarProducts = filteredSimilarProducts.slice(startIndex, startIndex + similarProductsPerPage);
         
-        // Render similar products table
         const similarProductsHtml = paginatedSimilarProducts.map(item => {
           const mainProduct = products.find(p => p.id === item.mainProductId);
           const similarCount = item.similarProductIds ? item.similarProductIds.length : 0;
@@ -2555,20 +3575,16 @@
               <td>${mainProduct ? mainProduct.title : 'Product ID: ' + item.mainProductId}</td>
               <td>
                 ${mainImage ? 
-                  `<img src="${mainImage}" width="50" height="50" class="product-image">` : 
-                  '<div class="product-image" style="background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8;"><i class="fas fa-image"></i></div>'
+                  `<img src="${mainImage}" class="product-image" onerror="this.src='https://via.placeholder.com/50'">` : 
+                  '<div class="product-image" style="background: #f1f5f9; display: flex; align-items: center; justify-content: center;"><i class="fas fa-image"></i></div>'
                 }
               </td>
               <td>${similarCount}</td>
               <td>${item.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-warning">Inactive</span>'}</td>
               <td>
                 <div style="display: flex; gap: 8px;">
-                  <button class="btn btn-primary btn-sm" onclick="editSimilarProducts('${item.mainProductId}')">
-                    <i class="fas fa-edit"></i> Edit
-                  </button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteSimilarProductsConfirm('${item.mainProductId}')">
-                    <i class="fas fa-trash"></i> Delete
-                  </button>
+                  <button class="btn btn-primary btn-sm" onclick="editSimilarProducts('${item.mainProductId}')"><i class="fas fa-edit"></i></button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteSimilarProducts('${item.mainProductId}')"><i class="fas fa-trash"></i></button>
                 </div>
               </td>
             </tr>
@@ -2582,19 +3598,14 @@
       });
     }
 
-    // Filter similar products list (NEW FUNCTION)
     function filterSimilarProductsList(similarProducts, products) {
-      const searchTerm = document.getElementById('similarProductsSearch').value.toLowerCase();
-      
+      const searchTerm = document.getElementById('similarProductsSearch')?.value.toLowerCase() || '';
       return similarProducts.filter(item => {
         const mainProduct = products.find(p => p.id === item.mainProductId);
-        if (!mainProduct) return false;
-        
-        return (mainProduct.title || '').toLowerCase().includes(searchTerm);
+        return mainProduct && (mainProduct.title || '').toLowerCase().includes(searchTerm);
       });
     }
 
-    // Filter similar products (NEW FUNCTION)
     function filterSimilarProducts() {
       currentSimilarProductsPage = 1;
       loadSimilarProducts();
@@ -2611,7 +3622,6 @@
           orders = Object.values(ordersData);
         }
         
-        // Extract unique customers based on mobile number
         const customersMap = {};
         orders.forEach(order => {
           if (order.mobile && !customersMap[order.mobile]) {
@@ -2635,26 +3645,21 @@
         const filteredCustomers = filterCustomersList(customers);
         const totalPages = Math.ceil(filteredCustomers.length / customersPerPage);
         
-        // Update pagination
         updatePagination('customersPagination', currentCustomersPage, totalPages, 'customers');
         
-        // Get customers for current page
         const startIndex = (currentCustomersPage - 1) * customersPerPage;
         const paginatedCustomers = filteredCustomers.slice(startIndex, startIndex + customersPerPage);
         
-        // Render customers table
-        const customersHtml = paginatedCustomers.map(customer => {
-          return `
-            <tr>
-              <td>${customer.name}</td>
-              <td>${customer.mobile}</td>
-              <td>${customer.email}</td>
-              <td>${customer.location}</td>
-              <td>${customer.orderCount}</td>
-              <td>${customer.lastOrder ? new Date(customer.lastOrder).toLocaleDateString() : 'N/A'}</td>
-            </tr>
-          `;
-        }).join('');
+        const customersHtml = paginatedCustomers.map(customer => `
+          <tr>
+            <td>${customer.name}</td>
+            <td>${customer.mobile}</td>
+            <td>${customer.email}</td>
+            <td>${customer.location}</td>
+            <td>${customer.orderCount}</td>
+            <td>${customer.lastOrder ? new Date(customer.lastOrder).toLocaleDateString() : 'N/A'}</td>
+          </tr>
+        `).join('');
         
         document.getElementById('customersTableBody').innerHTML = customersHtml || '<tr><td colspan="6" style="text-align: center">No customers found</td></tr>';
       }).catch(error => {
@@ -2662,19 +3667,16 @@
       });
     }
 
-    // Filter customers list
     function filterCustomersList(customers) {
-      const searchTerm = document.getElementById('customerSearch').value.toLowerCase();
-      
-      return customers.filter(customer => {
-        return (customer.name || '').toLowerCase().includes(searchTerm) || 
-               (customer.mobile || '').includes(searchTerm) ||
-               (customer.email || '').toLowerCase().includes(searchTerm) ||
-               (customer.location || '').toLowerCase().includes(searchTerm);
-      });
+      const searchTerm = document.getElementById('customerSearch')?.value.toLowerCase() || '';
+      return customers.filter(customer => 
+        (customer.name || '').toLowerCase().includes(searchTerm) || 
+        (customer.mobile || '').includes(searchTerm) ||
+        (customer.email || '').toLowerCase().includes(searchTerm) ||
+        (customer.location || '').toLowerCase().includes(searchTerm)
+      );
     }
 
-    // Filter customers
     function filterCustomers() {
       currentCustomersPage = 1;
       loadCustomers();
@@ -2688,28 +3690,26 @@
         let banners = [];
         
         if (bannersData) {
-          banners = Object.entries(bannersData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          banners = Object.entries(bannersData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
-        // Render banners table
-        const bannersHtml = banners.map(banner => {
-          return `
-            <tr>
-              <td>#${banner.id}</td>
-              <td><img src="${banner.image || ''}" width="100" height="50" style="object-fit: cover; border-radius: 6px"></td>
-              <td>${banner.title || 'No Title'}</td>
-              <td>${banner.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
-              <td>
-                <div style="display: flex; gap: 8px;">
-                  <button class="btn btn-primary btn-sm" onclick="editBanner('${banner.id}')"><i class="fas fa-edit"></i></button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteBannerConfirm('${banner.id}')"><i class="fas fa-trash"></i></button>
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
+        const bannersHtml = banners.map(banner => `
+          <tr>
+            <td>#${banner.id}</td>
+            <td><img src="${banner.image || ''}" width="100" height="50" style="object-fit: cover; border-radius: 6px" onerror="this.src='https://via.placeholder.com/100x50'"></td>
+            <td>${banner.title || 'No Title'}</td>
+            <td>${banner.status === 'active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>'}</td>
+            <td>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary btn-sm" onclick="editBanner('${banner.id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="deleteBanner('${banner.id}')"><i class="fas fa-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
         
         document.getElementById('bannersTableBody').innerHTML = bannersHtml || '<tr><td colspan="5" style="text-align: center">No banners found</td></tr>';
       }).catch(error => {
@@ -2723,7 +3723,6 @@
       policiesRef.once('value', snapshot => {
         const policies = snapshot.val() || {};
         
-        // Set policy content
         document.getElementById('aboutContent').value = policies.about || '';
         document.getElementById('refundContent').value = policies.refund || '';
         document.getElementById('termsContent').value = policies.terms || '';
@@ -2734,14 +3733,11 @@
       });
     }
 
-    // Save policy
     function savePolicy(policyType) {
       const content = document.getElementById(`${policyType}Content`).value;
       
       database.ref('policies/' + policyType).set(content)
-        .then(() => {
-          alert(`${policyType.charAt(0).toUpperCase() + policyType.slice(1)} policy saved successfully!`);
-        })
+        .then(() => alert(`${policyType} policy saved successfully!`))
         .catch(error => {
           console.error('Error saving policy:', error);
           alert('Error saving policy');
@@ -2754,19 +3750,20 @@
       settingsRef.once('value', snapshot => {
         const settings = snapshot.val() || {};
         
-        // Set settings values
         if (settings.storeName) document.getElementById('storeName').value = settings.storeName;
         if (settings.storeEmail) document.getElementById('storeEmail').value = settings.storeEmail;
         if (settings.storePhone) document.getElementById('storePhone').value = settings.storePhone;
         if (settings.storeAddress) document.getElementById('storeAddress').value = settings.storeAddress;
         if (settings.shippingCost) document.getElementById('shippingCost').value = settings.shippingCost;
         if (settings.currency) document.getElementById('currency').value = settings.currency;
+        if (settings.maxItemsPerOrder) document.getElementById('maxItemsPerOrder').value = settings.maxItemsPerOrder;
+        if (settings.freeShippingThreshold) document.getElementById('freeShippingThreshold').value = settings.freeShippingThreshold;
+        if (settings.paymentGatewayCharge) document.getElementById('paymentGatewayCharge').value = settings.paymentGatewayCharge;
       }).catch(error => {
         console.error('Error loading settings:', error);
       });
     }
 
-    // Save settings
     function saveSettings() {
       const settings = {
         storeName: document.getElementById('storeName').value,
@@ -2774,13 +3771,14 @@
         storePhone: document.getElementById('storePhone').value,
         storeAddress: document.getElementById('storeAddress').value,
         shippingCost: document.getElementById('shippingCost').value,
-        currency: document.getElementById('currency').value
+        currency: document.getElementById('currency').value,
+        maxItemsPerOrder: document.getElementById('maxItemsPerOrder').value,
+        freeShippingThreshold: document.getElementById('freeShippingThreshold').value,
+        paymentGatewayCharge: document.getElementById('paymentGatewayCharge').value
       };
       
       database.ref('settings').set(settings)
-        .then(() => {
-          alert('Settings saved successfully!');
-        })
+        .then(() => alert('Settings saved successfully!'))
         .catch(error => {
           console.error('Error saving settings:', error);
           alert('Error saving settings');
@@ -2789,10 +3787,8 @@
 
     // Show add product modal
     function showAddProductModal() {
-      // Reset form
       document.getElementById('productName').value = '';
       document.getElementById('productPrice').value = '';
-      document.getElementById('productDeliveryCharge').value = '';
       document.getElementById('productStock').value = '';
       document.getElementById('productCategory').value = '';
       document.getElementById('productDesc').value = '';
@@ -2803,40 +3799,28 @@
       document.getElementById('productImagePreviews').innerHTML = '';
       uploadedImages = [];
       
-      // Make sure categories dropdown is updated
       updateCategoryDropdowns();
-      
-      // Show modal
       document.getElementById('addProductModal').classList.add('active');
     }
 
-    // Show add category modal
     function showAddCategoryModal() {
-      // Reset form
       document.getElementById('categoryName').value = '';
       document.getElementById('categoryDescription').value = '';
       document.getElementById('categoryStatus').checked = true;
       document.getElementById('categoryImagePreview').innerHTML = '<span>No image selected</span>';
       uploadedCategoryImage = null;
-      
-      // Show modal
       document.getElementById('addCategoryModal').classList.add('active');
     }
 
-    // Show add banner modal
     function showAddBannerModal() {
-      // Reset form
       document.getElementById('bannerTitle').value = '';
       document.getElementById('bannerLink').value = '';
       document.getElementById('bannerStatus').checked = true;
       document.getElementById('bannerImagePreview').innerHTML = '<span>No image selected</span>';
       uploadedBannerImage = null;
-      
-      // Show modal
       document.getElementById('addBannerModal').classList.add('active');
     }
 
-    // Show add similar products modal (NEW FUNCTION)
     function showAddSimilarProductsModal() {
       const productsRef = database.ref('products');
       productsRef.once('value', snapshot => {
@@ -2844,32 +3828,29 @@
         let products = [];
         
         if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          products = Object.entries(productsData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
         allProductsForSimilar = products;
         
-        // Populate main product dropdown
         const mainProductSelect = document.getElementById('mainProductSelect');
         mainProductSelect.innerHTML = '<option value="">-- Select Product --</option>' +
           products.map(product => 
             `<option value="${product.id}">${product.title || 'No Name'} (₹${product.price || 0})</option>`
           ).join('');
         
-        // Populate similar products multi-select
         const similarProductsSelect = document.getElementById('similarProductsSelect');
         similarProductsSelect.innerHTML = products.map(product => 
           `<option value="${product.id}">${product.title || 'No Name'} (₹${product.price || 0}) - ${product.category || 'Uncategorized'}</option>`
         ).join('');
         
-        // Reset form
         document.getElementById('selectedProductInfo').style.display = 'none';
         document.getElementById('selectedSimilarProductsPreview').innerHTML = '';
         document.getElementById('autoSuggestSimilar').checked = true;
         
-        // Show modal
         document.getElementById('addSimilarProductsModal').classList.add('active');
       }).catch(error => {
         console.error('Error loading products for similar modal:', error);
@@ -2877,21 +3858,34 @@
       });
     }
 
-    // Handle product image upload
+    // FIXED: Handle product image upload
     function handleProductImageUpload(e) {
       const files = e.target.files;
       const previewContainer = document.getElementById('productImagePreviews');
       
-      // Clear existing previews
       previewContainer.innerHTML = '';
+      uploadedImages = [];
       
-      // Create preview for each selected file
+      if (files.length === 0) return;
+      
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          alert(`File ${file.name} is not an image. Please select only image files.`);
+          continue;
+        }
+        
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`File ${file.name} is too large. Maximum size is 5MB.`);
+          continue;
+        }
+        
         const reader = new FileReader();
         
         reader.onload = function(e) {
-          // Store image data
           uploadedImages.push(e.target.result);
           
           const previewItem = document.createElement('div');
@@ -2899,14 +3893,13 @@
           
           const img = document.createElement('img');
           img.src = e.target.result;
-          img.alt = 'Product Image Preview';
           
-          const removeBtn = document.createElement('button');
+          const removeBtn = document.createElement('div');
           removeBtn.className = 'remove-image';
           removeBtn.innerHTML = '&times;';
           removeBtn.onclick = function() {
             const index = uploadedImages.indexOf(e.target.result);
-            if (index !== -1) {
+            if (index > -1) {
               uploadedImages.splice(index, 1);
             }
             previewItem.remove();
@@ -2921,64 +3914,101 @@
       }
     }
 
-    // Handle category image upload
     function handleCategoryImageUpload(e) {
       const files = e.target.files;
       const preview = document.getElementById('categoryImagePreview');
       
       if (files && files.length > 0) {
         const file = files[0];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          alert('Please select an image file');
+          return;
+        }
+        
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('File is too large. Maximum size is 5MB.');
+          return;
+        }
+        
         const reader = new FileReader();
         
         reader.onload = function(e) {
-          // Store image data
           uploadedCategoryImage = e.target.result;
-          
-          // Create preview
-          preview.innerHTML = `<img src="${e.target.result}" alt="Category Image">`;
+          preview.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 100px;">`;
         };
         
         reader.readAsDataURL(file);
       }
     }
 
-    // Handle banner image upload
     function handleBannerImageUpload(e) {
       const files = e.target.files;
       const preview = document.getElementById('bannerImagePreview');
       
       if (files && files.length > 0) {
         const file = files[0];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          alert('Please select an image file');
+          return;
+        }
+        
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('File is too large. Maximum size is 5MB.');
+          return;
+        }
+        
         const reader = new FileReader();
         
         reader.onload = function(e) {
-          // Store image data
           uploadedBannerImage = e.target.result;
-          
-          // Create preview
-          preview.innerHTML = `<img src="${e.target.result}" alt="Banner Image">`;
+          preview.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 100px;">`;
         };
         
         reader.readAsDataURL(file);
       }
     }
 
-    // Save product
+    // FIXED: Save product with proper validation and error handling
     function saveProduct() {
-      const name = document.getElementById('productName').value;
-      const price = document.getElementById('productPrice').value;
-      const deliveryCharge = document.getElementById('productDeliveryCharge').value;
-      const stock = document.getElementById('productStock').value;
+      const name = document.getElementById('productName').value.trim();
+      const price = document.getElementById('productPrice').value.trim();
+      const stock = document.getElementById('productStock').value.trim();
       const category = document.getElementById('productCategory').value;
-      const desc = document.getElementById('productDesc').value;
-      const fullDesc = document.getElementById('productFullDesc').value;
-      const sizes = document.getElementById('productSizes').value.split(',').map(s => s.trim());
+      const desc = document.getElementById('productDesc').value.trim();
+      const fullDesc = document.getElementById('productFullDesc').value.trim();
+      const sizesInput = document.getElementById('productSizes').value.trim();
       const trending = document.getElementById('productTrending').checked;
       const status = document.getElementById('productStatus').checked ? 'active' : 'inactive';
       
-      // Validation
-      if (!name || !price || !category || !desc) {
-        alert('Please fill in all required fields');
+      // Validate required fields
+      if (!name) {
+        alert('Please enter product name');
+        return;
+      }
+      
+      if (!price) {
+        alert('Please enter product price');
+        return;
+      }
+      
+      if (isNaN(price) || parseFloat(price) <= 0) {
+        alert('Please enter a valid price');
+        return;
+      }
+      
+      if (!category) {
+        alert('Please select a category');
+        return;
+      }
+      
+      if (!desc) {
+        alert('Please enter product description');
         return;
       }
       
@@ -2987,12 +4017,15 @@
         return;
       }
       
-      if (category === "") {
-        alert('Please select a category');
-        return;
-      }
+      // Process sizes
+      const sizes = sizesInput ? sizesInput.split(',').map(s => s.trim()).filter(s => s) : [];
       
-      // Get next available ID
+      // Disable save button to prevent double submission
+      const saveBtn = document.getElementById('saveProductBtn');
+      const originalText = saveBtn.innerHTML;
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      saveBtn.disabled = true;
+      
       const productsRef = database.ref('products');
       productsRef.once('value', snapshot => {
         const productsData = snapshot.val();
@@ -3002,19 +4035,23 @@
           products = Object.values(productsData);
         }
         
+        // Generate next ID
         let nextId = 1;
         if (products.length > 0) {
-          const ids = products.map(p => parseInt(p.id)).filter(id => !isNaN(id));
+          const ids = products.map(p => {
+            const id = p.id || p.key;
+            return parseInt(id);
+          }).filter(id => !isNaN(id));
           nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
         }
         
-        // Create new product
+        const productId = nextId.toString();
+        
         const newProduct = {
-          id: nextId.toString(),
+          id: productId,
           title: name,
-          price: parseInt(price) || 0,
-          deliveryCharge: parseInt(deliveryCharge) || 0,
-          stock: parseInt(stock) || 0,
+          price: parseFloat(price),
+          stock: stock ? parseInt(stock) : 0,
           desc: desc,
           fullDesc: fullDesc,
           images: uploadedImages,
@@ -3025,38 +4062,43 @@
           timestamp: Date.now()
         };
         
-        // Add to Firebase
-        const newProductKey = nextId.toString();
-        productsRef.child(newProductKey).set(newProduct)
+        productsRef.child(productId).set(newProduct)
           .then(() => {
-            // Close modal and refresh products list
             document.getElementById('addProductModal').classList.remove('active');
             loadProducts();
             loadTrendingProducts();
-            
-            // If on dashboard, refresh it too
-            if (currentAdminTab === 'dashboard') {
-              loadDashboardData();
-            }
-            
+            if (currentAdminTab === 'dashboard') loadDashboardData();
             alert('Product added successfully!');
+            
+            // Reset button
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
           })
           .catch(error => {
             console.error('Error saving product:', error);
-            alert('Error saving product');
+            alert('Error saving product: ' + error.message);
+            
+            // Reset button
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
           });
+      }).catch(error => {
+        console.error('Error reading products:', error);
+        alert('Error reading products: ' + error.message);
+        
+        // Reset button
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
       });
     }
 
-    // Save category
     function saveCategory() {
-      const name = document.getElementById('categoryName').value;
-      const description = document.getElementById('categoryDescription').value;
+      const name = document.getElementById('categoryName').value.trim();
+      const description = document.getElementById('categoryDescription').value.trim();
       const status = document.getElementById('categoryStatus').checked ? 'active' : 'inactive';
       
-      // Validation
       if (!name) {
-        alert('Please enter a category name');
+        alert('Please enter category name');
         return;
       }
       
@@ -3065,14 +4107,12 @@
         return;
       }
       
-      // Check if category already exists
-      const existingCategory = allCategories.find(cat => cat.name.toLowerCase() === name.toLowerCase());
+      const existingCategory = allCategories.find(cat => cat.name && cat.name.toLowerCase() === name.toLowerCase());
       if (existingCategory) {
         alert('Category with this name already exists!');
         return;
       }
       
-      // Get next available ID
       const categoriesRef = database.ref('categories');
       categoriesRef.once('value', snapshot => {
         const categoriesData = snapshot.val();
@@ -3084,13 +4124,17 @@
         
         let nextId = 1;
         if (categories.length > 0) {
-          const ids = categories.map(c => parseInt(c.id)).filter(id => !isNaN(id));
+          const ids = categories.map(c => {
+            const id = c.id || c.key;
+            return parseInt(id);
+          }).filter(id => !isNaN(id));
           nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
         }
         
-        // Create new category
+        const categoryId = nextId.toString();
+        
         const newCategory = {
-          id: nextId.toString(),
+          id: categoryId,
           name: name,
           description: description,
           image: uploadedCategoryImage,
@@ -3098,38 +4142,28 @@
           productCount: 0
         };
         
-        // Add to Firebase
-        const newCategoryKey = nextId.toString();
-        categoriesRef.child(newCategoryKey).set(newCategory)
+        categoriesRef.child(categoryId).set(newCategory)
           .then(() => {
-            // Add to local array
             allCategories.push(newCategory);
-            
-            // Update dropdowns
             updateCategoryDropdowns();
-            
-            // Close modal and refresh categories list
             document.getElementById('addCategoryModal').classList.remove('active');
             loadCategories();
-            
             alert('Category added successfully!');
           })
           .catch(error => {
             console.error('Error saving category:', error);
-            alert('Error saving category');
+            alert('Error saving category: ' + error.message);
           });
       });
     }
 
-    // Save banner
     function saveBanner() {
-      const title = document.getElementById('bannerTitle').value;
-      const link = document.getElementById('bannerLink').value;
+      const title = document.getElementById('bannerTitle').value.trim();
+      const link = document.getElementById('bannerLink').value.trim();
       const status = document.getElementById('bannerStatus').checked ? 'active' : 'inactive';
       
-      // Validation
       if (!title) {
-        alert('Please enter a banner title');
+        alert('Please enter banner title');
         return;
       }
       
@@ -3138,7 +4172,6 @@
         return;
       }
       
-      // Get next available ID
       const bannersRef = database.ref('banners');
       bannersRef.once('value', snapshot => {
         const bannersData = snapshot.val();
@@ -3150,37 +4183,36 @@
         
         let nextId = 1;
         if (banners.length > 0) {
-          const ids = banners.map(b => parseInt(b.id)).filter(id => !isNaN(id));
+          const ids = banners.map(b => {
+            const id = b.id || b.key;
+            return parseInt(id);
+          }).filter(id => !isNaN(id));
           nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
         }
         
-        // Create new banner
+        const bannerId = nextId.toString();
+        
         const newBanner = {
-          id: nextId.toString(),
+          id: bannerId,
           title: title,
           link: link,
           image: uploadedBannerImage,
           status: status
         };
         
-        // Add to Firebase
-        const newBannerKey = nextId.toString();
-        bannersRef.child(newBannerKey).set(newBanner)
+        bannersRef.child(bannerId).set(newBanner)
           .then(() => {
-            // Close modal and refresh banners list
             document.getElementById('addBannerModal').classList.remove('active');
             loadBanners();
-            
             alert('Banner added successfully!');
           })
           .catch(error => {
             console.error('Error saving banner:', error);
-            alert('Error saving banner');
+            alert('Error saving banner: ' + error.message);
           });
       });
     }
 
-    // Load product details when main product is selected (NEW FUNCTION)
     function loadProductDetails(productId) {
       const product = allProductsForSimilar.find(p => p.id === productId);
       if (!product) return;
@@ -3199,28 +4231,23 @@
       
       infoDiv.style.display = 'block';
       
-      // Auto-select similar products by category
       const autoSuggest = document.getElementById('autoSuggestSimilar').checked;
       if (autoSuggest) {
         const similarProductsSelect = document.getElementById('similarProductsSelect');
         const similarProducts = allProductsForSimilar.filter(p => 
-          p.id !== productId && 
-          p.category === product.category
+          p.id !== productId && p.category === product.category
         );
         
-        // Select options with same category
         Array.from(similarProductsSelect.options).forEach(option => {
           const optionProductId = option.value;
           const isSimilar = similarProducts.some(p => p.id === optionProductId);
           option.selected = isSimilar;
         });
         
-        // Update preview
         updateSelectedSimilarProductsPreview();
       }
     }
 
-    // Search products for similar products selection (NEW FUNCTION)
     function searchProductsForSimilar() {
       const searchTerm = document.getElementById('searchSimilarProducts').value.toLowerCase();
       const selectElement = document.getElementById('similarProductsSelect');
@@ -3231,7 +4258,6 @@
       });
     }
 
-    // Edit search products (NEW FUNCTION)
     function editSearchProductsForSimilar() {
       const searchTerm = document.getElementById('editSearchSimilarProducts').value.toLowerCase();
       const selectElement = document.getElementById('editSimilarProductsSelect');
@@ -3242,7 +4268,6 @@
       });
     }
 
-    // Update selected similar products preview (NEW FUNCTION)
     function updateSelectedSimilarProductsPreview() {
       const selectElement = document.getElementById('similarProductsSelect');
       const selectedOptions = Array.from(selectElement.selectedOptions);
@@ -3259,18 +4284,17 @@
           const mainImage = images.length > 0 ? images[0] : '';
           
           const chip = document.createElement('div');
-          chip.className = 'similar-product-chip';
+          chip.style.cssText = 'display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; background: #f1f5f9; border-radius: 30px; margin-right: 5px; margin-bottom: 5px;';
           chip.innerHTML = `
-            <img src="${mainImage}" alt="${product.title || 'No Name'}">
-            <span>${product.title || 'No Name'}</span>
-            <button class="remove-chip" onclick="removeFromSimilarSelection('${productId}')">&times;</button>
+            <img src="${mainImage}" alt="${product.title || 'No Name'}" width="20" height="20" style="border-radius: 50%; object-fit: cover;">
+            <span style="font-size: 12px;">${product.title || 'No Name'}</span>
+            <span style="cursor: pointer; color: var(--danger);" onclick="removeFromSimilarSelection('${productId}')">&times;</span>
           `;
           previewDiv.appendChild(chip);
         }
       });
     }
 
-    // Remove product from selection (NEW FUNCTION)
     function removeFromSimilarSelection(productId) {
       const selectElement = document.getElementById('similarProductsSelect');
       const option = Array.from(selectElement.options).find(opt => opt.value === productId);
@@ -3280,7 +4304,6 @@
       }
     }
 
-    // Save similar products (NEW FUNCTION)
     function saveSimilarProducts() {
       const mainProductId = document.getElementById('mainProductSelect').value;
       const similarProductsSelect = document.getElementById('similarProductsSelect');
@@ -3298,7 +4321,6 @@
       
       const similarProductIds = selectedOptions.map(option => option.value);
       
-      // Check if main product is not in similar products
       if (similarProductIds.includes(mainProductId)) {
         alert('Main product cannot be in similar products list');
         return;
@@ -3306,7 +4328,6 @@
       
       const similarProductsRef = database.ref('similarProducts');
       
-      // Create similar products entry
       const similarProductsEntry = {
         mainProductId: mainProductId,
         similarProductIds: similarProductIds,
@@ -3315,24 +4336,18 @@
         updatedAt: Date.now()
       };
       
-      // Save to Firebase
       similarProductsRef.child(mainProductId).set(similarProductsEntry)
         .then(() => {
-          // Close modal
           document.getElementById('addSimilarProductsModal').classList.remove('active');
-          
-          // Refresh similar products list
           loadSimilarProducts();
-          
           alert('Similar products saved successfully!');
         })
         .catch(error => {
           console.error('Error saving similar products:', error);
-          alert('Error saving similar products');
+          alert('Error saving similar products: ' + error.message);
         });
     }
 
-    // Edit product
     function editProduct(productId) {
       const productsRef = database.ref('products');
       productsRef.child(productId).once('value', snapshot => {
@@ -3342,14 +4357,11 @@
           return;
         }
         
-        // Make sure categories dropdown is updated
         updateCategoryDropdowns();
         
-        // Fill form with product data
         document.getElementById('editProductId').value = productId;
         document.getElementById('editProductName').value = product.title || '';
         document.getElementById('editProductPrice').value = product.price || 0;
-        document.getElementById('editProductDeliveryCharge').value = product.deliveryCharge || 0;
         document.getElementById('editProductStock').value = product.stock || 0;
         document.getElementById('editProductCategory').value = product.category || '';
         document.getElementById('editProductDesc').value = product.desc || '';
@@ -3358,105 +4370,76 @@
         document.getElementById('editProductTrending').checked = product.trending || false;
         document.getElementById('editProductStatus').checked = product.status === 'active';
         
-        // Show modal
         document.getElementById('editProductModal').classList.add('active');
       }).catch(error => {
         console.error('Error loading product for edit:', error);
-        alert('Error loading product');
+        alert('Error loading product: ' + error.message);
       });
     }
 
-    // Update product
     function updateProduct() {
       const productId = document.getElementById('editProductId').value;
-      const name = document.getElementById('editProductName').value;
-      const price = document.getElementById('editProductPrice').value;
-      const deliveryCharge = document.getElementById('editProductDeliveryCharge').value;
-      const stock = document.getElementById('editProductStock').value;
+      const name = document.getElementById('editProductName').value.trim();
+      const price = document.getElementById('editProductPrice').value.trim();
+      const stock = document.getElementById('editProductStock').value.trim();
       const category = document.getElementById('editProductCategory').value;
-      const desc = document.getElementById('editProductDesc').value;
-      const fullDesc = document.getElementById('editProductFullDesc').value;
-      const sizes = document.getElementById('editProductSizes').value.split(',').map(s => s.trim());
+      const desc = document.getElementById('editProductDesc').value.trim();
+      const fullDesc = document.getElementById('editProductFullDesc').value.trim();
+      const sizesInput = document.getElementById('editProductSizes').value.trim();
       const trending = document.getElementById('editProductTrending').checked;
       const status = document.getElementById('editProductStatus').checked ? 'active' : 'inactive';
       
-      // Validation
       if (!name || !price || !category || !desc) {
         alert('Please fill in all required fields');
         return;
       }
       
-      if (category === "") {
-        alert('Please select a category');
-        return;
-      }
+      const sizes = sizesInput ? sizesInput.split(',').map(s => s.trim()).filter(s => s) : [];
       
-      // Update product
       const updates = {
         title: name,
-        price: parseInt(price) || 0,
-        deliveryCharge: parseInt(deliveryCharge) || 0,
-        stock: parseInt(stock) || 0,
+        price: parseFloat(price),
+        stock: stock ? parseInt(stock) : 0,
         desc: desc,
         fullDesc: fullDesc,
         sizes: sizes,
         category: category,
         trending: trending,
-        status: status
+        status: status,
+        updatedAt: Date.now()
       };
       
       database.ref('products/' + productId).update(updates)
         .then(() => {
-          // Close modal and refresh products list
           document.getElementById('editProductModal').classList.remove('active');
           loadProducts();
           loadTrendingProducts();
-          
-          // If on dashboard, refresh it too
-          if (currentAdminTab === 'dashboard') {
-            loadDashboardData();
-          }
-          
+          if (currentAdminTab === 'dashboard') loadDashboardData();
           alert('Product updated successfully!');
         })
         .catch(error => {
           console.error('Error updating product:', error);
-          alert('Error updating product');
+          alert('Error updating product: ' + error.message);
         });
     }
 
-    // Delete product confirmation
-    function deleteProductConfirm(productId) {
+    function deleteProduct(productId) {
       if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-        deleteProduct(productId);
+        database.ref('products/' + productId).remove()
+          .then(() => {
+            document.getElementById('editProductModal').classList.remove('active');
+            loadProducts();
+            loadTrendingProducts();
+            if (currentAdminTab === 'dashboard') loadDashboardData();
+            alert('Product deleted successfully!');
+          })
+          .catch(error => {
+            console.error('Error deleting product:', error);
+            alert('Error deleting product: ' + error.message);
+          });
       }
     }
 
-    // Delete product
-    function deleteProduct(productId) {
-      const productsRef = database.ref('products');
-      
-      productsRef.child(productId).remove()
-        .then(() => {
-          // Close modal and refresh products list
-          document.getElementById('editProductModal').classList.remove('active');
-          loadProducts();
-          loadTrendingProducts();
-          
-          // If on dashboard, refresh it too
-          if (currentAdminTab === 'dashboard') {
-            loadDashboardData();
-          }
-          
-          alert('Product deleted successfully!');
-        })
-        .catch(error => {
-          console.error('Error deleting product:', error);
-          alert('Error deleting product');
-        });
-    }
-
-    // Edit similar products (NEW FUNCTION)
     function editSimilarProducts(mainProductId) {
       const similarProductsRef = database.ref('similarProducts');
       const productsRef = database.ref('products');
@@ -3468,9 +4451,10 @@
         let products = [];
         
         if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          products = Object.entries(productsData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
         allProductsForSimilar = products;
@@ -3480,10 +4464,8 @@
           return;
         }
         
-        // Set main product ID
         document.getElementById('editMainProductId').value = mainProductId;
         
-        // Load main product info
         const mainProduct = products.find(p => p.id === mainProductId);
         const editProductInfo = document.getElementById('editProductInfo');
         
@@ -3493,7 +4475,7 @@
           
           editProductInfo.innerHTML = `
             <div style="display: flex; align-items: center; gap: 15px;">
-              <img src="${mainImage}" width="60" height="60" style="border-radius: 4px; object-fit: cover;">
+              <img src="${mainImage}" width="60" height="60" style="border-radius: 4px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/60'">
               <div>
                 <h4 style="margin: 0 0 5px 0;">${mainProduct.title || 'No Name'}</h4>
                 <p style="margin: 0; color: #64748b;">${mainProduct.category || 'Uncategorized'} | ₹${mainProduct.price || 0} | Stock: ${mainProduct.stock || 0}</p>
@@ -3502,7 +4484,6 @@
           `;
         }
         
-        // Populate similar products multi-select
         const editSimilarProductsSelect = document.getElementById('editSimilarProductsSelect');
         editSimilarProductsSelect.innerHTML = products
           .filter(p => p.id !== mainProductId)
@@ -3511,18 +4492,15 @@
             return `<option value="${product.id}" ${isSelected ? 'selected' : ''}>${product.title || 'No Name'} (₹${product.price || 0}) - ${product.category || 'Uncategorized'}</option>`;
           }).join('');
         
-        // Update preview
         updateEditSelectedSimilarProductsPreview();
         
-        // Show modal
         document.getElementById('editSimilarProductsModal').classList.add('active');
       }).catch(error => {
         console.error('Error loading similar products for edit:', error);
-        alert('Error loading similar products');
+        alert('Error loading similar products: ' + error.message);
       });
     }
 
-    // Update edit selected products preview (NEW FUNCTION)
     function updateEditSelectedSimilarProductsPreview() {
       const selectElement = document.getElementById('editSimilarProductsSelect');
       const selectedOptions = Array.from(selectElement.selectedOptions);
@@ -3539,18 +4517,17 @@
           const mainImage = images.length > 0 ? images[0] : '';
           
           const chip = document.createElement('div');
-          chip.className = 'similar-product-chip';
+          chip.style.cssText = 'display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; background: #f1f5f9; border-radius: 30px; margin-right: 5px; margin-bottom: 5px;';
           chip.innerHTML = `
-            <img src="${mainImage}" alt="${product.title || 'No Name'}">
-            <span>${product.title || 'No Name'}</span>
-            <button class="remove-chip" onclick="removeFromEditSimilarSelection('${productId}')">&times;</button>
+            <img src="${mainImage}" alt="${product.title || 'No Name'}" width="20" height="20" style="border-radius: 50%; object-fit: cover;" onerror="this.src='https://via.placeholder.com/20'">
+            <span style="font-size: 12px;">${product.title || 'No Name'}</span>
+            <span style="cursor: pointer; color: var(--danger);" onclick="removeFromEditSimilarSelection('${productId}')">&times;</span>
           `;
           previewDiv.appendChild(chip);
         }
       });
     }
 
-    // Remove from edit selection (NEW FUNCTION)
     function removeFromEditSimilarSelection(productId) {
       const selectElement = document.getElementById('editSimilarProductsSelect');
       const option = Array.from(selectElement.options).find(opt => opt.value === productId);
@@ -3560,7 +4537,6 @@
       }
     }
 
-    // Update similar products (NEW FUNCTION)
     function updateSimilarProducts() {
       const mainProductId = document.getElementById('editMainProductId').value;
       const editSimilarProductsSelect = document.getElementById('editSimilarProductsSelect');
@@ -3568,7 +4544,6 @@
       
       const similarProductIds = selectedOptions.map(option => option.value);
       
-      // Check if main product is not in similar products
       if (similarProductIds.includes(mainProductId)) {
         alert('Main product cannot be in similar products list');
         return;
@@ -3576,137 +4551,73 @@
       
       const similarProductsRef = database.ref('similarProducts');
       
-      // Update similar products entry
-      const updates = {
+      similarProductsRef.child(mainProductId).update({
         similarProductIds: similarProductIds,
         updatedAt: Date.now()
-      };
-      
-      similarProductsRef.child(mainProductId).update(updates)
-        .then(() => {
-          // Close modal
-          document.getElementById('editSimilarProductsModal').classList.remove('active');
-          
-          // Refresh similar products list
-          loadSimilarProducts();
-          
-          alert('Similar products updated successfully!');
-        })
-        .catch(error => {
-          console.error('Error updating similar products:', error);
-          alert('Error updating similar products');
-        });
+      })
+      .then(() => {
+        document.getElementById('editSimilarProductsModal').classList.remove('active');
+        loadSimilarProducts();
+        alert('Similar products updated successfully!');
+      })
+      .catch(error => {
+        console.error('Error updating similar products:', error);
+        alert('Error updating similar products: ' + error.message);
+      });
     }
 
-    // Delete similar products confirmation (NEW FUNCTION)
-    function deleteSimilarProductsConfirm(mainProductId) {
+    function deleteSimilarProducts(mainProductId) {
       if (confirm('Are you sure you want to delete all similar product links for this product?')) {
-        deleteSimilarProductsEntry(mainProductId);
-      }
-    }
-
-    // Delete similar products entry (NEW FUNCTION)
-    function deleteSimilarProductsEntry(mainProductId) {
-      const similarProductsRef = database.ref('similarProducts');
-      
-      similarProductsRef.child(mainProductId).remove()
-        .then(() => {
-          loadSimilarProducts();
-          alert('Similar products deleted successfully!');
-        })
-        .catch(error => {
-          console.error('Error deleting similar products:', error);
-          alert('Error deleting similar products');
-        });
-    }
-
-    // Delete similar products (from edit modal) (NEW FUNCTION)
-    function deleteSimilarProducts() {
-      const mainProductId = document.getElementById('editMainProductId').value;
-      
-      if (confirm('Are you sure you want to remove all similar product links?')) {
-        const similarProductsRef = database.ref('similarProducts');
-        
-        similarProductsRef.child(mainProductId).remove()
+        database.ref('similarProducts/' + mainProductId).remove()
           .then(() => {
-            // Close modal
-            document.getElementById('editSimilarProductsModal').classList.remove('active');
-            
-            // Refresh similar products list
             loadSimilarProducts();
-            
-            alert('Similar products removed successfully!');
+            alert('Similar products deleted successfully!');
           })
           .catch(error => {
-            console.error('Error removing similar products:', error);
-            alert('Error removing similar products');
+            console.error('Error deleting similar products:', error);
+            alert('Error deleting similar products: ' + error.message);
           });
       }
     }
 
-    // Edit category
     function editCategory(categoryId) {
-      // Implementation for edit category
-      alert('Edit category functionality would be implemented here');
+      alert('Edit category functionality coming soon!');
     }
 
-    // Delete category confirmation
-    function deleteCategoryConfirm(categoryId) {
-      if (confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
-        deleteCategory(categoryId);
-      }
-    }
-
-    // Delete category
     function deleteCategory(categoryId) {
-      const categoriesRef = database.ref('categories');
-      
-      categoriesRef.child(categoryId).remove()
-        .then(() => {
-          // Remove from local array
-          allCategories = allCategories.filter(cat => cat.id !== categoryId);
-          
-          // Update dropdowns
-          updateCategoryDropdowns();
-          
-          loadCategories();
-          alert('Category deleted successfully!');
-        })
-        .catch(error => {
-          console.error('Error deleting category:', error);
-          alert('Error deleting category');
-        });
-    }
-
-    // Edit banner
-    function editBanner(bannerId) {
-      // Implementation for edit banner
-      alert('Edit banner functionality would be implemented here');
-    }
-
-    // Delete banner confirmation
-    function deleteBannerConfirm(bannerId) {
-      if (confirm('Are you sure you want to delete this banner? This action cannot be undone.')) {
-        deleteBanner(bannerId);
+      if (confirm('Are you sure you want to delete this category?')) {
+        database.ref('categories/' + categoryId).remove()
+          .then(() => {
+            allCategories = allCategories.filter(cat => cat.id !== categoryId);
+            updateCategoryDropdowns();
+            loadCategories();
+            alert('Category deleted successfully!');
+          })
+          .catch(error => {
+            console.error('Error deleting category:', error);
+            alert('Error deleting category: ' + error.message);
+          });
       }
     }
 
-    // Delete banner
-    function deleteBanner(bannerId) {
-      const bannersRef = database.ref('banners');
-      
-      bannersRef.child(bannerId).remove()
-        .then(() => {
-          loadBanners();
-          alert('Banner deleted successfully!');
-        })
-        .catch(error => {
-          console.error('Error deleting banner:', error);
-          alert('Error deleting banner');
-        });
+    function editBanner(bannerId) {
+      alert('Edit banner functionality coming soon!');
     }
 
-    // Export orders
+    function deleteBanner(bannerId) {
+      if (confirm('Are you sure you want to delete this banner?')) {
+        database.ref('banners/' + bannerId).remove()
+          .then(() => {
+            loadBanners();
+            alert('Banner deleted successfully!');
+          })
+          .catch(error => {
+            console.error('Error deleting banner:', error);
+            alert('Error deleting banner: ' + error.message);
+          });
+      }
+    }
+
     function exportOrders() {
       const ordersRef = database.ref('orders');
       const productsRef = database.ref('products');
@@ -3718,14 +4629,12 @@
         let orders = [];
         let products = [];
         
-        if (ordersData) {
-          orders = Object.values(ordersData);
-        }
-        
+        if (ordersData) orders = Object.values(ordersData);
         if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => {
-            return { ...value, id: value.id || key };
-          });
+          products = Object.entries(productsData).map(([key, value]) => ({
+            ...value,
+            id: value.id || key
+          }));
         }
         
         if (orders.length === 0) {
@@ -3733,15 +4642,14 @@
           return;
         }
         
-        // Create CSV content
-        let csv = 'Order ID,Customer,Product,Quantity,Amount,Status,Date\n';
+        let csv = 'Order ID,Customer,Mobile,Product,Quantity,Amount,Status,Date\n';
         
         orders.forEach(order => {
           const product = products.find(p => p.id === order.productId);
-          csv += `"${order.id || 'N/A'}","${order.fullname || 'N/A'}","${product ? product.title : 'Unknown'}","${order.qty || 1}","${product ? product.price * (order.qty || 1) : 'N/A'}","${order.status || 'Pending'}","${order.timestamp ? new Date(order.timestamp).toLocaleDateString() : 'N/A'}"\n`;
+          const amount = product ? product.price * (order.qty || 1) : 0;
+          csv += `"${order.id || 'N/A'}","${order.fullname || 'N/A'}","${order.mobile || 'N/A'}","${product ? product.title : 'Unknown'}","${order.qty || 1}","${amount}","${order.status || 'Pending'}","${order.timestamp ? new Date(order.timestamp).toLocaleDateString() : 'N/A'}"\n`;
         });
         
-        // Create download link
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -3750,29 +4658,26 @@
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }).catch(error => {
         console.error('Error exporting orders:', error);
-        alert('Error exporting orders');
+        alert('Error exporting orders: ' + error.message);
       });
     }
 
-    // Export customers
     function exportCustomers() {
       const ordersRef = database.ref('orders');
       ordersRef.once('value', snapshot => {
         const ordersData = snapshot.val();
         let orders = [];
         
-        if (ordersData) {
-          orders = Object.values(ordersData);
-        }
+        if (ordersData) orders = Object.values(ordersData);
         
         if (orders.length === 0) {
           alert('No customer data to export');
           return;
         }
         
-        // Extract unique customers based on mobile number
         const customersMap = {};
         orders.forEach(order => {
           if (order.mobile && !customersMap[order.mobile]) {
@@ -3790,14 +4695,11 @@
         
         const customers = Object.values(customersMap);
         
-        // Create CSV content
         let csv = 'Name,Mobile,Email,Location,Orders\n';
-        
         customers.forEach(customer => {
           csv += `"${customer.name}","${customer.mobile}","${customer.email}","${customer.location}","${customer.orderCount}"\n`;
         });
         
-        // Create download link
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -3806,15 +4708,16 @@
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }).catch(error => {
         console.error('Error exporting customers:', error);
-        alert('Error exporting customers');
+        alert('Error exporting customers: ' + error.message);
       });
     }
 
-    // Update pagination
     function updatePagination(elementId, currentPage, totalPages, type) {
       const pagination = document.getElementById(elementId);
+      if (!pagination) return;
       
       if (totalPages <= 1) {
         pagination.innerHTML = '';
@@ -3823,12 +4726,10 @@
       
       let html = '';
       
-      // Previous button
       if (currentPage > 1) {
         html += `<div class="page-item" onclick="changePage('${type}', ${currentPage - 1})">&laquo;</div>`;
       }
       
-      // Page numbers
       const startPage = Math.max(1, currentPage - 2);
       const endPage = Math.min(totalPages, startPage + 4);
       
@@ -3836,7 +4737,6 @@
         html += `<div class="page-item ${i === currentPage ? 'active' : ''}" onclick="changePage('${type}', ${i})">${i}</div>`;
       }
       
-      // Next button
       if (currentPage < totalPages) {
         html += `<div class="page-item" onclick="changePage('${type}', ${currentPage + 1})">&raquo;</div>`;
       }
@@ -3844,7 +4744,6 @@
       pagination.innerHTML = html;
     }
 
-    // Change page
     function changePage(type, page) {
       if (type === 'products') {
         currentProductsPage = page;
@@ -3860,11 +4759,9 @@
         loadSimilarProducts();
       }
       
-      // Scroll to top
       window.scrollTo(0, 0);
     }
 
-    // Initialize when page loads
     window.addEventListener('DOMContentLoaded', initAdminPanel);
   </script>
 </body>
