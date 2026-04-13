@@ -1121,12 +1121,30 @@
               </div>
             </div>
             <div class="stat-card">
+              <div class="stat-icon" style="background: #10b981;">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="onlineUsersCount">0</h3>
+                <p>Users Online Now</p>
+              </div>
+            </div>
+            <div class="stat-card">
               <div class="stat-icon" style="background: var(--danger);">
                 <i class="fas fa-fire"></i>
               </div>
               <div class="stat-info">
                 <h3 id="trendingProducts">0</h3>
                 <p>Trending Products</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #8b5cf6;">
+                <i class="fas fa-users-cog"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="totalCustomersStat">0</h3>
+                <p>Total Customers</p>
               </div>
             </div>
           </div>
@@ -2908,64 +2926,65 @@
 
     // Load dashboard data
     function loadDashboardData() {
-      const productsRef = database.ref('products');
       const ordersRef = database.ref('orders');
-      
+      const productsRef = database.ref('products');
+      const usersRef = database.ref('users');
+
       Promise.all([
-        new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val()))),
-        new Promise(resolve => ordersRef.once('value', snapshot => resolve(snapshot.val())))
-      ]).then(([productsData, ordersData]) => {
-        let products = [];
-        let orders = [];
-        
-        if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => ({
-            ...value,
-            id: value.id || key
-          }));
-        }
-        
-        if (ordersData) {
-          orders = Object.entries(ordersData).map(([key, value]) => ({
-            ...value,
-            id: value.id || key
-          }));
-        }
-        
-        const trendingProducts = products.filter(p => p.trending);
-        
+        ordersRef.once('value'),
+        productsRef.once('value'),
+        usersRef.once('value')
+      ]).then(([ordersSnap, productsSnap, usersSnap]) => {
+        const ordersData = ordersSnap.val() || {};
+        const productsData = productsSnap.val() || {};
+        const usersData = usersSnap.val() || {};
+
+        const orders = Object.entries(ordersData).map(([key, val]) => ({ ...val, id: key }));
+        const products = Object.entries(productsData).map(([key, val]) => ({ ...val, id: key }));
+        const totalCustomers = Object.keys(usersData).length;
+
+        const trendingCount = products.filter(p => p.isTrending || p.trending).length;
+        const pendingCount = orders.filter(o => {
+          const s = (o.status || '').toLowerCase();
+          return s === 'confirmed' || s === 'pending';
+        }).length;
+
         document.getElementById('totalProducts').textContent = products.length;
         document.getElementById('totalOrders').textContent = orders.length;
-        document.getElementById('pendingOrders').textContent = orders.filter(o => o.status === 'Pending').length;
-        document.getElementById('trendingProducts').textContent = trendingProducts.length;
-        
-        const earnings = calculateEarnings(orders, products);
-        document.getElementById('totalEarnings').textContent = `₹${earnings.totalEarnings.toLocaleString()}`;
-        document.getElementById('lastWeekEarnings').textContent = `₹${earnings.lastWeekEarnings.toLocaleString()}`;
-        document.getElementById('lastMonthEarnings').textContent = `₹${earnings.lastMonthEarnings.toLocaleString()}`;
-        
-        updateTrendElement('lastWeekTrend', earnings.weeklyTrend);
-        updateTrendElement('lastMonthTrend', earnings.monthlyTrend);
-        
-        const recentOrders = orders.slice(-5).reverse();
-        const recentOrdersHtml = recentOrders.map(order => {
-          const product = products.find(p => p.id === order.productId);
-          return `
-            <tr>
-              <td>#${order.id || 'N/A'}</td>
-              <td>${order.fullname || 'N/A'}</td>
-              <td>${product ? product.title : 'Unknown'}</td>
-              <td>₹${product ? product.price * (order.qty || 1) : 'N/A'}</td>
-              <td><span class="badge ${getStatusBadgeClass(order.status)}">${order.status || 'Pending'}</span></td>
-              <td>${order.timestamp ? new Date(order.timestamp).toLocaleDateString() : 'N/A'}</td>
-            </tr>
-          `;
-        }).join('');
-        
-        document.getElementById('recentOrders').innerHTML = recentOrdersHtml || '<tr><td colspan="6" style="text-align: center">No orders found</td></tr>';
-      }).catch(error => {
-        console.error('Error loading dashboard data:', error);
-      });
+        document.getElementById('pendingOrders').textContent = pendingCount;
+        document.getElementById('trendingProducts').textContent = trendingCount;
+        document.getElementById('totalCustomersStat').textContent = totalCustomers;
+
+        const totalEarnings = orders.reduce((sum, o) => sum + (parseFloat(o.totalAmount) || 0), 0);
+        const now = Date.now();
+        const weekAgo = now - 7 * 24 * 3600000;
+        const monthAgo = now - 30 * 24 * 3600000;
+        const weekEarnings = orders.filter(o => (o.orderDate || 0) >= weekAgo).reduce((s, o) => s + (parseFloat(o.totalAmount) || 0), 0);
+        const monthEarnings = orders.filter(o => (o.orderDate || 0) >= monthAgo).reduce((s, o) => s + (parseFloat(o.totalAmount) || 0), 0);
+
+        if (document.getElementById('totalEarnings')) document.getElementById('totalEarnings').textContent = '₹' + totalEarnings.toLocaleString();
+        if (document.getElementById('lastWeekEarnings')) document.getElementById('lastWeekEarnings').textContent = '₹' + weekEarnings.toLocaleString();
+        if (document.getElementById('lastMonthEarnings')) document.getElementById('lastMonthEarnings').textContent = '₹' + monthEarnings.toLocaleString();
+
+        // Recent orders — sorted by newest first
+        const recentOrders = [...orders].sort((a, b) => (b.orderDate || 0) - (a.orderDate || 0)).slice(0, 10);
+        const recentOrdersHtml = recentOrders.length ? recentOrders.map(order => {
+          const statusColor = { confirmed:'#2563eb', shipped:'#f59e0b', delivered:'#22c55e', cancelled:'#ef4444', pending:'#94a3b8' };
+          const s = (order.status || 'confirmed').toLowerCase();
+          const name = order.userInfo?.fullName || order.username || 'N/A';
+          const date = order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-IN') : 'N/A';
+          return `<tr>
+            <td style="font-weight:600;">${order.orderId || '#' + order.id.slice(-6)}</td>
+            <td>${name}<br><small style="color:#64748b;">${order.userEmail || ''}</small></td>
+            <td>${order.productName || 'N/A'}</td>
+            <td style="font-weight:600;">₹${(order.totalAmount || 0).toLocaleString()}</td>
+            <td><span style="background:${statusColor[s]||'#94a3b8'}20;color:${statusColor[s]||'#94a3b8'};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">${order.status || 'Confirmed'}</span></td>
+            <td>${date}</td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">No orders yet</td></tr>';
+
+        document.getElementById('recentOrders').innerHTML = recentOrdersHtml;
+      }).catch(err => console.error('Dashboard error:', err));
     }
 
     // Update trend element
@@ -3108,69 +3127,75 @@
 
     // Load orders with date filter
     function loadOrders() {
-      const ordersRef = database.ref('orders');
-      const productsRef = database.ref('products');
-      
-      Promise.all([
-        new Promise(resolve => ordersRef.once('value', snapshot => resolve(snapshot.val()))),
-        new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val())))
-      ]).then(([ordersData, productsData]) => {
-        let orders = [];
-        let products = [];
-        
-        if (ordersData) {
-          orders = Object.entries(ordersData).map(([key, value]) => ({
-            ...value,
-            id: value.id || key
-          }));
+      database.ref('orders').once('value').then(snap => {
+        const ordersData = snap.val() || {};
+        let orders = Object.entries(ordersData).map(([key, val]) => ({ ...val, id: key }));
+
+        // Sort newest first
+        orders.sort((a, b) => (b.orderDate || 0) - (a.orderDate || 0));
+
+        // Apply search/date filter
+        const searchTerm = (document.getElementById('orderSearch')?.value || '').toLowerCase();
+        if (searchTerm) {
+          orders = orders.filter(o =>
+            (o.orderId || '').toLowerCase().includes(searchTerm) ||
+            (o.userInfo?.fullName || o.username || '').toLowerCase().includes(searchTerm) ||
+            (o.userInfo?.mobile || '').includes(searchTerm) ||
+            (o.productName || '').toLowerCase().includes(searchTerm) ||
+            (o.userEmail || '').toLowerCase().includes(searchTerm)
+          );
         }
-        
-        if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => ({
-            ...value,
-            id: value.id || key
-          }));
+
+        // Date filter
+        if (currentDateFilter.type !== 'all') {
+          const today = new Date(); today.setHours(0,0,0,0);
+          orders = orders.filter(o => {
+            if (!o.orderDate) return false;
+            const d = new Date(o.orderDate); d.setHours(0,0,0,0);
+            if (currentDateFilter.type === 'today') return d.getTime() === today.getTime();
+            if (currentDateFilter.type === 'custom' && currentDateFilter.startDate && currentDateFilter.endDate) {
+              const s = new Date(currentDateFilter.startDate); s.setHours(0,0,0,0);
+              const e = new Date(currentDateFilter.endDate); e.setHours(23,59,59,999);
+              return d >= s && d <= e;
+            }
+            return true;
+          });
         }
-        
-        // Apply date filter
-        const filteredOrders = applyDateFilter(orders, products);
-        const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-        
+
+        const totalPages = Math.ceil(orders.length / ordersPerPage);
         updatePagination('ordersPagination', currentOrdersPage, totalPages, 'orders');
-        
         const startIndex = (currentOrdersPage - 1) * ordersPerPage;
-        const paginatedOrders = filteredOrders.slice(startIndex, startIndex + ordersPerPage);
-        
-        const ordersHtml = paginatedOrders.map(order => {
-          const product = products.find(p => p.id === order.productId);
-          return `
-            <tr>
-              <td><input type="checkbox" value="${order.id}"></td>
-              <td>#${order.id || 'N/A'}</td>
-              <td>${order.fullname || 'N/A'}<br><small>${order.mobile || 'N/A'}</small></td>
-              <td>${product ? product.title : 'Unknown'} (x${order.qty || 1})</td>
-              <td>₹${product ? product.price * (order.qty || 1) : 'N/A'}</td>
-              <td>
-                <select onchange="updateOrderStatus('${order.id}', this.value)" class="form-control" style="width: auto;">
-                  <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                  <option value="Confirmed" ${order.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
-                  <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
-                  <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                  <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                </select>
-              </td>
-              <td>${order.timestamp ? new Date(order.timestamp).toLocaleDateString() : 'N/A'}</td>
-              <td>
-                <button class="btn btn-primary btn-sm" onclick="viewOrderDetails('${order.id}')"><i class="fas fa-eye"></i></button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-        
-        document.getElementById('ordersTableBody').innerHTML = ordersHtml || '<tr><td colspan="8" style="text-align: center">No orders found</td></tr>';
-      }).catch(error => {
-        console.error('Error loading orders:', error);
-      });
+        const paged = orders.slice(startIndex, startIndex + ordersPerPage);
+
+        const statusColor = { confirmed:'#2563eb', shipped:'#f59e0b', delivered:'#22c55e', cancelled:'#ef4444', pending:'#94a3b8', 'return-requested':'#8b5cf6', 'replace-requested':'#06b6d4' };
+
+        const html = paged.length ? paged.map(order => {
+          const s = (order.status || 'confirmed').toLowerCase();
+          const name = order.userInfo?.fullName || order.username || 'N/A';
+          const mobile = order.userInfo?.mobile || 'N/A';
+          const date = order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-IN') : 'N/A';
+          const statusLabel = order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Confirmed';
+          return `<tr>
+            <td><input type="checkbox" value="${order.id}"></td>
+            <td style="font-weight:600;">${order.orderId || '#' + order.id.slice(-6)}</td>
+            <td>${name}<br><small style="color:#64748b;">${mobile}</small></td>
+            <td>${order.productName || 'N/A'}<br><small>Qty: ${order.quantity||1} | Size: ${order.size||'N/A'}</small></td>
+            <td style="font-weight:600;">₹${(order.totalAmount || 0).toLocaleString()}</td>
+            <td>
+              <select onchange="updateOrderStatus('${order.id}', this.value)" class="form-control" style="width:auto;min-width:130px;">
+                <option value="confirmed" ${s==='confirmed'?'selected':''}>Confirmed</option>
+                <option value="shipped" ${s==='shipped'?'selected':''}>Shipped</option>
+                <option value="delivered" ${s==='delivered'?'selected':''}>Delivered</option>
+                <option value="cancelled" ${s==='cancelled'?'selected':''}>Cancelled</option>
+              </select>
+            </td>
+            <td>${date}</td>
+            <td><button class="btn btn-primary btn-sm" onclick="viewOrderDetails('${order.id}')"><i class="fas fa-eye"></i></button></td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="8" style="text-align:center;padding:20px;color:#94a3b8;">No orders found</td></tr>';
+
+        document.getElementById('ordersTableBody').innerHTML = html;
+      }).catch(err => console.error('Error loading orders:', err));
     }
 
     // Apply date filter
@@ -3336,134 +3361,102 @@
 
     // View Order Details
     function viewOrderDetails(orderId) {
-      const ordersRef = database.ref('orders');
-      const productsRef = database.ref('products');
-      
-      Promise.all([
-        new Promise(resolve => ordersRef.child(orderId).once('value', snapshot => resolve(snapshot.val()))),
-        new Promise(resolve => productsRef.once('value', snapshot => resolve(snapshot.val())))
-      ]).then(([order, productsData]) => {
-        if (!order) {
-          alert('Order not found');
-          return;
-        }
-        
-        let products = [];
-        if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => ({
-            ...value,
-            id: value.id || key
-          }));
-        }
-        
-        const product = products.find(p => p.id === order.productId);
-        const orderDate = order.timestamp ? new Date(order.timestamp) : new Date();
-        
-        // Populate order details
-        document.getElementById('orderDetailsId').textContent = `#${order.id || ''}`;
-        document.getElementById('orderDetailsName').textContent = order.fullname || 'N/A';
-        document.getElementById('orderDetailsMobile').textContent = order.mobile || 'N/A';
-        document.getElementById('orderDetailsEmail').textContent = order.email || 'N/A';
-        document.getElementById('orderDetailsDate').textContent = orderDate.toLocaleString();
-        
-        const address = `${order.house || ''}, ${order.area || ''}, ${order.city || ''}, ${order.state || ''} - ${order.pincode || ''}`;
-        document.getElementById('orderDetailsAddress').textContent = address;
-        
-        // Populate order items
-        const orderProductsBody = document.getElementById('orderProductsBody');
-        const productPrice = product ? product.price : 0;
-        const quantity = order.qty || 1;
-        const subtotal = productPrice * quantity;
-        
-        orderProductsBody.innerHTML = `
+      database.ref('orders/' + orderId).once('value').then(snap => {
+        const order = snap.val();
+        if (!order) { alert('Order not found'); return; }
+
+        const name = order.userInfo?.fullName || order.username || 'N/A';
+        const mobile = order.userInfo?.mobile || 'N/A';
+        const city = order.userInfo?.city || '';
+        const state = order.userInfo?.state || '';
+        const pincode = order.userInfo?.pincode || '';
+        const house = order.userInfo?.house || '';
+        const orderDate = order.orderDate ? new Date(order.orderDate) : new Date();
+
+        document.getElementById('orderDetailsId').textContent = order.orderId || ('#' + orderId.slice(-8));
+        document.getElementById('orderDetailsName').textContent = name;
+        document.getElementById('orderDetailsMobile').textContent = mobile;
+        document.getElementById('orderDetailsEmail').textContent = order.userEmail || 'N/A';
+        document.getElementById('orderDetailsDate').textContent = orderDate.toLocaleString('en-IN');
+
+        const address = [house, city, state, pincode].filter(Boolean).join(', ');
+        document.getElementById('orderDetailsAddress').textContent = address || 'N/A';
+
+        // Product row
+        const qty = order.quantity || 1;
+        const price = order.productPrice || 0;
+        const subtotal = order.subtotal || (price * qty);
+        document.getElementById('orderProductsBody').innerHTML = `
           <tr>
-            <td>${product ? product.title : 'Unknown'}</td>
-            <td>₹${productPrice}</td>
-            <td>${quantity}</td>
-            <td>₹${subtotal}</td>
-          </tr>
-        `;
-        
-        // Calculate totals
-        document.getElementById('orderSubtotal').textContent = `₹${subtotal}`;
-        const shipping = order.shipping || 50;
-        document.getElementById('orderShipping').textContent = `₹${shipping}`;
-        document.getElementById('orderTotal').textContent = `₹${subtotal + shipping}`;
-        
-        // Set status dropdown
+            <td>${order.productName || 'N/A'}</td>
+            <td>₹${price.toLocaleString()}</td>
+            <td>${qty} ${order.size ? '| Size: ' + order.size : ''}</td>
+            <td>₹${subtotal.toLocaleString()}</td>
+          </tr>`;
+
+        document.getElementById('orderSubtotal').textContent = '₹' + subtotal.toLocaleString();
+        document.getElementById('orderShipping').textContent = '₹' + (order.deliveryCharge || 50);
+        document.getElementById('orderTotal').textContent = '₹' + (order.totalAmount || subtotal + 50).toLocaleString();
+
         const statusSelect = document.getElementById('orderDetailsStatus');
-        statusSelect.value = order.status || 'Pending';
+        statusSelect.value = order.status || 'confirmed';
         statusSelect.setAttribute('data-order-id', orderId);
-        
-        // Update status timeline
-        updateStatusTimeline(order.status || 'Pending');
-        
-        // Show modal
+
+        updateStatusTimeline(order.status || 'confirmed');
         document.getElementById('orderDetailsModal').classList.add('active');
-      }).catch(error => {
-        console.error('Error loading order details:', error);
-        alert('Error loading order details');
-      });
+      }).catch(err => { console.error(err); alert('Error loading order details'); });
     }
 
-    // Update status timeline
+    function updateOrderStatus(orderId, status) {
+      const updates = { status };
+      // Auto-set deliveredDate when marking as delivered
+      if (status === 'delivered') updates.deliveredDate = Date.now();
+      database.ref('orders/' + orderId).update(updates)
+        .then(() => {
+          loadOrders();
+          if (currentAdminTab === 'dashboard') loadDashboardData();
+        })
+        .catch(err => alert('Error updating status: ' + err.message));
+    }
+
     function updateStatusTimeline(currentStatus) {
-      const statuses = ['Pending', 'Confirmed', 'Shipped', 'Delivered'];
+      const s = (currentStatus || 'confirmed').toLowerCase();
+      const statuses = ['confirmed', 'shipped', 'delivered'];
+      const labels = { confirmed: 'Confirmed', shipped: 'Shipped', delivered: 'Delivered' };
+      const icons = { confirmed: 'fa-check-circle', shipped: 'fa-truck', delivered: 'fa-box-open' };
       const timeline = document.getElementById('orderStatusTimeline');
-      
-      let timelineHtml = '';
-      statuses.forEach((status, index) => {
-        const statusIndex = statuses.indexOf(currentStatus);
-        let statusClass = '';
-        
-        if (index < statusIndex) {
-          statusClass = 'completed';
-        } else if (index === statusIndex) {
-          statusClass = 'active';
-        }
-        
-        timelineHtml += `
-          <div class="status-step ${statusClass}">
-            <div class="status-icon">
-              ${index < statusIndex ? '<i class="fas fa-check"></i>' : ''}
-            </div>
-            <div class="status-label">${status}</div>
-          </div>
-        `;
-      });
-      
-      // Add cancelled status if applicable
-      if (currentStatus === 'Cancelled') {
-        timelineHtml += `
-          <div class="status-step active">
-            <div class="status-icon">
-              <i class="fas fa-times"></i>
-            </div>
-            <div class="status-label">Cancelled</div>
-          </div>
-        `;
+      if (!timeline) return;
+      const currentIdx = statuses.indexOf(s);
+      let html = statuses.map((st, i) => {
+        const done = i < currentIdx;
+        const active = i === currentIdx;
+        return `<div class="status-step ${done ? 'completed' : active ? 'active' : ''}">
+          <div class="status-icon"><i class="fas ${done ? 'fa-check' : icons[st]}"></i></div>
+          <div class="status-label">${labels[st]}</div>
+        </div>`;
+      }).join('');
+      if (s === 'cancelled') {
+        html = `<div class="status-step active"><div class="status-icon"><i class="fas fa-times"></i></div><div class="status-label">Cancelled</div></div>`;
+      } else if (s === 'return-requested') {
+        html += `<div class="status-step active"><div class="status-icon"><i class="fas fa-undo"></i></div><div class="status-label">Return Requested</div></div>`;
       }
-      
-      timeline.innerHTML = timelineHtml;
+      timeline.innerHTML = html;
     }
 
     // Update order status from details modal
     function updateOrderStatusFromDetails() {
       const orderId = document.getElementById('orderDetailsStatus').getAttribute('data-order-id');
       const status = document.getElementById('orderDetailsStatus').value;
-      
-      if (confirm(`Update order status to ${status}?`)) {
-        database.ref('orders/' + orderId).update({ status: status })
+      if (confirm(`Update order status to "${status}"?`)) {
+        const updates = { status };
+        if (status === 'delivered') updates.deliveredDate = Date.now();
+        database.ref('orders/' + orderId).update(updates)
           .then(() => {
             updateStatusTimeline(status);
             loadOrders();
             if (currentAdminTab === 'dashboard') loadDashboardData();
-            alert('Order status updated successfully!');
           })
-          .catch(error => {
-            console.error('Error updating order status:', error);
-            alert('Error updating order status');
-          });
+          .catch(err => alert('Error updating status: ' + err.message));
       }
     }
 
@@ -3668,68 +3661,66 @@
 
     // Load customers
     function loadCustomers() {
-      const ordersRef = database.ref('orders');
-      ordersRef.once('value', snapshot => {
-        const ordersData = snapshot.val();
-        let orders = [];
-        
-        if (ordersData) {
-          orders = Object.values(ordersData);
-        }
-        
-        const customersMap = {};
-        orders.forEach(order => {
-          if (order.mobile && !customersMap[order.mobile]) {
-            customersMap[order.mobile] = {
-              name: order.fullname || 'Unknown',
-              mobile: order.mobile,
-              email: order.email || 'N/A',
-              location: `${order.city || ''}, ${order.state || ''}`,
-              orderCount: 1,
-              lastOrder: order.timestamp
-            };
-          } else if (order.mobile) {
-            customersMap[order.mobile].orderCount++;
-            if (new Date(order.timestamp) > new Date(customersMap[order.mobile].lastOrder)) {
-              customersMap[order.mobile].lastOrder = order.timestamp;
-            }
+      Promise.all([
+        database.ref('users').once('value'),
+        database.ref('orders').once('value')
+      ]).then(([usersSnap, ordersSnap]) => {
+        const usersData = usersSnap.val() || {};
+        const ordersData = ordersSnap.val() || {};
+
+        // Build order count per user
+        const orderCountMap = {};
+        const lastOrderMap = {};
+        Object.values(ordersData).forEach(o => {
+          if (!o.userId) return;
+          orderCountMap[o.userId] = (orderCountMap[o.userId] || 0) + 1;
+          if (!lastOrderMap[o.userId] || (o.orderDate || 0) > lastOrderMap[o.userId]) {
+            lastOrderMap[o.userId] = o.orderDate || 0;
           }
         });
-        
-        const customers = Object.values(customersMap);
-        const filteredCustomers = filterCustomersList(customers);
-        const totalPages = Math.ceil(filteredCustomers.length / customersPerPage);
-        
-        updatePagination('customersPagination', currentCustomersPage, totalPages, 'customers');
-        
-        const startIndex = (currentCustomersPage - 1) * customersPerPage;
-        const paginatedCustomers = filteredCustomers.slice(startIndex, startIndex + customersPerPage);
-        
-        const customersHtml = paginatedCustomers.map(customer => `
-          <tr>
-            <td>${customer.name}</td>
-            <td>${customer.mobile}</td>
-            <td>${customer.email}</td>
-            <td>${customer.location}</td>
-            <td>${customer.orderCount}</td>
-            <td>${customer.lastOrder ? new Date(customer.lastOrder).toLocaleDateString() : 'N/A'}</td>
-          </tr>
-        `).join('');
-        
-        document.getElementById('customersTableBody').innerHTML = customersHtml || '<tr><td colspan="6" style="text-align: center">No customers found</td></tr>';
-      }).catch(error => {
-        console.error('Error loading customers:', error);
-      });
-    }
 
-    function filterCustomersList(customers) {
-      const searchTerm = document.getElementById('customerSearch')?.value.toLowerCase() || '';
-      return customers.filter(customer => 
-        (customer.name || '').toLowerCase().includes(searchTerm) || 
-        (customer.mobile || '').includes(searchTerm) ||
-        (customer.email || '').toLowerCase().includes(searchTerm) ||
-        (customer.location || '').toLowerCase().includes(searchTerm)
-      );
+        const customers = Object.entries(usersData).map(([uid, u]) => ({
+          uid,
+          name: u.displayName || u.name || 'N/A',
+          email: u.email || 'N/A',
+          photo: u.photoURL || '',
+          createdAt: u.createdAt || 0,
+          lastLogin: u.lastLoginAt || 0,
+          orderCount: orderCountMap[uid] || 0,
+          lastOrder: lastOrderMap[uid] || 0
+        }));
+
+        // Sort by most recent
+        customers.sort((a, b) => (b.lastLogin || b.createdAt) - (a.lastLogin || a.createdAt));
+
+        const searchTerm = (document.getElementById('customerSearch')?.value || '').toLowerCase();
+        const filtered = searchTerm ? customers.filter(c =>
+          c.name.toLowerCase().includes(searchTerm) ||
+          c.email.toLowerCase().includes(searchTerm)
+        ) : customers;
+
+        const totalPages = Math.ceil(filtered.length / customersPerPage);
+        updatePagination('customersPagination', currentCustomersPage, totalPages, 'customers');
+        const start = (currentCustomersPage - 1) * customersPerPage;
+        const paged = filtered.slice(start, start + customersPerPage);
+
+        const html = paged.length ? paged.map(c => `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                ${c.photo ? `<img src="${c.photo}" width="32" height="32" style="border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">` : '<div style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#64748b;">' + (c.name[0]||'?') + '</div>'}
+                <div><div style="font-weight:600;">${c.name}</div><div style="font-size:11px;color:#94a3b8;">${c.uid.slice(0,8)}...</div></div>
+              </div>
+            </td>
+            <td>${c.email}</td>
+            <td><span style="background:#dbeafe;color:#1d4ed8;padding:3px 8px;border-radius:20px;font-size:12px;font-weight:600;">${c.orderCount}</span></td>
+            <td>${c.lastOrder ? new Date(c.lastOrder).toLocaleDateString('en-IN') : 'Never'}</td>
+            <td>${c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
+          </tr>
+        `).join('') : '<tr><td colspan="5" style="text-align:center;padding:20px;color:#94a3b8;">No customers yet</td></tr>';
+
+        document.getElementById('customersTableBody').innerHTML = html;
+      }).catch(err => console.error('Error loading customers:', err));
     }
 
     function filterCustomers() {
@@ -4410,43 +4401,37 @@
       const mainProductId = document.getElementById('mainProductSelect').value;
       const similarProductsSelect = document.getElementById('similarProductsSelect');
       const selectedOptions = Array.from(similarProductsSelect.selectedOptions);
-      
-      if (!mainProductId) {
-        alert('Please select a main product');
-        return;
-      }
-      
-      if (selectedOptions.length === 0) {
-        alert('Please select at least one similar product');
-        return;
-      }
-      
-      const similarProductIds = selectedOptions.map(option => option.value);
-      
-      if (similarProductIds.includes(mainProductId)) {
-        alert('Main product cannot be in similar products list');
-        return;
-      }
-      
-      const similarProductsRef = database.ref('similarProducts');
-      
-      const similarProductsEntry = {
-        mainProductId: mainProductId,
-        similarProductIds: similarProductIds,
+
+      if (!mainProductId) { alert('Please select a main product'); return; }
+      if (selectedOptions.length === 0) { alert('Please select at least one similar product'); return; }
+
+      const similarProductIds = selectedOptions.map(o => o.value);
+      if (similarProductIds.includes(mainProductId)) { alert('Main product cannot be in similar products list'); return; }
+
+      const saveBtn = document.querySelector('#addSimilarProductsModal .btn-primary');
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+
+      // Save similarFromAdmin field directly into the product + also in similarProducts node
+      const updates = {};
+      updates['products/' + mainProductId + '/similarFromAdmin'] = similarProductIds;
+      updates['similarProducts/' + mainProductId] = {
+        mainProductId,
+        similarProductIds,
         status: 'active',
-        createdAt: Date.now(),
         updatedAt: Date.now()
       };
-      
-      similarProductsRef.child(mainProductId).set(similarProductsEntry)
+
+      database.ref().update(updates)
         .then(() => {
           document.getElementById('addSimilarProductsModal').classList.remove('active');
           loadSimilarProducts();
-          alert('Similar products saved successfully!');
+          alert('✅ Similar products saved successfully!');
         })
-        .catch(error => {
-          console.error('Error saving similar products:', error);
-          alert('Error saving similar products: ' + error.message);
+        .catch(err => {
+          alert('❌ Error: ' + err.message);
+        })
+        .finally(() => {
+          if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Similar Products'; }
         });
     }
 
@@ -5002,6 +4987,30 @@
 
     // Hook offers and notifications load into showTab
     const _origShowTab = typeof showTab === 'function' ? showTab : null;
+
+    // ===== ONLINE USERS REAL-TIME TRACKING =====
+    function setupOnlineUsersTracking() {
+      database.ref('presence').on('value', snap => {
+        const count = snap.exists() ? Object.keys(snap.val() || {}).length : 0;
+        const el = document.getElementById('onlineUsersCount');
+        if (el) el.textContent = count;
+      });
+    }
+
+    // ===== REAL-TIME: new orders show instantly on dashboard =====
+    function setupRealtimeOrderListener() {
+      database.ref('orders').limitToLast(1).on('child_added', () => {
+        if (currentAdminTab === 'dashboard') loadDashboardData();
+        if (currentAdminTab === 'orders') loadOrders();
+      });
+    }
+
+    // Call presence + realtime after admin login
+    const _origOnAdminLoginSuccess = onAdminLoginSuccess;
+    function onAdminLoginSuccess() {
+      _origOnAdminLoginSuccess();
+      setTimeout(() => { setupOnlineUsersTracking(); setupRealtimeOrderListener(); }, 1000);
+    }
 
     window.addEventListener('DOMContentLoaded', initAdminPanel);
   </script>
