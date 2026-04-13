@@ -2282,6 +2282,11 @@
       loadOffers();
       loadNotifHistory();
       loadCategoriesForDropdown();
+      // Setup realtime listeners after short delay
+      setTimeout(() => {
+        setupOnlineUsersTracking();
+        setupRealtimeOrderListener();
+      }, 1200);
     }
 
     // Logout function
@@ -5003,13 +5008,6 @@
         if (currentAdminTab === 'dashboard') loadDashboardData();
         if (currentAdminTab === 'orders') loadOrders();
       });
-    }
-
-    // Call presence + realtime after admin login
-    const _origOnAdminLoginSuccess = onAdminLoginSuccess;
-    function onAdminLoginSuccess() {
-      _origOnAdminLoginSuccess();
-      setTimeout(() => { setupOnlineUsersTracking(); setupRealtimeOrderListener(); }, 1000);
     }
 
     window.addEventListener('DOMContentLoaded', initAdminPanel);
