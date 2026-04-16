@@ -1057,6 +1057,7 @@
         <li><a href="#" class="menu-item" data-tab="categories"><i class="fas fa-tags"></i><span>Categories</span></a></li>
         <li><a href="#" class="menu-item" data-tab="orders"><i class="fas fa-shopping-bag"></i><span>Orders</span></a></li>
         <li><a href="#" class="menu-item" data-tab="offers"><i class="fas fa-percentage"></i><span>Offers</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="reviews"><i class="fas fa-star"></i><span>Reviews</span></a></li>
         <li><a href="#" class="menu-item" data-tab="notifications"><i class="fas fa-bell"></i><span>Notifications</span></a></li>
         <li><a href="#" class="menu-item" data-tab="trending"><i class="fas fa-fire"></i><span>Trending Products</span></a></li>
         <li><a href="#" class="menu-item" data-tab="similar-products"><i class="fas fa-random"></i><span>Similar Products</span></a></li>
@@ -1643,6 +1644,23 @@
             </div>
             <div class="card-body">
               <div id="offersList" style="display:grid;gap:16px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reviews Tab -->
+        <div class="tab-content" id="reviews">
+          <div class="card">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+              <h2>Review Management</h2>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-secondary btn-sm" onclick="filterReviews('pending')">⏳ Pending</button>
+                <button class="btn btn-success btn-sm" onclick="filterReviews('approved')">✅ Approved</button>
+                <button class="btn btn-secondary btn-sm" onclick="filterReviews('all')">All</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="reviewsAdminList" style="display:flex;flex-direction:column;gap:16px;"></div>
             </div>
           </div>
         </div>
@@ -2483,7 +2501,7 @@
       if (navItem) navItem.classList.add('active');
       const titleMap = {
         'dashboard': 'Dashboard', 'products': 'Products', 'categories': 'Categories',
-        'orders': 'Orders', 'offers': 'Offers', 'notifications': 'Notifications',
+        'orders': 'Orders', 'offers': 'Offers', 'reviews': 'Reviews', 'notifications': 'Notifications',
         'trending': 'Trending Products', 'similar-products': 'Similar Products',
         'search-tags': 'Search Tags', 'popular-searches': 'Popular Searches',
         'customers': 'Customers', 'banners': 'Banners', 'policies': 'Policies', 'settings': 'Settings'
@@ -2495,6 +2513,7 @@
       else if (tabName === 'categories') loadCategories();
       else if (tabName === 'orders') loadOrders();
       else if (tabName === 'offers') loadOffers();
+      else if (tabName === 'reviews') { _reviewFilter = 'pending'; loadAdminReviews(); }
       else if (tabName === 'notifications') { loadNotifHistory(); }
       else if (tabName === 'trending') loadTrendingProducts();
       else if (tabName === 'similar-products') loadSimilarProducts();
@@ -3922,7 +3941,7 @@
     // Also supports direct URL input as fallback
     // ====================================================
     const CLOUDINARY_CLOUD = 'demosite-buyzo'; // Will use ImgBB as primary
-    const IMGBB_API_KEY = '0f5bf846083c8def69513e450708e48d'; // Get free key from imgbb.com/api
+    const IMGBB_API_KEY = 'YOUR_IMGBB_KEY_HERE'; // Get free key from imgbb.com/api
 
     async function uploadImageFile(file) {
       if (!file || !file.type.startsWith('image/')) throw new Error('Only image files allowed');
@@ -4708,19 +4727,36 @@
     }
 
     function deleteCategory(categoryId) {
-      if (confirm('Are you sure you want to delete this category?')) {
-        database.ref('categories/' + categoryId).remove()
-          .then(() => {
-            allCategories = allCategories.filter(cat => cat.id !== categoryId);
+      // Check if category has products first
+      database.ref('products').orderByChild('category').equalTo(categoryId).once('value').then(snap => {
+        const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+        if (count > 0) {
+          const choice = confirm(
+            `This category has ${count} product(s).\n\nClick OK to DELETE ALL PRODUCTS with this category.\nClick Cancel to keep products and cancel.`
+          );
+          if (!choice) return;
+          // Delete all products in this category first
+          const updates = {};
+          snap.forEach(child => { updates['products/' + child.key] = null; });
+          updates['categories/' + categoryId] = null;
+          database.ref().update(updates).then(() => {
+            allCategories = allCategories.filter(c => c.id !== categoryId);
             updateCategoryDropdowns();
             loadCategories();
-            alert('Category deleted successfully!');
-          })
-          .catch(error => {
-            console.error('Error deleting category:', error);
-            alert('Error deleting category: ' + error.message);
-          });
-      }
+            loadProducts();
+            loadDashboardData();
+            alert(`✅ Category and ${count} product(s) deleted.`);
+          }).catch(err => alert('Error: ' + err.message));
+        } else {
+          if (!confirm('Delete this category? (No products will be affected)')) return;
+          database.ref('categories/' + categoryId).remove().then(() => {
+            allCategories = allCategories.filter(c => c.id !== categoryId);
+            updateCategoryDropdowns();
+            loadCategories();
+            alert('✅ Category deleted.');
+          }).catch(err => alert('Error: ' + err.message));
+        }
+      });
     }
 
     function editBanner(bannerId) {
@@ -5041,6 +5077,71 @@
       previewItem.appendChild(removeBtn);
       previewContainer.appendChild(previewItem);
       if (input) input.value = '';
+    }
+
+    // ===== REVIEWS MANAGEMENT =====
+    let _reviewFilter = 'pending';
+
+    function filterReviews(filter) {
+      _reviewFilter = filter;
+      loadAdminReviews();
+    }
+
+    function loadAdminReviews() {
+      const el = document.getElementById('reviewsAdminList');
+      if (!el) return;
+      el.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8;">Loading reviews...</div>';
+
+      database.ref('reviews').once('value').then(snap => {
+        if (!snap.exists()) { el.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:30px;">No reviews found.</p>'; return; }
+        let reviews = Object.entries(snap.val()).map(([k,v]) => ({id:k,...v}));
+        if (_reviewFilter === 'pending') reviews = reviews.filter(r => r.status === 'pending' || !r.status);
+        else if (_reviewFilter === 'approved') reviews = reviews.filter(r => r.status === 'approved');
+        reviews.sort((a,b) => (b.date||0) - (a.date||0));
+        if (!reviews.length) { el.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:30px;">No ' + _reviewFilter + ' reviews.</p>'; return; }
+
+        el.innerHTML = '';
+        reviews.forEach(r => {
+          const stars = '★'.repeat(r.rating||0) + '☆'.repeat(5-(r.rating||0));
+          const statusColor = r.status === 'approved' ? '#22c55e' : r.status === 'rejected' ? '#ef4444' : '#f59e0b';
+          const statusLabel = r.status || 'pending';
+          const card = document.createElement('div');
+          card.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;';
+          card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                  <strong>${r.userName||'User'}</strong>
+                  <span style="color:#f59e0b;">${stars}</span>
+                  <span style="background:${statusColor}20;color:${statusColor};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;text-transform:capitalize;">${statusLabel}</span>
+                  ${r.isVerifiedPurchase ? '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">✓ Verified</span>' : ''}
+                </div>
+                <div style="font-size:13px;color:#334155;margin-bottom:6px;">${r.text||''}</div>
+                ${r.fileUrl ? `<img src="${r.fileUrl}" style="height:60px;width:60px;object-fit:cover;border-radius:6px;margin-right:6px;" onerror="this.style.display='none'">` : ''}
+                ${r.youtubeUrl ? `<a href="${r.youtubeUrl}" target="_blank" style="font-size:12px;color:#dc2626;">▶ YouTube Video</a>` : ''}
+                <div style="font-size:11px;color:#94a3b8;margin-top:6px;">Product: ${r.productId||''} • ${r.date ? new Date(r.date).toLocaleDateString('en-IN') : ''}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
+                ${r.status !== 'approved' ? `<button class="btn btn-success btn-sm" onclick="approveReview('${r.id}')">✅ Approve</button>` : ''}
+                <button class="btn btn-danger btn-sm" onclick="deleteAdminReview('${r.id}')">🗑 Delete</button>
+              </div>
+            </div>`;
+          el.appendChild(card);
+        });
+      }).catch(err => { el.innerHTML = '<p style="color:#ef4444;padding:20px;">Error loading reviews: ' + err.message + '</p>'; });
+    }
+
+    function approveReview(reviewId) {
+      database.ref('reviews/' + reviewId).update({ status: 'approved' })
+        .then(() => { alert('✅ Review approved and now visible on website!'); loadAdminReviews(); })
+        .catch(err => alert('Error: ' + err.message));
+    }
+
+    function deleteAdminReview(reviewId) {
+      if (!confirm('Delete this review permanently?')) return;
+      database.ref('reviews/' + reviewId).remove()
+        .then(() => { loadAdminReviews(); })
+        .catch(err => alert('Error: ' + err.message));
     }
 
     // ===== ONLINE USERS REAL-TIME TRACKING =====
