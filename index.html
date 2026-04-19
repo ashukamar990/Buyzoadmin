@@ -1873,6 +1873,48 @@
     </div>
   </div>
 
+  <!-- ===================== IMAGE CROPPER MODAL ===================== -->
+  <div id="imageCropperModal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;flex-direction:column;">
+    <div style="background:#1e293b;border-radius:16px;width:min(96vw,640px);max-height:96vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.5);">
+      <!-- Header -->
+      <div style="padding:16px 20px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div>
+          <div style="color:#f1f5f9;font-weight:700;font-size:1rem" id="cropperModalTitle">Image Crop & Adjust</div>
+          <div style="color:#94a3b8;font-size:0.75rem;margin-top:2px" id="cropperModalSubtitle">Drag to move, scroll to zoom, drag handles to crop</div>
+        </div>
+        <button onclick="closeCropper()" style="background:#334155;border:none;color:#94a3b8;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center">&times;</button>
+      </div>
+
+      <!-- Canvas Area -->
+      <div style="flex:1;overflow:hidden;position:relative;background:#0f172a;min-height:300px;display:flex;align-items:center;justify-content:center" id="cropperCanvasWrap">
+        <canvas id="cropperCanvas" style="display:block;cursor:crosshair;touch-action:none;max-width:100%;max-height:100%"></canvas>
+      </div>
+
+      <!-- Controls -->
+      <div style="padding:14px 20px;border-top:1px solid #334155;flex-shrink:0;background:#1e293b">
+        <!-- Zoom slider -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span style="color:#94a3b8;font-size:0.75rem;width:36px">Zoom</span>
+          <input type="range" id="cropZoomSlider" min="10" max="400" value="100" step="1"
+            style="flex:1;accent-color:#2563eb;cursor:pointer"
+            oninput="cropperSetZoom(this.value/100)">
+          <span style="color:#94a3b8;font-size:0.75rem;width:36px;text-align:right" id="cropZoomLabel">100%</span>
+        </div>
+        <!-- Aspect ratio buttons -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="cropAspectBtns">
+          <span style="color:#94a3b8;font-size:0.75rem;line-height:28px">Aspect:</span>
+        </div>
+        <!-- Action buttons -->
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+          <button onclick="cropperReset()" style="padding:8px 16px;background:#334155;color:#e2e8f0;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem">↺ Reset</button>
+          <button onclick="closeCropper()" style="padding:8px 16px;background:#475569;color:#e2e8f0;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem">Cancel</button>
+          <button onclick="cropperApply()" style="padding:8px 20px;background:#2563eb;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600">✓ Apply & Upload</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- =================== END CROPPER MODAL =================== -->
+
   <!-- Add Category Modal -->
   <div class="modal" id="addCategoryModal">
     <div class="modal-content">
@@ -4085,41 +4127,421 @@
     }
 
     // CATEGORY IMAGE UPLOAD
-    async function handleCategoryImageUpload(e) {
+    // =========================================================
+    //  IMAGE CROPPER ENGINE
+    // =========================================================
+    const _CROP = {
+      canvas: null, ctx: null, img: null,
+      // image state
+      imgX: 0, imgY: 0, imgW: 0, imgH: 0, scale: 1, minScale: 0.1,
+      // crop box state
+      cropX: 0, cropY: 0, cropW: 0, cropH: 0,
+      aspect: null,          // null = free, number = ratio
+      // drag state
+      drag: null,            // 'move' | 'tl'|'tr'|'bl'|'br'|'t'|'b'|'l'|'r'
+      dragStartX: 0, dragStartY: 0,
+      dragImgX: 0, dragImgY: 0,
+      dragCropX: 0, dragCropY: 0, dragCropW: 0, dragCropH: 0,
+      HANDLE: 10,
+      // callback after crop
+      onDone: null, previewId: null, uploadedVar: null,
+      mode: null // 'banner' | 'category'
+    };
+
+    function openCropper(file, mode) {
+      const modal = document.getElementById('imageCropperModal');
+      modal.style.display = 'flex';
+      _CROP.mode = mode;
+
+      const title = document.getElementById('cropperModalTitle');
+      const sub   = document.getElementById('cropperModalSubtitle');
+      title.textContent = mode === 'banner' ? 'Banner Image — Crop & Adjust' : 'Category Image — Crop & Adjust';
+      sub.textContent = 'Drag image to move • Pinch/scroll to zoom • Drag handles to crop';
+
+      // Build aspect ratio buttons
+      const btns = document.getElementById('cropAspectBtns');
+      const aspects = mode === 'banner'
+        ? [['Free','free'],['16:9','16:9'],['3:1','3:1'],['2:1','2:1'],['4:3','4:3']]
+        : [['Free','free'],['1:1','1:1'],['4:3','4:3'],['3:4','3:4']];
+      btns.innerHTML = '<span style="color:#94a3b8;font-size:0.75rem;line-height:28px">Aspect:</span>';
+      const defaultAspect = mode === 'banner' ? '16:9' : '1:1';
+      aspects.forEach(([label, val]) => {
+        const b = document.createElement('button');
+        b.textContent = label;
+        b.dataset.asp = val;
+        b.style.cssText = 'padding:4px 10px;border-radius:6px;border:1px solid #475569;cursor:pointer;font-size:0.75rem;transition:all 0.15s;background:' + (val===defaultAspect?'#2563eb':'#334155') + ';color:' + (val===defaultAspect?'#fff':'#cbd5e1');
+        b.onclick = () => {
+          btns.querySelectorAll('button').forEach(x => { x.style.background='#334155'; x.style.color='#cbd5e1'; });
+          b.style.background='#2563eb'; b.style.color='#fff';
+          cropperSetAspect(val);
+        };
+        btns.appendChild(b);
+      });
+
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const image = new Image();
+        image.onload = () => {
+          _CROP.img = image;
+          const wrap = document.getElementById('cropperCanvasWrap');
+          const maxW = wrap.clientWidth  || 600;
+          const maxH = (wrap.clientHeight || 400);
+          const canvas = document.getElementById('cropperCanvas');
+          canvas.width  = maxW;
+          canvas.height = maxH > 0 ? maxH : 400;
+          _CROP.canvas = canvas;
+          _CROP.ctx    = canvas.getContext('2d');
+
+          // Fit image
+          const scaleW = maxW / image.width;
+          const scaleH = (canvas.height) / image.height;
+          _CROP.scale  = Math.min(scaleW, scaleH, 1);
+          _CROP.minScale = Math.min(0.05, _CROP.scale * 0.5);
+          _CROP.imgW   = image.width  * _CROP.scale;
+          _CROP.imgH   = image.height * _CROP.scale;
+          _CROP.imgX   = (canvas.width  - _CROP.imgW) / 2;
+          _CROP.imgY   = (canvas.height - _CROP.imgH) / 2;
+
+          // Default crop = full image
+          _CROP.cropX = _CROP.imgX;
+          _CROP.cropY = _CROP.imgY;
+          _CROP.cropW = _CROP.imgW;
+          _CROP.cropH = _CROP.imgH;
+
+          document.getElementById('cropZoomSlider').value = 100;
+          document.getElementById('cropZoomLabel').textContent = '100%';
+
+          cropperSetAspect(defaultAspect);
+          _CROP.aspect = defaultAspect === 'free' ? null : eval(defaultAspect.replace(':','/'));
+          cropperDraw();
+          cropperBindEvents();
+        };
+        image.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function closeCropper() {
+      document.getElementById('imageCropperModal').style.display = 'none';
+      cropperUnbindEvents();
+    }
+
+    function cropperDraw() {
+      const { canvas, ctx, img, imgX, imgY, imgW, imgH, cropX, cropY, cropW, cropH, HANDLE } = _CROP;
+      if (!ctx || !img) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw image
+      ctx.drawImage(img, imgX, imgY, imgW, imgH);
+
+      // Dark overlay outside crop
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(0, 0, canvas.width, cropY);
+      ctx.fillRect(0, cropY+cropH, canvas.width, canvas.height-cropY-cropH);
+      ctx.fillRect(0, cropY, cropX, cropH);
+      ctx.fillRect(cropX+cropW, cropY, canvas.width-cropX-cropW, cropH);
+
+      // Crop border
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(cropX, cropY, cropW, cropH);
+
+      // Grid (rule of thirds)
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 0.5;
+      for (let i=1;i<3;i++) {
+        ctx.beginPath(); ctx.moveTo(cropX+cropW*i/3,cropY); ctx.lineTo(cropX+cropW*i/3,cropY+cropH); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cropX,cropY+cropH*i/3); ctx.lineTo(cropX+cropW,cropY+cropH*i/3); ctx.stroke();
+      }
+
+      // Corner handles
+      ctx.fillStyle = '#fff';
+      const h=HANDLE;
+      [[cropX,cropY],[cropX+cropW-h,cropY],[cropX,cropY+cropH-h],[cropX+cropW-h,cropY+cropH-h]].forEach(([x,y])=>{
+        ctx.fillRect(x,y,h,h);
+      });
+      // Edge handles (mid)
+      const mx=cropX+cropW/2-h/2, my=cropY+cropH/2-h/2;
+      ctx.fillRect(mx,cropY,h,4); ctx.fillRect(mx,cropY+cropH-4,h,4);
+      ctx.fillRect(cropX,my,4,h); ctx.fillRect(cropX+cropW-4,my,4,h);
+
+      // Size indicator
+      const origW = Math.round(cropW/_CROP.scale);
+      const origH = Math.round(cropH/_CROP.scale);
+      ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(cropX,cropY,80,20);
+      ctx.fillStyle='#fff'; ctx.font='11px monospace';
+      ctx.fillText(origW+'×'+origH, cropX+4, cropY+14);
+    }
+
+    function cropperGetHandle(x, y) {
+      const {cropX,cropY,cropW,cropH,HANDLE} = _CROP;
+      const H=HANDLE, near=(px,py,hx,hy)=>Math.abs(px-hx)<H+4&&Math.abs(py-hy)<H+4;
+      if (near(x,y,cropX,cropY)) return 'tl';
+      if (near(x,y,cropX+cropW,cropY)) return 'tr';
+      if (near(x,y,cropX,cropY+cropH)) return 'bl';
+      if (near(x,y,cropX+cropW,cropY+cropH)) return 'br';
+      const mx=cropX+cropW/2, my=cropY+cropH/2;
+      if (Math.abs(x-mx)<H+4 && Math.abs(y-cropY)<H+4) return 't';
+      if (Math.abs(x-mx)<H+4 && Math.abs(y-cropY-cropH)<H+4) return 'b';
+      if (Math.abs(y-my)<H+4 && Math.abs(x-cropX)<H+4) return 'l';
+      if (Math.abs(y-my)<H+4 && Math.abs(x-cropX-cropW)<H+4) return 'r';
+      if (x>cropX&&x<cropX+cropW&&y>cropY&&y<cropY+cropH) return 'move';
+      return null;
+    }
+
+    function cropperClampCrop() {
+      const {imgX,imgY,imgW,imgH} = _CROP;
+      if (_CROP.cropX < imgX) _CROP.cropX = imgX;
+      if (_CROP.cropY < imgY) _CROP.cropY = imgY;
+      if (_CROP.cropX+_CROP.cropW > imgX+imgW) _CROP.cropW = imgX+imgW-_CROP.cropX;
+      if (_CROP.cropY+_CROP.cropH > imgY+imgH) _CROP.cropH = imgY+imgH-_CROP.cropY;
+      if (_CROP.cropW < 20) _CROP.cropW = 20;
+      if (_CROP.cropH < 20) _CROP.cropH = 20;
+    }
+
+    function cropperGetXY(e) {
+      const r = _CROP.canvas.getBoundingClientRect();
+      const scaleX = _CROP.canvas.width / r.width;
+      const scaleY = _CROP.canvas.height / r.height;
+      if (e.touches) {
+        return { x:(e.touches[0].clientX-r.left)*scaleX, y:(e.touches[0].clientY-r.top)*scaleY };
+      }
+      return { x:(e.clientX-r.left)*scaleX, y:(e.clientY-r.top)*scaleY };
+    }
+
+    function cropperOnDown(e) {
+      e.preventDefault();
+      const {x,y} = cropperGetXY(e);
+      const handle = cropperGetHandle(x,y);
+      if (!handle) {
+        // drag whole image
+        _CROP.drag = 'imgmove';
+        _CROP.dragStartX = x; _CROP.dragStartY = y;
+        _CROP.dragImgX = _CROP.imgX; _CROP.dragImgY = _CROP.imgY;
+        return;
+      }
+      _CROP.drag = handle;
+      _CROP.dragStartX = x; _CROP.dragStartY = y;
+      _CROP.dragCropX = _CROP.cropX; _CROP.dragCropY = _CROP.cropY;
+      _CROP.dragCropW = _CROP.cropW; _CROP.dragCropH = _CROP.cropH;
+    }
+
+    function cropperOnMove(e) {
+      if (!_CROP.drag) {
+        const {x,y} = cropperGetXY(e);
+        const h = cropperGetHandle(x,y);
+        const cur = h==='move'?'grab': h?'crosshair':'default';
+        _CROP.canvas.style.cursor = cur;
+        return;
+      }
+      e.preventDefault();
+      const {x,y} = cropperGetXY(e);
+      const dx = x-_CROP.dragStartX, dy = y-_CROP.dragStartY;
+      const {imgX,imgY,imgW,imgH,aspect} = _CROP;
+
+      if (_CROP.drag === 'imgmove') {
+        _CROP.imgX = _CROP.dragImgX+dx;
+        _CROP.imgY = _CROP.dragImgY+dy;
+        // Clamp crop inside image
+        cropperClampCrop();
+        cropperDraw(); return;
+      }
+      if (_CROP.drag === 'move') {
+        let nx = _CROP.dragCropX+dx, ny = _CROP.dragCropY+dy;
+        nx = Math.max(imgX, Math.min(imgX+imgW-_CROP.cropW, nx));
+        ny = Math.max(imgY, Math.min(imgY+imgH-_CROP.cropH, ny));
+        _CROP.cropX=nx; _CROP.cropY=ny;
+        cropperDraw(); return;
+      }
+      // Resize handles
+      let {dragCropX:cx, dragCropY:cy, dragCropW:cw, dragCropH:ch} = _CROP;
+      let nx=cx,ny=cy,nw=cw,nh=ch;
+      const d=_CROP.drag;
+      if (d==='tl'||d==='l'||d==='bl') { nx=cx+dx; nw=cw-dx; }
+      if (d==='tr'||d==='r'||d==='br') { nw=cw+dx; }
+      if (d==='tl'||d==='t'||d==='tr') { ny=cy+dy; nh=ch-dy; }
+      if (d==='bl'||d==='b'||d==='br') { nh=ch+dy; }
+      if (nw<20){if(d.includes('l')){nx=cx+cw-20;} nw=20;}
+      if (nh<20){if(d.includes('t')){ny=cy+ch-20;} nh=20;}
+      // Apply aspect ratio lock
+      if (aspect) {
+        if (['tl','tr','bl','br','r','l'].includes(d)) { nh=nw/aspect; if(d.includes('t')){ny=cy+ch-nh;} }
+        else { nw=nh*aspect; }
+      }
+      // Clamp to image
+      nx=Math.max(imgX,nx); ny=Math.max(imgY,ny);
+      nw=Math.min(nw,imgX+imgW-nx); nh=Math.min(nh,imgY+imgH-ny);
+      if(nw>0&&nh>0){_CROP.cropX=nx;_CROP.cropY=ny;_CROP.cropW=nw;_CROP.cropH=nh;}
+      cropperDraw();
+    }
+
+    function cropperOnUp() { _CROP.drag=null; }
+
+    function cropperOnWheel(e) {
+      e.preventDefault();
+      const delta = e.deltaY>0 ? -0.05 : 0.05;
+      cropperSetZoom(Math.max(_CROP.minScale/_CROP.scale, (_CROP.scale+delta*_CROP.scale)/_CROP.scale)*_CROP.scale/_CROP.scale+delta);
+    }
+
+    // Pinch zoom
+    let _cropPinchDist = null;
+    function cropperOnTouchStart(e) {
+      if (e.touches.length===2) {
+        _cropPinchDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      } else cropperOnDown(e);
+    }
+    function cropperOnTouchMove(e) {
+      if (e.touches.length===2 && _cropPinchDist) {
+        e.preventDefault();
+        const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+        cropperSetZoom(_CROP.scale * (d/_cropPinchDist));
+        _cropPinchDist = d;
+      } else cropperOnMove(e);
+    }
+    function cropperOnTouchEnd(e) { _cropPinchDist=null; cropperOnUp(); }
+
+    function cropperBindEvents() {
+      const c = _CROP.canvas;
+      c.addEventListener('mousedown', cropperOnDown);
+      c.addEventListener('mousemove', cropperOnMove);
+      c.addEventListener('mouseup',   cropperOnUp);
+      c.addEventListener('mouseleave',cropperOnUp);
+      c.addEventListener('wheel',     cropperOnWheel, {passive:false});
+      c.addEventListener('touchstart',cropperOnTouchStart,{passive:false});
+      c.addEventListener('touchmove', cropperOnTouchMove, {passive:false});
+      c.addEventListener('touchend',  cropperOnTouchEnd);
+    }
+    function cropperUnbindEvents() {
+      const c = _CROP.canvas;
+      if (!c) return;
+      c.removeEventListener('mousedown', cropperOnDown);
+      c.removeEventListener('mousemove', cropperOnMove);
+      c.removeEventListener('mouseup',   cropperOnUp);
+      c.removeEventListener('mouseleave',cropperOnUp);
+      c.removeEventListener('wheel',     cropperOnWheel);
+      c.removeEventListener('touchstart',cropperOnTouchStart);
+      c.removeEventListener('touchmove', cropperOnTouchMove);
+      c.removeEventListener('touchend',  cropperOnTouchEnd);
+    }
+
+    function cropperSetZoom(newScale) {
+      newScale = Math.max(_CROP.minScale||0.05, Math.min(8, newScale));
+      const cx = _CROP.canvas.width/2, cy = _CROP.canvas.height/2;
+      const ratio = newScale/_CROP.scale;
+      _CROP.imgX = cx + (_CROP.imgX-cx)*ratio;
+      _CROP.imgY = cy + (_CROP.imgY-cy)*ratio;
+      _CROP.imgW *= ratio; _CROP.imgH *= ratio;
+      // Scale crop box too
+      _CROP.cropX = cx + (_CROP.cropX-cx)*ratio;
+      _CROP.cropY = cy + (_CROP.cropY-cy)*ratio;
+      _CROP.cropW *= ratio; _CROP.cropH *= ratio;
+      _CROP.scale = newScale;
+      const pct = Math.round(newScale*100);
+      document.getElementById('cropZoomSlider').value = Math.min(400,pct);
+      document.getElementById('cropZoomLabel').textContent = pct+'%';
+      cropperDraw();
+    }
+
+    function cropperSetAspect(val) {
+      if (val==='free') { _CROP.aspect=null; return; }
+      const [a,b] = val.split(':').map(Number);
+      _CROP.aspect = a/b;
+      // Resize crop box to match aspect
+      const {cropX,cropY,cropW,cropH,imgX,imgY,imgW,imgH} = _CROP;
+      let nw=cropW, nh=nw/(_CROP.aspect);
+      if (nh>cropH) { nh=cropH; nw=nh*(_CROP.aspect); }
+      nw=Math.min(nw,imgW); nh=Math.min(nh,imgH);
+      _CROP.cropX = imgX+(imgW-nw)/2;
+      _CROP.cropY = imgY+(imgH-nh)/2;
+      _CROP.cropW = nw; _CROP.cropH = nh;
+      cropperDraw();
+    }
+
+    function cropperReset() {
+      const {img, canvas} = _CROP;
+      if (!img||!canvas) return;
+      const scaleW=canvas.width/img.width, scaleH=canvas.height/img.height;
+      _CROP.scale=Math.min(scaleW,scaleH,1);
+      _CROP.imgW=img.width*_CROP.scale; _CROP.imgH=img.height*_CROP.scale;
+      _CROP.imgX=(canvas.width-_CROP.imgW)/2; _CROP.imgY=(canvas.height-_CROP.imgH)/2;
+      _CROP.cropX=_CROP.imgX; _CROP.cropY=_CROP.imgY;
+      _CROP.cropW=_CROP.imgW; _CROP.cropH=_CROP.imgH;
+      document.getElementById('cropZoomSlider').value=100;
+      document.getElementById('cropZoomLabel').textContent='100%';
+      cropperDraw();
+    }
+
+    async function cropperApply() {
+      const {img,imgX,imgY,imgW,imgH,cropX,cropY,cropW,cropH,scale,mode} = _CROP;
+      if (!img) return;
+      // Calculate source rectangle in original image pixels
+      const srcX = (cropX-imgX)/scale;
+      const srcY = (cropY-imgY)/scale;
+      const srcW = cropW/scale;
+      const srcH = cropH/scale;
+      // Output canvas
+      const out = document.createElement('canvas');
+      // Max output size: banner 1600×900, category 800×800
+      const maxOut = mode==='banner' ? {w:1600,h:900} : {w:800,h:800};
+      const ratio = Math.min(maxOut.w/srcW, maxOut.h/srcH, 1);
+      out.width  = Math.round(srcW*ratio);
+      out.height = Math.round(srcH*ratio);
+      const oc = out.getContext('2d');
+      oc.drawImage(img, srcX,srcY,srcW,srcH, 0,0,out.width,out.height);
+
+      // Show uploading state
+      const applyBtn = document.querySelector('#imageCropperModal button[onclick="cropperApply()"]');
+      if (applyBtn) { applyBtn.textContent='⏳ Uploading...'; applyBtn.disabled=true; }
+
+      out.toBlob(async (blob) => {
+        const ext = mode==='banner'?'banner':'category';
+        const file = new File([blob], ext+'_cropped_'+Date.now()+'.jpg', {type:'image/jpeg'});
+        try {
+          const url = await uploadImageFile(file);
+          const previewId = mode==='banner' ? 'bannerImagePreview' : 'categoryImagePreview';
+          const preview = document.getElementById(previewId);
+          const thumbStyle = mode==='banner'
+            ? 'height:55px;width:110px;object-fit:cover;border-radius:8px;border:1px solid #22c55e;'
+            : 'height:55px;width:55px;object-fit:cover;border-radius:8px;border:1px solid #22c55e;';
+          preview.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;">
+            <img src="${url}" style="${thumbStyle}">
+            <div>
+              <div style="color:#22c55e;font-size:12px;font-weight:700;">✓ Cropped & Uploaded</div>
+              <div style="font-size:10px;color:#64748b;word-break:break-all;max-width:200px;">${out.width}×${out.height}px</div>
+            </div>
+          </div>`;
+          if (mode==='banner') uploadedBannerImage=url;
+          else uploadedCategoryImage=url;
+          closeCropper();
+        } catch(err) {
+          alert('Upload failed: '+err.message);
+        } finally {
+          if (applyBtn) { applyBtn.textContent='✓ Apply & Upload'; applyBtn.disabled=false; }
+        }
+      }, 'image/jpeg', 0.92);
+    }
+
+    // UPDATED HANDLERS — open cropper instead of uploading directly
+    function handleCategoryImageUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
-      const preview = document.getElementById('categoryImagePreview');
-      preview.innerHTML = '<div style="color:#2563eb;padding:8px;font-size:13px;">⏳ Uploading...</div>';
       uploadedCategoryImage = null;
-      try {
-        const url = await uploadImageFile(file);
-        uploadedCategoryImage = url;
-        preview.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <img src="${url}" style="height:60px;width:60px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;">
-          <div><div style="color:#22c55e;font-size:12px;font-weight:700;">✓ Uploaded</div>
-          <div style="font-size:10px;color:#64748b;word-break:break-all;max-width:200px;">${url.slice(0,60)}...</div></div></div>`;
-      } catch(err) {
-        preview.innerHTML = `<div style="color:#ef4444;font-size:12px;">✗ ${err.message}<br><small>Try entering URL directly below</small></div>`;
-      }
+      document.getElementById('categoryImagePreview').innerHTML =
+        '<div style="color:#2563eb;font-size:12px;padding:6px;">Image selected — cropper khul raha hai...</div>';
+      openCropper(file, 'category');
+      // Reset file input so same file can be re-selected
+      e.target.value = '';
     }
 
     // BANNER IMAGE UPLOAD
-    async function handleBannerImageUpload(e) {
+    function handleBannerImageUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
-      const preview = document.getElementById('bannerImagePreview');
-      preview.innerHTML = '<div style="color:#2563eb;padding:8px;font-size:13px;">⏳ Uploading...</div>';
       uploadedBannerImage = null;
-      try {
-        const url = await uploadImageFile(file);
-        uploadedBannerImage = url;
-        preview.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <img src="${url}" style="height:60px;width:120px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;">
-          <div><div style="color:#22c55e;font-size:12px;font-weight:700;">✓ Uploaded</div>
-          <div style="font-size:10px;color:#64748b;word-break:break-all;max-width:200px;">${url.slice(0,60)}...</div></div></div>`;
-      } catch(err) {
-        preview.innerHTML = `<div style="color:#ef4444;font-size:12px;">✗ ${err.message}</div>`;
-      }
+      document.getElementById('bannerImagePreview').innerHTML =
+        '<div style="color:#2563eb;font-size:12px;padding:6px;">Image selected — cropper khul raha hai...</div>';
+      openCropper(file, 'banner');
+      e.target.value = '';
     }
 
     // FIXED: Save product with proper validation and error handling
