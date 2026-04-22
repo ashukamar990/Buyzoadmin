@@ -1797,17 +1797,17 @@
               <h2 style="margin:0"><i class="fas fa-toggle-on" style="color:var(--primary);margin-right:8px"></i>Feature Flags</h2>
             </div>
             <div class="card-body">
-              <p style="color:#64748b;margin-bottom:20px;font-size:0.9rem">Yahan se app ke features enable/disable karein. Changes turant live ho jaate hain.</p>
+              <p style="color:#64748b;margin-bottom:20px;font-size:0.9rem">App ke features yahan se enable/disable karein. Changes turant live hote hain.</p>
               <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
                 <div>
                   <div style="font-weight:600;font-size:0.95rem;color:#0f172a;margin-bottom:4px">🔐 Two-Factor Authentication (2FA)</div>
-                  <div style="font-size:0.82rem;color:#64748b">ON karne par users 2FA setup kar sakte hain. OFF = "Coming Soon" dikhega.</div>
+                  <div style="font-size:0.82rem;color:#64748b">ON → users 2FA setup kar sakte hain. OFF → "Coming Soon" dikhega.</div>
                   <div id="tfa2FABadge" style="margin-top:6px"></div>
                 </div>
                 <label style="position:relative;display:inline-block;width:52px;height:28px;flex-shrink:0;margin-left:16px;cursor:pointer">
                   <input type="checkbox" id="featureTwoFactor" style="opacity:0;width:0;height:0" onchange="adminToggle2FA(this.checked)">
                   <span id="featureTwoFactorSlider" style="position:absolute;inset:0;background:#cbd5e1;border-radius:28px;transition:0.3s">
-                    <span id="featureTwoFactorKnob" style="position:absolute;height:22px;width:22px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:0.3s;display:block;box-shadow:0 1px 3px rgba(0,0,0,0.2)"></span>
+                    <span id="featureTwoFactorKnob" style="position:absolute;height:22px;width:22px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:0.3s;display:block"></span>
                   </span>
                 </label>
               </div>
@@ -1882,7 +1882,7 @@
         <div class="form-group">
           <label for="productSearchTags">Search Tags (comma separated)</label>
           <input type="text" id="productSearchTags" class="form-control" placeholder="e.g. Summer Collection, New Arrivals, Best Sellers">
-          <small style="color:#64748b;">Yeh tags search panel mein dikhenge aur in par click karne se product filter hoga</small>
+          <small style="color:#64748b;margin-top:4px;display:block;">Search panel mein dikhenge — click karne par yeh products filter honge</small>
         </div>
 
         <div class="checkbox-group">
@@ -3899,14 +3899,14 @@
       database.ref('adminSettings/features/twoFactorAuth').set(enabled)
         .then(() => {
           if (slider) slider.style.background = enabled ? '#22c55e' : '#cbd5e1';
-          if (knob)   knob.style.transform = enabled ? 'translateX(24px)' : 'translateX(0)';
+          if (knob)   knob.style.transform    = enabled ? 'translateX(24px)' : 'translateX(0)';
           if (badge)  badge.innerHTML = enabled
             ? '<span style="background:#dcfce7;color:#15803d;font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:20px">✅ Active</span>'
             : '<span style="background:#fef9c3;color:#92400e;font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:20px">⏳ Coming Soon</span>';
           showNotification(enabled ? '2FA feature enable ho gaya!' : '2FA feature disable ho gaya.', enabled ? 'success' : 'warning');
         })
         .catch(() => {
-          showNotification('2FA toggle mein error', 'error');
+          showNotification('2FA toggle mein error aaya', 'error');
           document.getElementById('featureTwoFactor').checked = !enabled;
         });
     }
@@ -3920,7 +3920,7 @@
         const badge  = document.getElementById('tfa2FABadge');
         if (cb)     cb.checked = enabled;
         if (slider) slider.style.background = enabled ? '#22c55e' : '#cbd5e1';
-        if (knob)   knob.style.transform = enabled ? 'translateX(24px)' : 'translateX(0)';
+        if (knob)   knob.style.transform    = enabled ? 'translateX(24px)' : 'translateX(0)';
         if (badge)  badge.innerHTML = enabled
           ? '<span style="background:#dcfce7;color:#15803d;font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:20px">✅ Active</span>'
           : '<span style="background:#fef9c3;color:#92400e;font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:20px">⏳ Coming Soon</span>';
@@ -3939,8 +3939,8 @@
       document.getElementById('productTrending').checked = false;
       document.getElementById('productStatus').checked = true;
       document.getElementById('productImagePreviews').innerHTML = '';
-      const tagsEl = document.getElementById('productSearchTags');
-      if (tagsEl) tagsEl.value = '';
+      const _tagsEl = document.getElementById('productSearchTags');
+      if (_tagsEl) _tagsEl.value = '';
       uploadedImages = [];
       
       updateCategoryDropdowns();
@@ -4262,8 +4262,8 @@
         
         const productId = nextId.toString();
         
-        const tagsInput = document.getElementById('productSearchTags')?.value?.trim() || '';
-        const productTags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(Boolean) : [];
+        const tagsRaw = document.getElementById('productSearchTags')?.value?.trim() || '';
+        const productTags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
 
         const newProduct = {
           id: productId,
