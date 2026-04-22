@@ -2515,6 +2515,14 @@
               <label for="permCategories">Categories Management</label>
             </div>
             <div class="checkbox-group">
+              <input type="checkbox" id="permOrders" value="orders">
+              <label for="permOrders">Orders Management</label>
+            </div>
+            <div class="checkbox-group">
+              <input type="checkbox" id="permOffers" value="offers">
+              <label for="permOffers">Offers Management</label>
+            </div>
+            <div class="checkbox-group">
               <input type="checkbox" id="permBanners" value="banners">
               <label for="permBanners">Banners Management</label>
             </div>
@@ -2541,6 +2549,14 @@
             <div class="checkbox-group">
               <input type="checkbox" id="permPopularSearches" value="popularSearches">
               <label for="permPopularSearches">Popular Searches</label>
+            </div>
+            <div class="checkbox-group">
+              <input type="checkbox" id="permCustomers" value="customers">
+              <label for="permCustomers">Customers Data</label>
+            </div>
+            <div class="checkbox-group">
+              <input type="checkbox" id="permPolicies" value="policies">
+              <label for="permPolicies">Policies Editor</label>
             </div>
           </div>
         </div>
@@ -2696,6 +2712,16 @@
     // Initialize admin panel
     function initAdminPanel() {
       _setupAdminUI();
+
+      // Check for shared access link first
+      const urlParams = new URLSearchParams(window.location.search);
+      const shareId = urlParams.get('share');
+      if (shareId) {
+        // Don't wait for Firebase auth for shared access - just check the share link
+        checkSharedAccess();
+        return;
+      }
+
       auth.onAuthStateChanged(user => {
         if (user && isAllowedAdmin(user.email)) {
           onAdminLoginSuccess();
@@ -2705,7 +2731,6 @@
           document.getElementById('adminPanel').style.display = 'none';
         }
       });
-      checkSharedAccess();
     }
 
     function _setupAdminUI() {
@@ -2800,6 +2825,16 @@
         if (settingsItem) {
           sidebarMenu.insertBefore(sharingItem, settingsItem);
         }
+
+        // Attach click event to the newly added menu item
+        const newMenuLink = sharingItem.querySelector('.menu-item');
+        if (newMenuLink) {
+          newMenuLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            showTab('admin-sharing');
+            if (window.innerWidth <= 1024) toggleSidebar();
+          });
+        }
       }
     }
 
@@ -2885,21 +2920,67 @@
           sessionStorage.setItem('sharedAdminId', shareId);
           sessionStorage.setItem('sharedPermissions', JSON.stringify(shareData.permissions));
           shareRef.update({ lastAccessed: Date.now() });
+
+          // Hide the full admin login page, show the panel
+          document.getElementById('adminLoginPage').style.display = 'none';
+          document.getElementById('adminPanel').style.display = 'block';
+
+          // Load necessary data
+          loadDashboardData();
+          loadProducts();
+          loadCategories();
+          loadCategoriesForDropdown();
+          if (shareData.permissions.includes('orders')) loadOrders();
+          if (shareData.permissions.includes('trending')) loadTrendingProducts();
+          if (shareData.permissions.includes('similar')) loadSimilarProducts();
+          if (shareData.permissions.includes('searchTags')) loadSearchTags();
+          if (shareData.permissions.includes('popularSearches')) loadPopularSearches();
+          if (shareData.permissions.includes('customers')) loadCustomers();
+          if (shareData.permissions.includes('banners')) loadBanners();
+          if (shareData.permissions.includes('offers')) loadOffers();
+          if (shareData.permissions.includes('notifications')) loadNotifHistory();
+          setupOnlineUsersTracking();
+
+          // Update header to show shared admin email
+          const userAvatar = document.querySelector('.user-avatar');
+          const userDiv = document.querySelector('.user-profile > div:last-child');
+          if (userAvatar) userAvatar.textContent = shareData.email[0].toUpperCase();
+          if (userDiv) userDiv.textContent = shareData.email;
+
           showLimitedAdminPanel(shareData.permissions);
+        } else if (shareData && shareData.status === 'suspended') {
+          document.getElementById('adminLoginPage').innerHTML = `
+            <div class="login-card" style="text-align:center;">
+              <div style="font-size:48px;margin-bottom:16px;">🚫</div>
+              <h2 style="color:#ef4444;margin-bottom:8px;">Access Suspended</h2>
+              <p style="color:#64748b;">Your admin access has been suspended. Please contact the main administrator.</p>
+            </div>`;
         } else {
-          alert('Invalid or expired access link');
+          document.getElementById('adminLoginPage').innerHTML = `
+            <div class="login-card" style="text-align:center;">
+              <div style="font-size:48px;margin-bottom:16px;">❌</div>
+              <h2 style="color:#ef4444;margin-bottom:8px;">Invalid Link</h2>
+              <p style="color:#64748b;">This access link is invalid or has expired.</p>
+            </div>`;
         }
       }
     }
 
     function showLimitedAdminPanel(permissions) {
+      // Hide ALL sidebar menu items except dashboard and logout
       document.querySelectorAll('.menu-item').forEach(item => {
         const tab = item.dataset.tab;
         if (tab && tab !== 'dashboard') {
           item.style.display = 'none';
         }
       });
+
+      // Also hide logout? No - keep logout visible always
+      // Hide admin-sharing menu item for shared admins (they can't share access)
+      const adminSharingItem = document.querySelector('.menu-item[data-tab="admin-sharing"]');
+      if (adminSharingItem) adminSharingItem.style.display = 'none';
       
+      // Permission key → sidebar tab mapping
       const tabMapping = {
         'products': 'products',
         'categories': 'categories',
@@ -2909,7 +2990,11 @@
         'reviews': 'reviews',
         'notifications': 'notifications',
         'searchTags': 'search-tags',
-        'popularSearches': 'popular-searches'
+        'popularSearches': 'popular-searches',
+        'orders': 'orders',
+        'offers': 'offers',
+        'customers': 'customers',
+        'policies': 'policies'
       };
       
       permissions.forEach(perm => {
@@ -2921,6 +3006,14 @@
           }
         }
       });
+
+      // Show a "Shared Access" badge in the header
+      const headerRight = document.querySelector('.header-right');
+      if (headerRight) {
+        const badge = document.createElement('div');
+        badge.innerHTML = `<span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid #fcd34d;"><i class="fas fa-lock" style="margin-right:5px;"></i>Limited Access</span>`;
+        headerRight.prepend(badge);
+      }
     }
 
     async function showManageSharedAdmins() {
@@ -3327,6 +3420,29 @@
 
     // ===== SHOW TAB =====
     function showTab(tabName) {
+      // Block shared admins from accessing tabs they don't have permission for
+      const sharedPermsRaw = sessionStorage.getItem('sharedPermissions');
+      if (sharedPermsRaw) {
+        const sharedPerms = JSON.parse(sharedPermsRaw);
+        const tabMapping = {
+          'products': 'products', 'categories': 'categories', 'banners': 'banners',
+          'trending': 'trending', 'similar-products': 'similar', 'reviews': 'reviews',
+          'notifications': 'notifications', 'search-tags': 'searchTags',
+          'popular-searches': 'popularSearches', 'orders': 'orders',
+          'offers': 'offers', 'customers': 'customers', 'policies': 'policies'
+        };
+        const requiredPerm = tabMapping[tabName];
+        if (requiredPerm && !sharedPerms.includes(requiredPerm)) {
+          alert('You do not have permission to access this section.');
+          return;
+        }
+        // Completely block settings and admin-sharing for shared admins
+        if (tabName === 'settings' || tabName === 'admin-sharing') {
+          alert('You do not have permission to access this section.');
+          return;
+        }
+      }
+
       if (tabName === 'admin-sharing') {
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.menu-item').forEach(nav => nav.classList.remove('active'));
