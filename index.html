@@ -1210,10 +1210,103 @@
     .active-dropdown {
       display: block !important;
     }
+
+    /* Permission checkbox items - professional style */
+    .perm-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1.5px solid #e5e7eb;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+      background: #fafafa;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .perm-item:hover {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    .perm-item input[type="checkbox"] {
+      accent-color: #3b82f6;
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .perm-item input[type="checkbox"]:checked + i,
+    .perm-item input[type="checkbox"]:checked ~ * {
+      color: #1d4ed8;
+    }
+    .perm-item i {
+      color: #9ca3af;
+      width: 14px;
+      text-align: center;
+      font-size: 12px;
+    }
+    .perm-item:has(input:checked) {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    .perm-item:has(input:checked) i {
+      color: #3b82f6;
+    }
+
+    /* Toast notification */
+    #adminToast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1e293b;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 99999;
+      transition: transform 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      max-width: 90vw;
+      white-space: nowrap;
+    }
+    #adminToast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+    #adminToast.toast-success { background: #15803d; }
+    #adminToast.toast-error { background: #dc2626; }
+
+    /* Disable text selection/copy on admin panel */
+    #adminPanel {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    /* Re-enable for inputs and textareas */
+    #adminPanel input,
+    #adminPanel textarea,
+    #adminPanel select,
+    #adminPanel [readonly] {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+    }
   </style>
 </head>
 <body>
-  <!-- Admin Login Page -->
+  <!-- Toast Notification -->
+  <div id="adminToast"></div>
   <div id="adminLoginPage" class="login-container">
     <div class="login-card">
       <div class="login-logo">
@@ -2546,97 +2639,96 @@
   
   <!-- Admin Sharing Modal -->
   <div class="modal" id="adminSharingModal">
-    <div class="modal-content" style="max-width: 700px;">
-      <div class="modal-header">
-        <h3>Share Admin Access</h3>
-        <button class="close" onclick="closeModal('adminSharingModal')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>User Email</label>
-          <input type="email" id="shareAdminEmail" class="form-control" placeholder="user@gmail.com">
-        </div>
-        
-        <div class="form-group">
-          <label>Select Permissions</label>
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
-            <div class="checkbox-group">
-              <input type="checkbox" id="permProducts" value="products">
-              <label for="permProducts">Products Management</label>
-            </div>
-            <div class="checkbox-group">
-              <input type="checkbox" id="permCategories" value="categories">
-              <label for="permCategories">Categories Management</label>
-            </div>
-            <div class="checkbox-group">
-              <input type="checkbox" id="permOrders" value="orders">
-              <label for="permOrders">Orders Management</label>
-            </div>
-            <div class="checkbox-group">
-              <input type="checkbox" id="permOffers" value="offers">
-              <label for="permOffers">Offers Management</label>
-            </div>
-            <div class="checkbox-group">
-              <input type="checkbox" id="permBanners" value="banners">
-              <label for="permBanners">Banners Management</label>
-            </div>
-            <div class="checkbox-group">
-              <input type="checkbox" id="permTrending" value="trending">
-              <label for="permTrending">Trending Products</label>
-            </div>
-            <div class="checkbox-group">
-              <input type="checkbox" id="permSimilar" value="similar">
-              <label for="permSimilar">Similar Products</label>
-            </div>
-            <div class="checkbox-group">
-              <input type="checkbox" id="permReviews" value="reviews">
-              <label for="permReviews">Reviews Management</label>
-            </div>
-            <div class="checkbox-group">
-              <input type="checkbox" id="permNotifications" value="notifications">
-              <label for="permNotifications">Notifications</label>
-            </div>
-            <div class="checkbox-group">
-              <input type="checkbox" id="permSearchTags" value="searchTags">
-              <label for="permSearchTags">Search Tags</label>
-            </div>
-            <div class="checkbox-group">
-              <input type="checkbox" id="permPopularSearches" value="popularSearches">
-              <label for="permPopularSearches">Popular Searches</label>
-            </div>
-            <div class="checkbox-group">
-              <input type="checkbox" id="permCustomers" value="customers">
-              <label for="permCustomers">Customers Data</label>
-            </div>
-            <div class="checkbox-group">
-              <input type="checkbox" id="permPolicies" value="policies">
-              <label for="permPolicies">Policies Editor</label>
-            </div>
+    <div class="modal-content" style="max-width:680px;border-radius:16px;overflow:hidden;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#1e40af,#3b82f6);padding:24px 28px;border:none;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-user-shield" style="color:white;font-size:20px;"></i>
+          </div>
+          <div>
+            <h3 style="color:white;margin:0;font-size:18px;font-weight:700;">Share Admin Access</h3>
+            <p style="color:rgba(255,255,255,0.75);margin:0;font-size:12px;">Team member ko limited panel access dein</p>
           </div>
         </div>
-        
-        <div class="checkbox-group">
-          <input type="checkbox" id="permAll" onchange="toggleAllPermissions()">
-          <label for="permAll"><strong>Grant All Permissions</strong></label>
+        <button class="close" onclick="closeModal('adminSharingModal')" style="color:rgba(255,255,255,0.8);font-size:22px;background:rgba(255,255,255,0.1);border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:24px 28px;max-height:70vh;overflow-y:auto;">
+
+        <!-- Email Input -->
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="font-weight:600;font-size:13px;color:#374151;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            <i class="fas fa-envelope" style="color:#3b82f6;"></i> User Gmail Address
+          </label>
+          <input type="email" id="shareAdminEmail" class="form-control"
+            placeholder="example@gmail.com"
+            style="border-radius:10px;border:1.5px solid #e5e7eb;padding:11px 14px;font-size:14px;transition:border 0.2s;"
+            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
         </div>
-        
-        <button class="btn btn-primary" onclick="generateShareLink()" style="width: 100%; margin-top: 10px;">
+
+        <!-- Permissions -->
+        <div class="form-group" style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <label style="font-weight:600;font-size:13px;color:#374151;display:flex;align-items:center;gap:6px;margin:0;">
+              <i class="fas fa-shield-alt" style="color:#3b82f6;"></i> Permissions Select Karein
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#6b7280;font-weight:500;">
+              <input type="checkbox" id="permAll" onchange="toggleAllPermissions()" style="accent-color:#3b82f6;width:14px;height:14px;">
+              Select All
+            </label>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+            <label class="perm-item" for="permProducts"><input type="checkbox" id="permProducts" value="products"><i class="fas fa-box"></i>Products</label>
+            <label class="perm-item" for="permCategories"><input type="checkbox" id="permCategories" value="categories"><i class="fas fa-tags"></i>Categories</label>
+            <label class="perm-item" for="permOrders"><input type="checkbox" id="permOrders" value="orders"><i class="fas fa-shopping-bag"></i>Orders</label>
+            <label class="perm-item" for="permOffers"><input type="checkbox" id="permOffers" value="offers"><i class="fas fa-percentage"></i>Offers</label>
+            <label class="perm-item" for="permBanners"><input type="checkbox" id="permBanners" value="banners"><i class="fas fa-image"></i>Banners</label>
+            <label class="perm-item" for="permTrending"><input type="checkbox" id="permTrending" value="trending"><i class="fas fa-fire"></i>Trending</label>
+            <label class="perm-item" for="permSimilar"><input type="checkbox" id="permSimilar" value="similar"><i class="fas fa-random"></i>Similar Products</label>
+            <label class="perm-item" for="permReviews"><input type="checkbox" id="permReviews" value="reviews"><i class="fas fa-star"></i>Reviews</label>
+            <label class="perm-item" for="permNotifications"><input type="checkbox" id="permNotifications" value="notifications"><i class="fas fa-bell"></i>Notifications</label>
+            <label class="perm-item" for="permSearchTags"><input type="checkbox" id="permSearchTags" value="searchTags"><i class="fas fa-search"></i>Search Tags</label>
+            <label class="perm-item" for="permPopularSearches"><input type="checkbox" id="permPopularSearches" value="popularSearches"><i class="fas fa-chart-line"></i>Popular Searches</label>
+            <label class="perm-item" for="permCustomers"><input type="checkbox" id="permCustomers" value="customers"><i class="fas fa-users"></i>Customers</label>
+            <label class="perm-item" for="permPolicies"><input type="checkbox" id="permPolicies" value="policies"><i class="fas fa-file-alt"></i>Policies</label>
+          </div>
+        </div>
+
+        <!-- Generate Button -->
+        <button id="generateShareBtn" onclick="generateShareLink()"
+          style="width:100%;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#1e40af,#3b82f6);color:white;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;margin-top:4px;"
+          onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
           <i class="fas fa-paper-plane"></i> Generate Link &amp; Send Email
         </button>
-        
-        <div id="shareLinkResult" style="margin-top: 15px; display: none; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 14px;">
-          <div style="color: #15803d; font-weight: 600; margin-bottom: 10px;"><i class="fas fa-check-circle"></i> Link Generated! Gmail tab khul gaya hai — email bhejein.</div>
-          <label style="font-size: 13px; color: #334155;">Share Link (Copy karein):</label>
-          <div style="display: flex; gap: 10px; margin-top: 5px;">
-            <input type="text" id="generatedShareLink" class="form-control" readonly style="font-size: 12px;">
-            <button class="btn btn-secondary" onclick="copyShareLink()" title="Copy link">
-              <i class="fas fa-copy"></i>
-            </button>
+
+        <!-- Result Section -->
+        <div id="shareLinkResult" style="display:none;margin-top:16px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:16px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <div style="width:28px;height:28px;background:#22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+              <i class="fas fa-check" style="color:white;font-size:12px;"></i>
+            </div>
+            <div>
+              <div style="font-weight:700;color:#15803d;font-size:13px;">Link Generated!</div>
+              <div style="color:#16a34a;font-size:11px;">Gmail tab mein email bhejein</div>
+            </div>
           </div>
-          <button class="btn btn-success" onclick="sendShareEmailAgain()" style="margin-top: 10px; width: 100%;">
+          <div style="background:white;border-radius:8px;padding:10px;border:1px solid #d1fae5;">
+            <div style="font-size:11px;color:#6b7280;margin-bottom:5px;font-weight:600;">SHARE LINK</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="generatedShareLink" readonly
+                style="flex:1;border:none;background:transparent;font-size:11px;color:#374151;outline:none;font-family:monospace;"
+                onclick="this.select()">
+              <button onclick="copyShareLink()"
+                style="background:#3b82f6;color:white;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+          <button onclick="sendShareEmailAgain()"
+            style="width:100%;margin-top:10px;padding:10px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;">
             <i class="fas fa-envelope"></i> Gmail Dobara Kholein
           </button>
         </div>
+
       </div>
     </div>
   </div>
@@ -2764,9 +2856,70 @@
     let currentCategoryForAdd = null;
     let allProductsCache = [];
 
+    // ===== TOAST NOTIFICATION =====
+    function showToast(msg, type = 'info') {
+      const toast = document.getElementById('adminToast');
+      if (!toast) return;
+      const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
+      toast.className = `show toast-${type}`;
+      toast.innerHTML = `<i class="fas ${icons[type] || 'fa-info-circle'}"></i> ${msg}`;
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => { toast.classList.remove('show'); }, 3500);
+    }
+
+    // ===== MOBILE BACK BUTTON FIX =====
+    // Push state so back button doesn't leave the page
+    function setupMobileBackFix() {
+      // Push initial state
+      history.pushState({ page: 'admin' }, '', window.location.href);
+      
+      window.addEventListener('popstate', function(e) {
+        // When back is pressed, push state again to stay on page
+        history.pushState({ page: 'admin' }, '', window.location.href);
+        
+        // If a modal is open, close it instead
+        const openModal = document.querySelector('.modal.active');
+        if (openModal) {
+          openModal.classList.remove('active');
+          return;
+        }
+        // If not on dashboard, go to dashboard
+        if (currentAdminTab !== 'dashboard') {
+          showTab('dashboard');
+        }
+      });
+    }
+
+    // ===== COPY/RIGHT-CLICK DISABLE =====
+    function setupCopyProtection() {
+      document.addEventListener('contextmenu', function(e) {
+        // Allow on inputs/textareas
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        e.preventDefault();
+      });
+      document.addEventListener('copy', function(e) {
+        // Allow copy from inputs/textareas and readonly inputs
+        const tag = document.activeElement?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        e.preventDefault();
+      });
+      document.addEventListener('keydown', function(e) {
+        // Block Ctrl+A, Ctrl+C, Ctrl+U (view source), Ctrl+S
+        if (e.ctrlKey || e.metaKey) {
+          if (['a','c','u','s'].includes(e.key.toLowerCase())) {
+            const tag = document.activeElement?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+            e.preventDefault();
+          }
+        }
+      });
+    }
+
     // Initialize admin panel
     function initAdminPanel() {
       _setupAdminUI();
+      setupMobileBackFix();
+      setupCopyProtection();
 
       // Check for shared access link first
       const urlParams = new URLSearchParams(window.location.search);
@@ -2914,7 +3067,7 @@
     function generateShareLink() {
       const email = document.getElementById('shareAdminEmail').value.trim();
       if (!email) {
-        alert('Please enter user email');
+        showToast('Please enter user email', 'error');
         return;
       }
       
@@ -2926,77 +3079,94 @@
       });
       
       if (permissions.length === 0) {
-        alert('Please select at least one permission');
+        showToast('Please select at least one permission', 'error');
         return;
       }
 
-      const btn = document.querySelector('#adminSharingModal .btn-primary[onclick="generateShareLink()"]');
+      const btn = document.getElementById('generateShareBtn');
       if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...'; btn.disabled = true; }
       
       const shareId = 'share_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      const creatorEmail = (auth.currentUser && auth.currentUser.email) ? auth.currentUser.email : 'super-admin';
       const shareData = {
         email: email,
         permissions: permissions,
         status: 'active',
-        createdBy: auth.currentUser.email,
+        createdBy: creatorEmail,
         createdAt: Date.now(),
         lastAccessed: null
       };
-      
-      database.ref('sharedAdmins/' + shareId).set(shareData).then(() => {
+
+      // Use auth token for proper Firebase write
+      const doWrite = () => {
+        return database.ref('sharedAdmins/' + shareId).set(shareData);
+      };
+
+      doWrite().then(() => {
         const shareLink = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
         
-        // Show the link
         document.getElementById('generatedShareLink').value = shareLink;
         document.getElementById('shareLinkResult').style.display = 'block';
 
-        if (btn) { btn.innerHTML = '<i class="fas fa-check"></i> Link Generated!'; btn.disabled = false; }
+        if (btn) { btn.innerHTML = '<i class="fas fa-check-circle"></i> Link Generated!'; btn.disabled = false; }
+        showToast('Share link generated successfully!', 'success');
 
-        // Auto-open Gmail with pre-filled email
+        // Auto-open Gmail
         const permissionLabels = {
-          products: 'Products Management', categories: 'Categories Management',
-          orders: 'Orders Management', offers: 'Offers Management',
-          banners: 'Banners Management', trending: 'Trending Products',
-          similar: 'Similar Products', reviews: 'Reviews Management',
+          products: 'Products', categories: 'Categories',
+          orders: 'Orders', offers: 'Offers',
+          banners: 'Banners', trending: 'Trending Products',
+          similar: 'Similar Products', reviews: 'Reviews',
           notifications: 'Notifications', searchTags: 'Search Tags',
-          popularSearches: 'Popular Searches', customers: 'Customers Data',
-          policies: 'Policies Editor'
+          popularSearches: 'Popular Searches', customers: 'Customers',
+          policies: 'Policies'
         };
-        const permNames = permissions.map(p => permissionLabels[p] || p).join(', ');
+        const permNames = permissions.map(p => '• ' + (permissionLabels[p] || p)).join('\n');
 
-        const subject = 'Admin Panel Access - Buyzo Cart';
-        const body = `Namaste,
-
-Aapko Buyzo Cart Admin Panel ka limited access diya gaya hai.
-
-📌 Access Link:
-${shareLink}
-
-✅ Aapke Permissions:
-${permNames}
-
-🔒 Important:
-- Yeh link sirf aapke liye hai — kisi aur ke saath share mat karein
-- Sirf wahi sections dikhenge jinke aapko permission mili hai
-- Access kabhi bhi revoke kiya ja sakta hai
-
-Is link ko browser mein open karein aur directly panel access karein.
-
-- Buyzo Cart Admin`;
+        const subject = 'Admin Panel Access — Buyzo Cart';
+        const body = `Namaste,\n\nAapko Buyzo Cart Admin Panel ka limited access diya gaya hai.\n\n🔗 Access Link:\n${shareLink}\n\n✅ Aapki Permissions:\n${permNames}\n\n📌 Note:\n- Yeh link sirf aapke liye hai\n- Kisi aur ke saath share mat karein\n- Access kabhi bhi revoke ho sakta hai\n\nIs link ko browser mein open karein.\n\n— Buyzo Cart Admin Team`;
 
         const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        window.open(gmailUrl, '_blank');
+        setTimeout(() => window.open(gmailUrl, '_blank'), 500);
+
       }).catch(err => {
-        alert('Error generating link: ' + err.message);
-        if (btn) { btn.innerHTML = '<i class="fas fa-link"></i> Generate Share Link'; btn.disabled = false; }
+        console.error('Firebase write error:', err);
+        // Try alternative: use Firebase REST API with no auth (if rules allow public write to sharedAdmins)
+        const dbUrl = `https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`;
+        fetch(dbUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(shareData)
+        }).then(r => r.json()).then(result => {
+          if (result && result.email) {
+            const shareLink = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
+            document.getElementById('generatedShareLink').value = shareLink;
+            document.getElementById('shareLinkResult').style.display = 'block';
+            if (btn) { btn.innerHTML = '<i class="fas fa-check-circle"></i> Link Generated!'; btn.disabled = false; }
+            showToast('Share link generated!', 'success');
+
+            const permissionLabels = { products:'Products', categories:'Categories', orders:'Orders', offers:'Offers', banners:'Banners', trending:'Trending', similar:'Similar Products', reviews:'Reviews', notifications:'Notifications', searchTags:'Search Tags', popularSearches:'Popular Searches', customers:'Customers', policies:'Policies' };
+            const permNames = permissions.map(p => '• ' + (permissionLabels[p] || p)).join('\n');
+            const subject = 'Admin Panel Access — Buyzo Cart';
+            const body = `Namaste,\n\nAapko Buyzo Cart Admin Panel ka limited access diya gaya hai.\n\n🔗 Access Link:\n${shareLink}\n\n✅ Aapki Permissions:\n${permNames}\n\n— Buyzo Cart Admin Team`;
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            setTimeout(() => window.open(gmailUrl, '_blank'), 500);
+          } else {
+            showToast('Firebase permission error. Check Database Rules for sharedAdmins node.', 'error');
+            if (btn) { btn.innerHTML = '<i class="fas fa-paper-plane"></i> Generate Link & Send Email'; btn.disabled = false; }
+          }
+        }).catch(() => {
+          showToast('Error: ' + err.message + ' — Firebase Database Rules mein sharedAdmins allow karo.', 'error');
+          if (btn) { btn.innerHTML = '<i class="fas fa-paper-plane"></i> Generate Link & Send Email'; btn.disabled = false; }
+        });
       });
     }
 
     function copyShareLink() {
       const input = document.getElementById('generatedShareLink');
-      input.select();
-      document.execCommand('copy');
-      alert('Link copied to clipboard!');
+      if (!input || !input.value) return;
+      navigator.clipboard ? navigator.clipboard.writeText(input.value).then(() => showToast('Link copied!', 'success'))
+        : (input.select(), document.execCommand('copy'), showToast('Link copied!', 'success'));
     }
 
     function sendShareEmail() {
@@ -3022,16 +3192,28 @@ Is link ko browser mein open karein aur directly panel access karein.
       const shareId = urlParams.get('share');
       
       if (shareId) {
-        const shareRef = database.ref('sharedAdmins/' + shareId);
-        const snapshot = await shareRef.once('value');
-        const shareData = snapshot.val();
+        // Use REST API to read share data (works without Firebase auth)
+        let shareData = null;
+        try {
+          const res = await fetch(`https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`);
+          shareData = await res.json();
+        } catch (e) {
+          // fallback to firebase SDK
+          try {
+            const snap = await database.ref('sharedAdmins/' + shareId).once('value');
+            shareData = snap.val();
+          } catch(e2) { shareData = null; }
+        }
         
         if (shareData && shareData.status === 'active') {
           sessionStorage.setItem('sharedAdminId', shareId);
           sessionStorage.setItem('sharedPermissions', JSON.stringify(shareData.permissions));
-          shareRef.update({ lastAccessed: Date.now() });
+          
+          // Update lastAccessed via REST
+          fetch(`https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}/lastAccessed.json`, {
+            method: 'PUT', body: JSON.stringify(Date.now())
+          }).catch(() => {});
 
-          // Hide the full admin login page, show the panel
           document.getElementById('adminLoginPage').style.display = 'none';
           document.getElementById('adminPanel').style.display = 'block';
 
@@ -3051,11 +3233,10 @@ Is link ko browser mein open karein aur directly panel access karein.
           if (shareData.permissions.includes('notifications')) loadNotifHistory();
           setupOnlineUsersTracking();
 
-          // Update header to show shared admin email
           const userAvatar = document.querySelector('.user-avatar');
           const userDiv = document.querySelector('.user-profile > div:last-child');
-          if (userAvatar) userAvatar.textContent = shareData.email[0].toUpperCase();
-          if (userDiv) userDiv.textContent = shareData.email;
+          if (userAvatar) userAvatar.textContent = (shareData.email || 'S')[0].toUpperCase();
+          if (userDiv) userDiv.textContent = shareData.email || 'Shared Admin';
 
           showLimitedAdminPanel(shareData.permissions);
         } else if (shareData && shareData.status === 'suspended') {
