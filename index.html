@@ -1170,6 +1170,46 @@
     .status-suspended {
       color: #ef4444;
     }
+
+    /* Tag chip selector */
+    .tag-chip-selected {
+      background: var(--primary);
+      color: white;
+      padding: 3px 10px 3px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .tag-chip-selected .remove-chip {
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+    }
+    .tag-checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.15s;
+    }
+    .tag-checkbox-item:hover {
+      background: #f1f5f9;
+    }
+    .tag-checkbox-item input[type="checkbox"] {
+      accent-color: var(--primary);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+    .active-dropdown {
+      display: block !important;
+    }
   </style>
 </head>
 <body>
@@ -2033,9 +2073,23 @@
         </div>
         
         <div class="form-group">
-          <label for="productSearchTags">Search Tags (comma separated)</label>
-          <input type="text" id="productSearchTags" class="form-control" placeholder="e.g. Summer Collection, New Arrivals, Best Sellers">
-          <small style="color:#64748b;margin-top:4px;display:block;">Search panel mein dikhenge — click karne par yeh products filter honge</small>
+          <label>Search Tags / Collections <span style="color:#94a3b8;font-weight:400;font-size:12px;">(Optional)</span></label>
+          <div id="productTagsChipContainer" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid #d1d5db;border-radius:6px;min-height:44px;cursor:pointer;background:#fff;" onclick="document.getElementById('productTagsDropdown').classList.toggle('active-dropdown')">
+            <div id="selectedTagsDisplay" style="display:flex;flex-wrap:wrap;gap:6px;flex:1;align-items:center;">
+              <span style="color:#94a3b8;font-size:13px;" id="tagsPlaceholder">Click to select tags...</span>
+            </div>
+            <i class="fas fa-chevron-down" style="color:#94a3b8;align-self:center;font-size:12px;"></i>
+          </div>
+          <div id="productTagsDropdown" style="display:none;border:1px solid #d1d5db;border-radius:6px;margin-top:4px;max-height:200px;overflow-y:auto;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.1);" class="">
+            <div style="padding:8px;border-bottom:1px solid #e2e8f0;">
+              <input type="text" id="tagSearchInput" class="form-control" placeholder="Search tags..." style="font-size:13px;" oninput="filterTagsInDropdown()" onclick="event.stopPropagation()">
+            </div>
+            <div id="tagCheckboxList" style="padding:8px;">
+              <div style="color:#94a3b8;text-align:center;padding:10px;font-size:13px;">Loading tags...</div>
+            </div>
+          </div>
+          <input type="hidden" id="productSearchTags">
+          <small style="color:#64748b;margin-top:4px;display:block;">Firebase mein jo tags already hain woh yahan dikhenge</small>
         </div>
 
         <div class="checkbox-group">
@@ -2566,20 +2620,21 @@
           <label for="permAll"><strong>Grant All Permissions</strong></label>
         </div>
         
-        <button class="btn btn-primary" onclick="generateShareLink()" style="width: 100%;">
-          <i class="fas fa-link"></i> Generate Share Link
+        <button class="btn btn-primary" onclick="generateShareLink()" style="width: 100%; margin-top: 10px;">
+          <i class="fas fa-paper-plane"></i> Generate Link &amp; Send Email
         </button>
         
-        <div id="shareLinkResult" style="margin-top: 15px; display: none;">
-          <label>Share this link with the user:</label>
+        <div id="shareLinkResult" style="margin-top: 15px; display: none; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 14px;">
+          <div style="color: #15803d; font-weight: 600; margin-bottom: 10px;"><i class="fas fa-check-circle"></i> Link Generated! Gmail tab khul gaya hai — email bhejein.</div>
+          <label style="font-size: 13px; color: #334155;">Share Link (Copy karein):</label>
           <div style="display: flex; gap: 10px; margin-top: 5px;">
-            <input type="text" id="generatedShareLink" class="form-control" readonly>
-            <button class="btn btn-secondary" onclick="copyShareLink()">
+            <input type="text" id="generatedShareLink" class="form-control" readonly style="font-size: 12px;">
+            <button class="btn btn-secondary" onclick="copyShareLink()" title="Copy link">
               <i class="fas fa-copy"></i>
             </button>
           </div>
-          <button class="btn btn-success" onclick="sendShareEmail()" style="margin-top: 10px;">
-            <i class="fas fa-envelope"></i> Send Email
+          <button class="btn btn-success" onclick="sendShareEmailAgain()" style="margin-top: 10px; width: 100%;">
+            <i class="fas fa-envelope"></i> Gmail Dobara Kholein
           </button>
         </div>
       </div>
@@ -2874,6 +2929,9 @@
         alert('Please select at least one permission');
         return;
       }
+
+      const btn = document.querySelector('#adminSharingModal .btn-primary[onclick="generateShareLink()"]');
+      if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...'; btn.disabled = true; }
       
       const shareId = 'share_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
       const shareData = {
@@ -2887,8 +2945,50 @@
       
       database.ref('sharedAdmins/' + shareId).set(shareData).then(() => {
         const shareLink = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
+        
+        // Show the link
         document.getElementById('generatedShareLink').value = shareLink;
         document.getElementById('shareLinkResult').style.display = 'block';
+
+        if (btn) { btn.innerHTML = '<i class="fas fa-check"></i> Link Generated!'; btn.disabled = false; }
+
+        // Auto-open Gmail with pre-filled email
+        const permissionLabels = {
+          products: 'Products Management', categories: 'Categories Management',
+          orders: 'Orders Management', offers: 'Offers Management',
+          banners: 'Banners Management', trending: 'Trending Products',
+          similar: 'Similar Products', reviews: 'Reviews Management',
+          notifications: 'Notifications', searchTags: 'Search Tags',
+          popularSearches: 'Popular Searches', customers: 'Customers Data',
+          policies: 'Policies Editor'
+        };
+        const permNames = permissions.map(p => permissionLabels[p] || p).join(', ');
+
+        const subject = 'Admin Panel Access - Buyzo Cart';
+        const body = `Namaste,
+
+Aapko Buyzo Cart Admin Panel ka limited access diya gaya hai.
+
+📌 Access Link:
+${shareLink}
+
+✅ Aapke Permissions:
+${permNames}
+
+🔒 Important:
+- Yeh link sirf aapke liye hai — kisi aur ke saath share mat karein
+- Sirf wahi sections dikhenge jinke aapko permission mili hai
+- Access kabhi bhi revoke kiya ja sakta hai
+
+Is link ko browser mein open karein aur directly panel access karein.
+
+- Buyzo Cart Admin`;
+
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.open(gmailUrl, '_blank');
+      }).catch(err => {
+        alert('Error generating link: ' + err.message);
+        if (btn) { btn.innerHTML = '<i class="fas fa-link"></i> Generate Share Link'; btn.disabled = false; }
       });
     }
 
@@ -2905,6 +3005,16 @@
       const subject = 'Admin Panel Access - Buyzo Cart';
       const body = `You have been granted access to Buyzo Cart Admin Panel.\n\nClick this link to access: ${link}\n\nThis link is unique to you. Do not share it with others.`;
       window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    }
+
+    function sendShareEmailAgain() {
+      const email = document.getElementById('shareAdminEmail').value;
+      const link = document.getElementById('generatedShareLink').value;
+      if (!link) return;
+      const subject = 'Admin Panel Access - Buyzo Cart';
+      const body = `Namaste,\n\nAapko Buyzo Cart Admin Panel ka limited access diya gaya hai.\n\n📌 Access Link:\n${link}\n\n🔒 Important:\n- Yeh link sirf aapke liye hai — kisi aur ke saath share mat karein\n- Sirf wahi sections dikhenge jinke aapko permission mili hai\n\nIs link ko browser mein open karein aur directly panel access karein.\n\n- Buyzo Cart Admin`;
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(gmailUrl, '_blank');
     }
 
     async function checkSharedAccess() {
@@ -4392,9 +4502,124 @@
       const tagsEl = document.getElementById('productSearchTags');
       if (tagsEl) tagsEl.value = '';
       uploadedImages = [];
+      selectedProductTagIds = new Set();
       
+      // Reset chip display
+      const display = document.getElementById('selectedTagsDisplay');
+      if (display) display.innerHTML = '<span style="color:#94a3b8;font-size:13px;" id="tagsPlaceholder">Click to select tags...</span>';
+      const dropdown = document.getElementById('productTagsDropdown');
+      if (dropdown) dropdown.classList.remove('active-dropdown');
+
       updateCategoryDropdowns();
+      loadTagsForProductForm();
       document.getElementById('addProductModal').classList.add('active');
+
+      // Close dropdown when clicking outside
+      setTimeout(() => {
+        document.addEventListener('click', closeTagDropdownOnOutsideClick, { once: false });
+      }, 100);
+    }
+
+    // Global set to track selected tag IDs in product form
+    let selectedProductTagIds = new Set();
+
+    function closeTagDropdownOnOutsideClick(e) {
+      const container = document.getElementById('productTagsChipContainer');
+      const dropdown = document.getElementById('productTagsDropdown');
+      if (!container || !dropdown) return;
+      if (!container.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('active-dropdown');
+      }
+    }
+
+    function loadTagsForProductForm() {
+      const list = document.getElementById('tagCheckboxList');
+      if (!list) return;
+      list.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;font-size:13px;">Loading...</div>';
+
+      database.ref('searchTags').once('value').then(snap => {
+        if (!snap.exists()) {
+          list.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;font-size:13px;">Koi tags nahi hain. Pehle Search Tags tab mein tags add karein.</div>';
+          return;
+        }
+        const tags = Object.entries(snap.val()).map(([k, v]) => ({ id: k, ...v })).filter(t => t.active !== false);
+        renderTagCheckboxes(tags);
+      }).catch(() => {
+        list.innerHTML = '<div style="color:#ef4444;text-align:center;padding:10px;font-size:13px;">Error loading tags</div>';
+      });
+    }
+
+    function renderTagCheckboxes(tags, filter = '') {
+      const list = document.getElementById('tagCheckboxList');
+      if (!list) return;
+      const filtered = filter ? tags.filter(t => (t.name || '').toLowerCase().includes(filter.toLowerCase())) : tags;
+      if (!filtered.length) {
+        list.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;font-size:13px;">No tags found</div>';
+        return;
+      }
+      list.innerHTML = filtered.map(tag => `
+        <label class="tag-checkbox-item" onclick="event.stopPropagation()">
+          <input type="checkbox" value="${tag.id}" data-name="${tag.name || ''}"
+            ${selectedProductTagIds.has(tag.id) ? 'checked' : ''}
+            onchange="toggleProductTagChip(this, '${(tag.name || '').replace(/'/g, "\\'")}')">
+          <span>${tag.name || 'Unnamed'}</span>
+          ${tag.type ? `<span style="margin-left:auto;font-size:10px;color:#94a3b8;">${tag.type}</span>` : ''}
+        </label>
+      `).join('');
+    }
+
+    function filterTagsInDropdown() {
+      const q = document.getElementById('tagSearchInput')?.value || '';
+      database.ref('searchTags').once('value').then(snap => {
+        if (!snap.exists()) return;
+        const tags = Object.entries(snap.val()).map(([k, v]) => ({ id: k, ...v })).filter(t => t.active !== false);
+        renderTagCheckboxes(tags, q);
+      });
+    }
+
+    function toggleProductTagChip(checkbox, tagName) {
+      const tagId = checkbox.value;
+      if (checkbox.checked) {
+        selectedProductTagIds.add(tagId);
+      } else {
+        selectedProductTagIds.delete(tagId);
+      }
+      updateSelectedTagsDisplay();
+      // Update hidden input with tag names (comma separated) for saveProduct compatibility
+      const names = [];
+      document.querySelectorAll('#tagCheckboxList input[type="checkbox"]:checked').forEach(cb => {
+        names.push(cb.dataset.name);
+      });
+      const hiddenInput = document.getElementById('productSearchTags');
+      if (hiddenInput) hiddenInput.value = names.join(',');
+    }
+
+    function updateSelectedTagsDisplay() {
+      const display = document.getElementById('selectedTagsDisplay');
+      if (!display) return;
+      if (selectedProductTagIds.size === 0) {
+        display.innerHTML = '<span style="color:#94a3b8;font-size:13px;" id="tagsPlaceholder">Click to select tags...</span>';
+        return;
+      }
+      // Get names from checked checkboxes
+      const chips = [];
+      document.querySelectorAll('#tagCheckboxList input[type="checkbox"]:checked').forEach(cb => {
+        chips.push(`<span class="tag-chip-selected">${cb.dataset.name}<span class="remove-chip" onclick="removeTagChip('${cb.value}', event)">×</span></span>`);
+      });
+      // Also handle tags selected but not yet rendered in filtered list
+      display.innerHTML = chips.length ? chips.join('') : '<span style="color:#94a3b8;font-size:13px;">Click to select tags...</span>';
+    }
+
+    function removeTagChip(tagId, e) {
+      e.stopPropagation();
+      selectedProductTagIds.delete(tagId);
+      const cb = document.querySelector(`#tagCheckboxList input[value="${tagId}"]`);
+      if (cb) cb.checked = false;
+      updateSelectedTagsDisplay();
+      const names = [];
+      document.querySelectorAll('#tagCheckboxList input[type="checkbox"]:checked').forEach(c => names.push(c.dataset.name));
+      const hiddenInput = document.getElementById('productSearchTags');
+      if (hiddenInput) hiddenInput.value = names.join(',');
     }
 
     function showAddCategoryModal() {
