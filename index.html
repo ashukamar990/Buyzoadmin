@@ -3068,15 +3068,22 @@
       </div>
       <div class="modal-body" style="padding:24px 28px;max-height:70vh;overflow-y:auto;">
 
-        <!-- Email Input -->
+        <!-- Email Input - COMPULSORY -->
         <div class="form-group" style="margin-bottom:20px;">
-          <label style="font-weight:600;font-size:13px;color:#374151;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
-            <i class="fas fa-envelope" style="color:#3b82f6;"></i> User Gmail Address
+          <label style="font-weight:700;font-size:13px;color:#374151;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            <i class="fas fa-envelope" style="color:#3b82f6;"></i> 
+            Jis Gmail par bhejni hai link <span style="color:#ef4444;">*</span>
           </label>
-          <input type="email" id="shareAdminEmail" class="form-control"
-            placeholder="example@gmail.com"
-            style="border-radius:10px;border:1.5px solid #e5e7eb;padding:11px 14px;font-size:14px;transition:border 0.2s;"
+          <input type="email" id="shareRecipientEmail" class="form-control" required
+            placeholder="teammember@gmail.com"
+            style="border-radius:10px;border:2px solid #e5e7eb;padding:12px 14px;font-size:14px;transition:border 0.2s;"
             onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
+          <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px 12px;margin-top:8px;display:flex;align-items:flex-start;gap:8px;">
+            <i class="fas fa-lock" style="color:#92400e;margin-top:1px;font-size:12px;flex-shrink:0;"></i>
+            <p style="margin:0;font-size:12px;color:#92400e;line-height:1.5;">
+              <strong>Important:</strong> Sirf yahi Gmail ID is link se admin panel open kar sakti hai. Agar kisi aur Gmail se kholne ki koshish hogi to access nahi milega.
+            </p>
+          </div>
         </div>
 
         <!-- Permissions -->
@@ -3509,6 +3516,16 @@
     }
 
     function showAdminSharing() {
+      // Reset modal fields
+      const emailEl = document.getElementById('shareRecipientEmail') || document.getElementById('shareAdminEmail');
+      if (emailEl) { emailEl.value = ''; emailEl.style.borderColor = '#e5e7eb'; }
+      document.querySelectorAll('[id^="perm"]:checked').forEach(cb => cb.checked = false);
+      const permAll = document.getElementById('permAll');
+      if (permAll) permAll.checked = false;
+      const result = document.getElementById('shareLinkResult');
+      if (result) result.style.display = 'none';
+      const btn = document.getElementById('generateShareBtn');
+      if (btn) { btn.innerHTML = '<i class="fas fa-paper-plane"></i> Generate Link & Send Email'; btn.disabled = false; }
       document.getElementById('adminSharingModal').classList.add('active');
     }
 
@@ -3522,25 +3539,32 @@
     }
 
     function generateShareLink() {
-      const recipientEmail = document.getElementById('shareRecipientEmail') ? document.getElementById('shareRecipientEmail').value.trim() : '';
-      
+      const emailEl = document.getElementById('shareRecipientEmail') || document.getElementById('shareAdminEmail');
+      const recipientEmail = emailEl ? emailEl.value.trim() : '';
+      if (!recipientEmail) {
+        showToast('Gmail address daalna zaroori hai!', 'error');
+        if (emailEl) { emailEl.style.borderColor = '#ef4444'; emailEl.focus(); }
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+        showToast('Valid Gmail address daalo', 'error');
+        if (emailEl) { emailEl.style.borderColor = '#ef4444'; emailEl.focus(); }
+        return;
+      }
       const permissions = [];
       document.querySelectorAll('[id^="perm"]:checked').forEach(cb => {
         if (cb.id !== 'permAll') permissions.push(cb.value);
       });
-      
       if (permissions.length === 0) {
-        showToast('Please select at least one permission', 'error');
+        showToast('Kam se kam ek permission select karo', 'error');
         return;
       }
-
       const btn = document.getElementById('generateShareBtn');
       if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...'; btn.disabled = true; }
-      
       const shareId = 'share_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
       const creatorEmail = (auth.currentUser && auth.currentUser.email) ? auth.currentUser.email : 'super-admin';
       const shareData = {
-        email: recipientEmail || '',
+        email: recipientEmail,
         permissions: permissions,
         status: 'active',
         createdBy: creatorEmail,
@@ -3578,10 +3602,9 @@
             document.getElementById('shareLinkResult').style.display = 'block';
             if (btn) { btn.innerHTML = '<i class="fas fa-check-circle"></i> Link Generated!'; btn.disabled = false; }
             showToast('Link generated!', 'success');
-            const toEmail = recipientEmail || '';
             const subject = 'Admin Panel Access — Buyzo Cart';
-            const body = `Access Link: ${shareLink}`;
-            window.open(`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(toEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+            const body = 'Access Link: ' + shareLink + '\n\nSirf ' + recipientEmail + ' Gmail se open hoga.';
+            window.location.href = 'mailto:' + encodeURIComponent(recipientEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
           } else {
             showToast('Firebase permission error — Database Rules check karein', 'error');
             if (btn) { btn.innerHTML = '<i class="fas fa-paper-plane"></i> Generate Link & Send Email'; btn.disabled = false; }
