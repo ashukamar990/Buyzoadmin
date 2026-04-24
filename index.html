@@ -3287,31 +3287,35 @@
 
     // ===== PAGE VISIBILITY FIX - website tab switch karke wapas aane per kaam kare =====
     function setupPageVisibilityFix() {
+      // Fix: Tab switch karke wapas aane par buttons kaam nahi karte
       document.addEventListener('visibilitychange', function() {
         if (!document.hidden) {
-          // Page visible ho gayi - data reload karo
           const panel = document.getElementById('adminPanel');
           if (panel && panel.style.display !== 'none') {
-            // Re-attach Firebase listeners if disconnected
-            if (currentAdminTab === 'dashboard') {
-              loadDashboardData();
-            }
-            // Reconnect Firebase realtime database
             database.goOnline && database.goOnline();
+            // Current tab reload karo
+            setTimeout(() => {
+              const tab = currentAdminTab;
+              if (tab === 'dashboard') loadDashboardData();
+              else if (tab === 'products') loadProducts();
+              else if (tab === 'orders') loadOrders();
+            }, 300);
           }
         }
       });
 
-      // Page focus pe bhi reconnect
-      window.addEventListener('focus', function() {
-        database.goOnline && database.goOnline();
+      // bfcache se wapas aaye to reload
+      window.addEventListener('pageshow', function(e) {
+        if (e.persisted) window.location.reload();
       });
 
-      window.addEventListener('pageshow', function(e) {
-        if (e.persisted) {
-          // bfcache se wapas aaya - page reload karo
-          window.location.reload();
-        }
+      // Firebase reconnect on focus
+      window.addEventListener('focus', function() {
+        database.goOnline && database.goOnline();
+        // Re-enable all buttons
+        document.querySelectorAll('button:disabled').forEach(btn => {
+          if (!btn.id || btn.id !== 'generateShareBtn') btn.disabled = false;
+        });
       });
     }
 
@@ -3372,6 +3376,30 @@
           }
         }
       });
+    }
+
+
+    // ===== CACHE SYSTEM - Fast loading =====
+    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+    function cacheSet(key, data) {
+      try {
+        localStorage.setItem('bz_' + key, JSON.stringify({ data, ts: Date.now() }));
+      } catch(e) {}
+    }
+
+    function cacheGet(key) {
+      try {
+        const item = localStorage.getItem('bz_' + key);
+        if (!item) return null;
+        const parsed = JSON.parse(item);
+        if (Date.now() - parsed.ts > CACHE_TTL) { localStorage.removeItem('bz_' + key); return null; }
+        return parsed.data;
+      } catch(e) { return null; }
+    }
+
+    function cacheClear(key) {
+      try { localStorage.removeItem('bz_' + key); } catch(e) {}
     }
 
     // Initialize admin panel
@@ -3826,12 +3854,20 @@
         }
       });
 
-      // Show a "Shared Access" badge in the header
-      const headerRight = document.querySelector('.header-right');
-      if (headerRight) {
+      // Show "Shared Access" badge - properly positioned for mobile
+      // Remove existing badge if any
+      const existingBadge = document.getElementById('limitedAccessBadge');
+      if (existingBadge) existingBadge.remove();
+      
+      const headerEl = document.querySelector('.header');
+      if (headerEl) {
         const badge = document.createElement('div');
-        badge.innerHTML = `<span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid #fcd34d;"><i class="fas fa-lock" style="margin-right:5px;"></i>Limited Access</span>`;
-        headerRight.prepend(badge);
+        badge.id = 'limitedAccessBadge';
+        badge.style.cssText = 'position:absolute;top:0;left:0;right:0;background:linear-gradient(90deg,#f59e0b,#f97316);color:white;text-align:center;padding:5px;font-size:11px;font-weight:700;z-index:200;letter-spacing:0.3px;';
+        badge.innerHTML = '<i class="fas fa-lock" style="margin-right:5px;"></i>LIMITED ACCESS — View Only Mode';
+        headerEl.style.paddingTop = '28px';
+        headerEl.style.position = 'relative';
+        headerEl.prepend(badge);
       }
     }
 
@@ -4626,7 +4662,12 @@
 
     // Load orders with date filter
     function loadOrders() {
-      database.ref('orders').once('value').then(snap => {
+      // Shared admin ke liye REST API use karo (Firebase rules bypass)
+      const doLoad = isSharedAdmin
+        ? fetch('https://buyzocart-default-rtdb.firebaseio.com/orders.json').then(r => r.json()).then(data => ({ val: () => data }))
+        : database.ref('orders').once('value');
+
+      doLoad.then(snap => {
         const ordersData = snap.val() || {};
         let orders = Object.entries(ordersData).map(([key, val]) => ({ ...val, id: key }));
 
