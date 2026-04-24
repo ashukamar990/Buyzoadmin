@@ -2596,7 +2596,7 @@
             </div>
           </div>
           <input type="hidden" id="productSearchTags">
-          <small style="color:#64748b;margin-top:4px;display:block;">Firebase mein jo tags already hain woh yahan dikhenge</small>
+          <small style="color:#64748b;margin-top:4px;display:block;">Tags already in Firebase will appear here</small>
         </div>
 
         <div class="checkbox-group">
@@ -3061,7 +3061,7 @@
           </div>
           <div>
             <h3 style="color:white;margin:0;font-size:18px;font-weight:700;">Share Admin Access</h3>
-            <p style="color:rgba(255,255,255,0.75);margin:0;font-size:12px;">Team member ko limited panel access dein</p>
+            <p style="color:rgba(255,255,255,0.75);margin:0;font-size:12px;">Grant limited access to a team member</p>
           </div>
         </div>
         <button class="close" onclick="closeModal('adminSharingModal')" style="color:rgba(255,255,255,0.8);font-size:22px;background:rgba(255,255,255,0.1);border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">&times;</button>
@@ -3072,7 +3072,7 @@
         <div class="form-group" style="margin-bottom:20px;">
           <label style="font-weight:700;font-size:13px;color:#374151;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
             <i class="fas fa-envelope" style="color:#3b82f6;"></i> 
-            Jis Gmail par bhejni hai link <span style="color:#ef4444;">*</span>
+            Recipient Gmail Address <span style="color:#ef4444;">*</span>
           </label>
           <input type="email" id="shareRecipientEmail" class="form-control" required
             placeholder="teammember@gmail.com"
@@ -3081,7 +3081,7 @@
           <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px 12px;margin-top:8px;display:flex;align-items:flex-start;gap:8px;">
             <i class="fas fa-lock" style="color:#92400e;margin-top:1px;font-size:12px;flex-shrink:0;"></i>
             <p style="margin:0;font-size:12px;color:#92400e;line-height:1.5;">
-              <strong>Important:</strong> Sirf yahi Gmail ID is link se admin panel open kar sakti hai. Agar kisi aur Gmail se kholne ki koshish hogi to access nahi milega.
+              <strong>Important:</strong> Only this Gmail ID can open the admin panel using this link. Any other Gmail account will be blocked from accessing it.
             </p>
           </div>
         </div>
@@ -3090,7 +3090,7 @@
         <div class="form-group" style="margin-bottom:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
             <label style="font-weight:600;font-size:13px;color:#374151;display:flex;align-items:center;gap:6px;margin:0;">
-              <i class="fas fa-shield-alt" style="color:#3b82f6;"></i> Permissions Select Karein
+              <i class="fas fa-shield-alt" style="color:#3b82f6;"></i> Select Permissions
             </label>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#6b7280;font-weight:500;">
               <input type="checkbox" id="permAll" onchange="toggleAllPermissions()" style="accent-color:#3b82f6;width:14px;height:14px;">
@@ -3129,7 +3129,7 @@
             </div>
             <div>
               <div style="font-weight:700;color:#15803d;font-size:13px;">Link Generated!</div>
-              <div style="color:#16a34a;font-size:11px;">Gmail tab mein email bhejein</div>
+              <div style="color:#16a34a;font-size:11px;">Send the email from your Gmail app</div>
             </div>
           </div>
           <div style="background:white;border-radius:8px;padding:10px;border:1px solid #d1fae5;">
@@ -3146,7 +3146,7 @@
           </div>
           <button onclick="sendShareEmailAgain()"
             style="width:100%;margin-top:10px;padding:10px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;">
-            <i class="fas fa-envelope"></i> Gmail Dobara Kholein
+            <i class="fas fa-envelope"></i> Open Gmail Again
           </button>
         </div>
 
@@ -3164,7 +3164,7 @@
           </div>
           <div>
             <h3 style="color:white;margin:0;font-size:16px;font-weight:700;">Manage Shared Admins</h3>
-            <p style="color:rgba(255,255,255,0.5);margin:0;font-size:11px;">Sabhi shared access links aur unke permissions</p>
+            <p style="color:rgba(255,255,255,0.5);margin:0;font-size:11px;">All shared access links and their permissions</p>
           </div>
         </div>
         <button class="close" onclick="closeModal('manageSharedAdminsModal')" style="color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);border:none;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;">&times;</button>
@@ -3611,12 +3611,12 @@
       const emailEl = document.getElementById('shareRecipientEmail') || document.getElementById('shareAdminEmail');
       const recipientEmail = emailEl ? emailEl.value.trim() : '';
       if (!recipientEmail) {
-        showToast('Gmail address daalna zaroori hai!', 'error');
+        showToast('Gmail address is required!', 'error');
         if (emailEl) { emailEl.style.borderColor = '#ef4444'; emailEl.focus(); }
         return;
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
-        showToast('Valid Gmail address daalo', 'error');
+        showToast('Please enter a valid Gmail address', 'error');
         if (emailEl) { emailEl.style.borderColor = '#ef4444'; emailEl.focus(); }
         return;
       }
@@ -3625,7 +3625,7 @@
         if (cb.id !== 'permAll') permissions.push(cb.value);
       });
       if (permissions.length === 0) {
-        showToast('Kam se kam ek permission select karo', 'error');
+        showToast('Please select at least one permission', 'error');
         return;
       }
       const btn = document.getElementById('generateShareBtn');
@@ -3648,13 +3648,13 @@
         document.getElementById('generatedShareLink').value = shareLink;
         document.getElementById('shareLinkResult').style.display = 'block';
         if (btn) { btn.innerHTML = '<i class="fas fa-check-circle"></i> Link Generated!'; btn.disabled = false; }
-        showToast('Share link generated!', 'success');
+        showToast('Share link generated successfully!', 'success');
 
         // Auto open Gmail app (mailto: opens Gmail app on mobile)
         const permissionLabels = { products:'Products', categories:'Categories', orders:'Orders', offers:'Offers', banners:'Banners', trending:'Trending', similar:'Similar Products', reviews:'Reviews', notifications:'Notifications', searchTags:'Search Tags', popularSearches:'Popular Searches', customers:'Customers', policies:'Policies' };
         const permNames = permissions.map(p => '• ' + (permissionLabels[p] || p)).join('\n');
         const subject = 'Admin Panel Access — Buyzo Cart';
-        const body = `Namaste,\n\nAapko Buyzo Cart Admin Panel ka limited access diya gaya hai.\n\n🔗 Access Link:\n${shareLink}\n\n✅ Aapki Permissions:\n${permNames}\n\n📌 Note: Yeh link sirf aapke liye hai. Kisi aur ke saath share mat karein.\n\n— Buyzo Cart Admin Team`;
+        const body = `Hello,\n\nYou have been granted limited access to the Buyzo Cart Admin Panel.\n\n🔗 Access Link:\n${shareLink}\n\n✅ Your Permissions:\n${permNames}\n\n📌 Note: This link is only for you. Do not share it with others.\n\n— Buyzo Cart Admin Team`;
         const toEmail = recipientEmail || '';
         // mailto: opens Gmail app on mobile, gmail.com on desktop
         const mailtoUrl = `mailto:${encodeURIComponent(toEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -3670,12 +3670,12 @@
             document.getElementById('generatedShareLink').value = shareLink;
             document.getElementById('shareLinkResult').style.display = 'block';
             if (btn) { btn.innerHTML = '<i class="fas fa-check-circle"></i> Link Generated!'; btn.disabled = false; }
-            showToast('Link generated!', 'success');
+            showToast('Link generated successfully!', 'success');
             const subject = 'Admin Panel Access — Buyzo Cart';
-            const body = 'Access Link: ' + shareLink + '\n\nSirf ' + recipientEmail + ' Gmail se open hoga.';
+            const body = 'Access Link: ' + shareLink + '\n\nOnly ' + recipientEmail + ' can open this link.';
             window.location.href = 'mailto:' + encodeURIComponent(recipientEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
           } else {
-            showToast('Firebase permission error — Database Rules check karein', 'error');
+            showToast('Firebase permission error — check Database Rules', 'error');
             if (btn) { btn.innerHTML = '<i class="fas fa-paper-plane"></i> Generate Link & Send Email'; btn.disabled = false; }
           }
         }).catch(() => {
@@ -3705,7 +3705,7 @@
       const link = document.getElementById('generatedShareLink').value;
       if (!link) return;
       const subject = 'Admin Panel Access — Buyzo Cart';
-      const body = `Namaste,\n\nAapko Buyzo Cart Admin Panel ka limited access diya gaya hai.\n\n🔗 Access Link:\n${link}\n\n— Buyzo Cart Admin Team`;
+      const body = `Hello,\n\nYou have been granted limited access to the Buyzo Cart Admin Panel.\n\n🔗 Access Link:\n${link}\n\n— Buyzo Cart Admin Team`;
       window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
 
@@ -3756,7 +3756,7 @@
               <p class="login-subtitle">Admin Panel — Shared Access</p>
             </div>
             <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#1d4ed8;text-align:center;">
-              <i class="fas fa-info-circle"></i> Sirf <strong>${requiredEmail}</strong> se login kar sakte hain
+              <i class="fas fa-info-circle"></i> Only <strong>${requiredEmail}</strong> can access this panel
             </div>
             <button onclick="sharedAdminGoogleLogin('${shareId}', '${requiredEmail}')" style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;background:#fff;color:#333;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
               <img src="https://developers.google.com/identity/images/g-logo.png" width="22" height="22" alt="Google">
@@ -3765,7 +3765,7 @@
             <div id="sharedLoginError" style="color:#ef4444;margin-top:14px;text-align:center;font-size:13px;min-height:20px;"></div>
           </div>`;
       } else {
-        // No email restriction — direct access
+        // No email provided restriction — direct access
         grantSharedAccess(shareId, shareData);
       }
     }
@@ -3780,7 +3780,7 @@
         const loggedEmail = (result.user.email || '').toLowerCase().trim();
         if (loggedEmail !== requiredEmail) {
           await auth.signOut();
-          if (errEl) errEl.textContent = `❌ Wrong Gmail! Sirf ${requiredEmail} se login karein.`;
+          if (errEl) errEl.textContent = `❌ Wrong Gmail! Only ${requiredEmail} can access this panel.`;
           return;
         }
         // Email matches — fetch share data again and grant access
@@ -3835,12 +3835,53 @@
     }
 
     // Shared admin write block helper
-    function sharedAdminWriteBlocked(action) {
-      if (isSharedAdmin) {
-        showToast('View only access — write permission nahi hai', 'error');
-        return true;
+    // Helper: get Firebase auth token for REST API calls
+    async function getFirebaseToken() {
+      try {
+        const user = auth.currentUser;
+        if (user) return await user.getIdToken();
+      } catch(e) {}
+      return null;
+    }
+
+    // Helper: Firebase REST write with auth token
+    async function firebaseRestWrite(path, data, method = 'PUT') {
+      const token = await getFirebaseToken();
+      const url = `https://buyzocart-default-rtdb.firebaseio.com/${path}.json${token ? '?auth=' + token : ''}`;
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error('Firebase write failed: ' + res.status);
+      return res.json();
+    }
+
+    // Helper: Firebase SDK write with REST fallback
+    async function firebaseWrite(path, data) {
+      try {
+        await database.ref(path).set(data);
+      } catch(e) {
+        await firebaseRestWrite(path, data, 'PUT');
       }
-      return false;
+    }
+
+    async function firebaseUpdate(path, data) {
+      try {
+        await database.ref(path).update(data);
+      } catch(e) {
+        await firebaseRestWrite(path, data, 'PATCH');
+      }
+    }
+
+    async function firebaseRemove(path) {
+      try {
+        await database.ref(path).remove();
+      } catch(e) {
+        const token = await getFirebaseToken();
+        const url = `https://buyzocart-default-rtdb.firebaseio.com/${path}.json${token ? '?auth=' + token : ''}`;
+        await fetch(url, { method: 'DELETE' });
+      }
     }
 
     function showSharedErrorPage(icon, title, message) {
@@ -3952,7 +3993,7 @@
                 ${(data.email || 'S')[0].toUpperCase()}
               </div>
               <div>
-                <div style="font-weight:700;font-size:14px;color:#111827;">${data.email || 'No email'}</div>
+                <div style="font-weight:700;font-size:14px;color:#111827;">${data.email || 'No email provided'}</div>
                 <div style="font-size:11px;color:#6b7280;margin-top:1px;">
                   Added: ${data.createdAt ? new Date(data.createdAt).toLocaleDateString('en-IN') : 'N/A'}
                   ${data.lastAccessed ? ` • Last seen: ${new Date(data.lastAccessed).toLocaleDateString('en-IN')}` : ''}
@@ -4428,19 +4469,35 @@
     }
 
     // ===== LOAD SEARCH TAGS =====
+    // ===== LOAD SEARCH TAGS =====
     function loadSearchTags() {
-      const searchTagsRef = database.ref('searchTags');
-      searchTagsRef.off('value'); // Remove old listeners
-      searchTagsRef.on('value', snapshot => {
-        const tagsData = snapshot.val();
+      const renderTags = (tagsData) => {
         allSearchTags = [];
-        
         if (tagsData) {
-          allSearchTags = Object.entries(tagsData).map(([key, value]) => ({
-            id: key,
-            ...value
-          }));
+          allSearchTags = Object.entries(tagsData).map(([key, value]) => ({ id: key, ...value }));
         }
+        updateDashboardSearchTags();
+        const tagsList = document.getElementById('searchTagsList');
+        if (!tagsList) return;
+        if (allSearchTags.length === 0) {
+          tagsList.innerHTML = '<p style="color: var(--secondary);">No search tags added yet.</p>';
+        } else {
+          tagsList.innerHTML = allSearchTags.map(tag => `
+            <div class="tag-item" onclick="showTagProducts('${tag.id}', '${(tag.name||'').replace(/'/g,"\'")}')">
+              <span>${tag.name || ''}</span>
+              <span class="badge badge-info" style="margin-left: 8px;">${tag.type || 'general'}</span>
+              <i class="fas fa-times remove-tag" onclick="event.stopPropagation(); deleteSearchTag('${tag.id}')"></i>
+            </div>
+          `).join('');
+        }
+      };
+      const ref = database.ref('searchTags');
+      ref.off('value');
+      ref.on('value', snap => renderTags(snap.val()), err => {
+        fetch('https://buyzocart-default-rtdb.firebaseio.com/searchTags.json')
+          .then(r => r.json()).then(data => renderTags(data)).catch(() => renderTags(null));
+      });
+    }
         
         updateDashboardSearchTags();
         
@@ -4463,22 +4520,13 @@
 
     // Load Popular Searches
     function loadPopularSearches() {
-      const popularSearchesRef = database.ref('popularSearches');
-      popularSearchesRef.off('value'); // Remove old listeners
-      popularSearchesRef.on('value', snapshot => {
-        const searchesData = snapshot.val();
+      const renderSearches = (searchesData) => {
         allPopularSearches = [];
-        
         if (searchesData) {
-          allPopularSearches = Object.entries(searchesData).map(([key, value]) => ({
-            id: key,
-            ...value
-          }));
+          allPopularSearches = Object.entries(searchesData).map(([key, value]) => ({ id: key, ...value }));
           allPopularSearches.sort((a, b) => (b.count || 0) - (a.count || 0));
         }
-        
         updateDashboardPopularSearches();
-        
         const searchesList = document.getElementById('popularSearchesList');
         if (searchesList) {
           if (allPopularSearches.length === 0) {
@@ -4493,6 +4541,17 @@
             `).join('');
           }
         }
+      };
+
+      const ref = database.ref('popularSearches');
+      ref.off('value');
+      ref.on('value', snapshot => {
+        renderSearches(snapshot.val());
+      }, err => {
+        console.warn('popularSearches SDK error, using REST:', err.message);
+        fetch('https://buyzocart-default-rtdb.firebaseio.com/popularSearches.json')
+          .then(r => r.json()).then(data => renderSearches(data))
+          .catch(() => renderSearches(null));
       });
     }
 
@@ -5363,7 +5422,7 @@
 
       database.ref('searchTags').once('value').then(snap => {
         if (!snap.exists()) {
-          list.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;font-size:13px;">Koi tags nahi hain. Pehle Search Tags tab mein tags add karein.</div>';
+          list.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;font-size:13px;">No tags found. Please add tags in the Search Tags tab first.</div>';
           return;
         }
         const tags = Object.entries(snap.val()).map(([k, v]) => ({ id: k, ...v })).filter(t => t.active !== false);
@@ -5516,88 +5575,77 @@
     }
 
     // Save functions
-    function saveSearchTag() {
-      if (sharedAdminWriteBlocked()) return;
+    async function saveSearchTag() {
       const name = document.getElementById('searchTagName').value.trim();
       const type = document.getElementById('searchTagType').value;
       const active = document.getElementById('searchTagActive').checked;
-      
       if (!name) { showToast('Please enter a tag name', 'error'); return; }
-      
-      const tagId = 'tag_' + Date.now();
-      database.ref('searchTags/' + tagId).set({ name, type, active, createdAt: Date.now() })
-        .then(() => {
-          closeModal('addSearchTagModal');
-          showToast('Search tag added!', 'success');
-        })
-        .catch(error => showToast('Error: ' + error.message, 'error'));
+      try {
+        await firebaseWrite('searchTags/tag_' + Date.now(), { name, type, active, createdAt: Date.now() });
+        closeModal('addSearchTagModal');
+        showToast('Search tag added successfully!', 'success');
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
-    function deleteSearchTag(tagId) {
+    async function deleteSearchTag(tagId) {
       if (confirm('Delete this search tag?')) {
-        database.ref('searchTags/' + tagId).remove()
-          .then(() => {
-            database.ref('tagProducts/' + tagId).remove();
-            showToast('Tag deleted', 'success');
-          })
-          .catch(error => showToast('Error: ' + error.message, 'error'));
+        try {
+          await firebaseRemove('searchTags/' + tagId);
+          await firebaseRemove('tagProducts/' + tagId);
+          showToast('Tag deleted successfully', 'success');
+        } catch(e) { showToast('Error: ' + e.message, 'error'); }
       }
     }
 
-    function bulkAddSearchTags() {
+    async function bulkAddSearchTags() {
       const bulkText = document.getElementById('bulkSearchTags').value.trim();
       if (!bulkText) { showToast('Please enter tags', 'error'); return; }
       const tags = bulkText.split(',').map(t => t.trim()).filter(Boolean);
-      if (!tags.length) { showToast('No valid tags', 'error'); return; }
-      
-      const updates = {};
-      tags.forEach(tag => {
-        const tagId = 'tag_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        updates[`searchTags/${tagId}`] = { name: tag, type: 'general', active: true, createdAt: Date.now() };
-      });
-      
-      database.ref().update(updates)
-        .then(() => {
-          document.getElementById('bulkSearchTags').value = '';
-          showToast(`${tags.length} tags added!`, 'success');
-        })
-        .catch(error => showToast('Error: ' + error.message, 'error'));
+      if (!tags.length) { showToast('No valid tags found', 'error'); return; }
+      try {
+        for (const tag of tags) {
+          await firebaseWrite('searchTags/tag_' + Date.now() + '_' + Math.random().toString(36).substr(2,6), { name: tag, type: 'general', active: true, createdAt: Date.now() });
+        }
+        document.getElementById('bulkSearchTags').value = '';
+        showToast(tags.length + ' tags added successfully!', 'success');
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
-    function savePopularSearch() {
-      if (sharedAdminWriteBlocked()) return;
+    async function savePopularSearch() {
       const term = document.getElementById('popularSearchTerm').value.trim();
       const count = parseInt(document.getElementById('popularSearchCount').value) || 1;
       const active = document.getElementById('popularSearchActive').checked;
       if (!term) { showToast('Please enter a search term', 'error'); return; }
-      
-      database.ref('popularSearches/search_' + Date.now()).set({ term, count, active, createdAt: Date.now() })
-        .then(() => { closeModal('addPopularSearchModal'); showToast('Popular search added!', 'success'); })
-        .catch(error => showToast('Error: ' + error.message, 'error'));
+      try {
+        await firebaseWrite('popularSearches/search_' + Date.now(), { term, count, active, createdAt: Date.now() });
+        closeModal('addPopularSearchModal');
+        showToast('Popular search added successfully!', 'success');
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
-    function deletePopularSearch(searchId) {
+    async function deletePopularSearch(searchId) {
       if (confirm('Delete this popular search?')) {
-        database.ref('popularSearches/' + searchId).remove()
-          .then(() => showToast('Deleted!', 'success'))
-          .catch(error => showToast('Error: ' + error.message, 'error'));
+        try {
+          await firebaseRemove('popularSearches/' + searchId);
+          showToast('Deleted successfully', 'success');
+        } catch(e) { showToast('Error: ' + e.message, 'error'); }
       }
     }
 
-    function bulkAddPopularSearches() {
+    async function bulkAddPopularSearches() {
       const bulkText = document.getElementById('bulkPopularSearches').value.trim();
       if (!bulkText) { showToast('Please enter searches', 'error'); return; }
       const searches = bulkText.split(',').map(s => s.trim()).filter(Boolean);
-      if (!searches.length) { showToast('No valid searches', 'error'); return; }
-      
-      const updates = {};
-      searches.forEach(term => {
-        updates[`popularSearches/search_${Date.now()}_${Math.random().toString(36).substr(2,6)}`] = { term, count: 1, active: true, createdAt: Date.now() };
-      });
-      database.ref().update(updates)
-        .then(() => { document.getElementById('bulkPopularSearches').value = ''; showToast(`${searches.length} searches added!`, 'success'); })
-        .catch(error => showToast('Error: ' + error.message, 'error'));
+      if (!searches.length) { showToast('No valid searches found', 'error'); return; }
+      try {
+        for (const term of searches) {
+          await firebaseWrite('popularSearches/search_' + Date.now() + '_' + Math.random().toString(36).substr(2,6), { term, count: 1, active: true, createdAt: Date.now() });
+        }
+        document.getElementById('bulkPopularSearches').value = '';
+        showToast(searches.length + ' searches added successfully!', 'success');
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
+
 
     function generatePopularSearchesFromProducts() {
       const productsRef = database.ref('products');
@@ -5741,7 +5789,6 @@
     }
 
     function saveProduct() {
-      if (sharedAdminWriteBlocked()) return;
       const name = document.getElementById('productName').value.trim();
       const price = document.getElementById('productPrice').value.trim();
       const stock = document.getElementById('productStock').value.trim();
@@ -5819,7 +5866,6 @@
     }
 
     function saveCategory() {
-      if (sharedAdminWriteBlocked()) return;
       const name = document.getElementById('categoryName').value.trim();
       const description = document.getElementById('categoryDescription').value.trim();
       const status = document.getElementById('categoryStatus').checked ? 'active' : 'inactive';
@@ -5869,7 +5915,6 @@
     }
 
     function saveBanner() {
-      if (sharedAdminWriteBlocked()) return;
       const title = document.getElementById('bannerTitle').value.trim();
       const link = document.getElementById('bannerLink').value.trim();
       const status = document.getElementById('bannerStatus').checked ? 'active' : 'inactive';
@@ -6125,7 +6170,7 @@
         database.ref('similarProducts/' + mainProductId).remove()
           .then(() => {
             loadSimilarProducts();
-            alert('Deleted!');
+            alert('Deleted successfully');
           })
           .catch(error => alert('Error: ' + error.message));
       }
@@ -6226,7 +6271,6 @@
 
     // Notifications
     function sendAdminNotification() {
-      if (sharedAdminWriteBlocked()) return;
       const type = document.getElementById('notifType').value;
       const title = document.getElementById('notifTitle').value.trim();
       const message = document.getElementById('notifMessage').value.trim();
