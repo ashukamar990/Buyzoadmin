@@ -1750,21 +1750,21 @@
         <button class="sidebar-close" onclick="toggleSidebar()">&times;</button>
       </div>
       <ul class="sidebar-menu">
-        <li><a href="#" class="menu-item active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="products"><i class="fas fa-box"></i><span>Products</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="categories"><i class="fas fa-tags"></i><span>Categories</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="orders"><i class="fas fa-shopping-bag"></i><span>Orders</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="offers"><i class="fas fa-percentage"></i><span>Offers</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="reviews"><i class="fas fa-star"></i><span>Reviews</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="notifications"><i class="fas fa-bell"></i><span>Notifications</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="trending"><i class="fas fa-fire"></i><span>Trending Products</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="similar-products"><i class="fas fa-random"></i><span>Similar Products</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="search-tags"><i class="fas fa-search"></i><span>Search Tags</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="popular-searches"><i class="fas fa-chart-line"></i><span>Popular Searches</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="customers"><i class="fas fa-users"></i><span>Customers</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="banners"><i class="fas fa-image"></i><span>Banners</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="policies"><i class="fas fa-file-alt"></i><span>Policies</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
+        <li><a href="#" class="menu-item active" data-tab="dashboard" onclick="event.preventDefault();showTab('dashboard');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="products" onclick="event.preventDefault();showTab('products');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-box"></i><span>Products</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="categories" onclick="event.preventDefault();showTab('categories');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-tags"></i><span>Categories</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="orders" onclick="event.preventDefault();showTab('orders');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-shopping-bag"></i><span>Orders</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="offers" onclick="event.preventDefault();showTab('offers');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-percentage"></i><span>Offers</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="reviews" onclick="event.preventDefault();showTab('reviews');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-star"></i><span>Reviews</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="notifications" onclick="event.preventDefault();showTab('notifications');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-bell"></i><span>Notifications</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="trending" onclick="event.preventDefault();showTab('trending');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-fire"></i><span>Trending Products</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="similar-products" onclick="event.preventDefault();showTab('similar-products');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-random"></i><span>Similar Products</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="search-tags" onclick="event.preventDefault();showTab('search-tags');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-search"></i><span>Search Tags</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="popular-searches" onclick="event.preventDefault();showTab('popular-searches');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-chart-line"></i><span>Popular Searches</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="customers" onclick="event.preventDefault();showTab('customers');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-users"></i><span>Customers</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="banners" onclick="event.preventDefault();showTab('banners');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-image"></i><span>Banners</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="policies" onclick="event.preventDefault();showTab('policies');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-file-alt"></i><span>Policies</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="settings" onclick="event.preventDefault();showTab('settings');document.getElementById('adminSidebar').classList.remove('active');document.getElementById('sidebarOverlay').classList.remove('active');"><i class="fas fa-cog"></i><span>Settings</span></a></li>
         <li><a href="#" class="menu-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
       </ul>
     </div>
@@ -3331,26 +3331,38 @@
     }
 
     // ===== MOBILE BACK BUTTON FIX =====
-    // Push state so back button doesn't leave the page
     function setupMobileBackFix() {
-      // Push initial state
-      history.pushState({ page: 'admin' }, '', window.location.href);
-      
+      // bfcache se wapas aaye to reload
+      window.addEventListener('pageshow', function(e) {
+        if (e.persisted) window.location.reload();
+      });
+
+      // Android back button - close modal or go to dashboard
       window.addEventListener('popstate', function(e) {
-        // When back is pressed, push state again to stay on page
-        history.pushState({ page: 'admin' }, '', window.location.href);
-        
-        // If a modal is open, close it instead
+        // If a modal is open, close it
         const openModal = document.querySelector('.modal.active');
         if (openModal) {
           openModal.classList.remove('active');
+          history.pushState(null, '', window.location.href);
           return;
         }
-        // If not on dashboard, go to dashboard
-        if (currentAdminTab !== 'dashboard') {
+        // If sidebar is open, close it
+        const sidebar = document.getElementById('adminSidebar');
+        if (sidebar && sidebar.classList.contains('active')) {
+          sidebar.classList.remove('active');
+          document.getElementById('sidebarOverlay')?.classList.remove('active');
+          history.pushState(null, '', window.location.href);
+          return;
+        }
+        // Otherwise go to dashboard
+        if (currentAdminTab && currentAdminTab !== 'dashboard') {
           showTab('dashboard');
+          history.pushState(null, '', window.location.href);
         }
       });
+
+      // Push initial state once
+      history.pushState(null, '', window.location.href);
     }
 
     // ===== COPY/RIGHT-CLICK DISABLE =====
@@ -3430,17 +3442,47 @@
     }
 
     function _setupAdminUI() {
-      document.querySelectorAll('.menu-item').forEach(tab => {
-        tab.addEventListener('click', function(e) {
+      // ===== EVENT DELEGATION - sidebar menu clicks =====
+      // Individual addEventListener instead of delegation - more reliable
+      // Use onclick in HTML directly for menu items (most reliable on mobile)
+      
+      // Re-attach all menu item click handlers
+      document.querySelectorAll('.menu-item[data-tab]').forEach(function(item) {
+        // Remove old listeners by cloning
+        const clone = item.cloneNode(true);
+        item.parentNode.replaceChild(clone, item);
+        clone.addEventListener('click', function(e) {
           e.preventDefault();
-          if (this.dataset.tab) {
-            showTab(this.dataset.tab);
-            if (window.innerWidth <= 1024) {
-              toggleSidebar();
-            }
+          e.stopPropagation();
+          const tab = this.dataset.tab;
+          if (tab) {
+            showTab(tab);
+            // Close sidebar on mobile
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar) sidebar.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
           }
         });
       });
+
+      // Also use event delegation on sidebar as backup
+      const sidebarEl = document.getElementById('adminSidebar');
+      if (sidebarEl) {
+        sidebarEl.addEventListener('click', function(e) {
+          const menuItem = e.target.closest('.menu-item[data-tab]');
+          if (menuItem) {
+            e.preventDefault();
+            const tab = menuItem.dataset.tab;
+            if (tab) {
+              showTab(tab);
+              sidebarEl.classList.remove('active');
+              const overlay = document.getElementById('sidebarOverlay');
+              if (overlay) overlay.classList.remove('active');
+            }
+          }
+        });
+      }
       
       document.querySelectorAll('.tabs .tab').forEach(tab => {
         tab.addEventListener('click', function() {
@@ -3486,7 +3528,6 @@
       });
 
       document.getElementById('sidebarOverlay')?.addEventListener('click', function() {
-        // Close sidebar when overlay (outside area) is clicked
         const sidebar = document.getElementById('adminSidebar');
         const overlay = document.getElementById('sidebarOverlay');
         if (sidebar) sidebar.classList.remove('active');
