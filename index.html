@@ -1726,7 +1726,7 @@
         <p class="login-subtitle">Admin Panel — Authorized Access Only</p>
       </div>
 
-      <button onclick="adminGoogleLogin()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;background:#fff;color:#333;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
+      <button onclick="adminGoogleLogin()" class="google-signin-btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;background:#fff;color:#333;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
         <img src="https://developers.google.com/identity/images/g-logo.png" width="22" height="22" alt="Google">
         Sign in with Google
       </button>
@@ -3212,18 +3212,33 @@
     // Google Sign-In
     async function adminGoogleLogin() {
       showLoginError('');
+      const btn = document.querySelector('.google-signin-btn');
+      if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...'; btn.disabled = true; }
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
-        const result = await auth.signInWithPopup(provider);
-        const email = result.user.email;
-        if (!isAllowedAdmin(email)) {
-          await auth.signOut();
-          showLoginError('❌ Access denied. This Gmail is not authorized as admin.');
-          return;
+        provider.addScope('email');
+        // Mobile mein redirect, desktop mein popup
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isMobile) {
+          // Store that we're doing admin login
+          sessionStorage.setItem('pendingAdminLogin', 'true');
+          await auth.signInWithRedirect(provider);
+          return; // page redirect ho jaayega
+        } else {
+          const result = await auth.signInWithPopup(provider);
+          const email = result.user.email;
+          if (!isAllowedAdmin(email)) {
+            await auth.signOut();
+            showLoginError('❌ Access denied. This Gmail is not authorized as admin.');
+            if (btn) { btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" width="18" height="18"> Sign in with Google'; btn.disabled = false; }
+            return;
+          }
+          onAdminLoginSuccess();
         }
-        onAdminLoginSuccess();
       } catch(err) {
-        showLoginError('Google sign-in failed: ' + (err.message || err));
+        console.error('Login error:', err);
+        showLoginError('Sign-in failed: ' + (err.message || err));
+        if (btn) { btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" width="18" height="18"> Sign in with Google'; btn.disabled = false; }
       }
     }
 
@@ -3425,11 +3440,52 @@
       const urlParams = new URLSearchParams(window.location.search);
       const shareId = urlParams.get('share');
       if (shareId) {
-        // Don't wait for Firebase auth for shared access - just check the share link
         checkSharedAccess();
         return;
       }
 
+      // Handle Google redirect result (mobile login)
+      auth.getRedirectResult().then(result => {
+        if (result && result.user) {
+          // Check if this was a shared admin redirect
+          const pendingShareId = sessionStorage.getItem('pendingShareId');
+          const pendingRequiredEmail = sessionStorage.getItem('pendingRequiredEmail');
+          
+          if (pendingShareId && pendingRequiredEmail) {
+            // Shared admin redirect
+            sessionStorage.removeItem('pendingShareId');
+            sessionStorage.removeItem('pendingRequiredEmail');
+            const loggedEmail = (result.user.email || '').toLowerCase().trim();
+            if (loggedEmail !== pendingRequiredEmail.toLowerCase().trim()) {
+              auth.signOut();
+              showSharedErrorPage('❌', 'Wrong Gmail', `Only ${pendingRequiredEmail} can access this panel.`);
+              return;
+            }
+            fetch(`https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${pendingShareId}.json`)
+              .then(r => r.json()).then(shareData => {
+                if (shareData && shareData.status === 'active') {
+                  grantSharedAccess(pendingShareId, shareData, result.user);
+                } else {
+                  showSharedErrorPage('🚫', 'Access Revoked', 'This access link is no longer active.');
+                }
+              });
+          } else if (sessionStorage.getItem('pendingAdminLogin')) {
+            // Normal admin redirect
+            sessionStorage.removeItem('pendingAdminLogin');
+            if (!isAllowedAdmin(result.user.email)) {
+              auth.signOut();
+              document.getElementById('adminLoginPage').style.display = 'flex';
+              showLoginError('❌ Access denied. This Gmail is not authorized as admin.');
+              return;
+            }
+            onAdminLoginSuccess();
+          }
+        }
+      }).catch(err => {
+        console.error('Redirect result error:', err);
+      });
+
+      // Normal auth state check
       auth.onAuthStateChanged(user => {
         if (user && isAllowedAdmin(user.email)) {
           onAdminLoginSuccess();
@@ -3758,7 +3814,7 @@
             <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#1d4ed8;text-align:center;">
               <i class="fas fa-info-circle"></i> Only <strong>${requiredEmail}</strong> can access this panel
             </div>
-            <button onclick="sharedAdminGoogleLogin('${shareId}', '${requiredEmail}')" style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;background:#fff;color:#333;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
+            <button onclick="sharedAdminGoogleLogin('${shareId}', '${requiredEmail}')" class="google-signin-btn" id="sharedLoginBtn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;background:#fff;color:#333;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
               <img src="https://developers.google.com/identity/images/g-logo.png" width="22" height="22" alt="Google">
               Sign in with Google
             </button>
@@ -3772,18 +3828,28 @@
 
     async function sharedAdminGoogleLogin(shareId, requiredEmail) {
       const errEl = document.getElementById('sharedLoginError');
+      const btn = document.querySelector('#sharedLoginPage .google-signin-btn');
       if (errEl) errEl.textContent = '';
+      if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...'; btn.disabled = true; }
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.setCustomParameters({ login_hint: requiredEmail });
-        const result = await auth.signInWithPopup(provider);
-        const loggedEmail = (result.user.email || '').toLowerCase().trim();
-        if (loggedEmail !== requiredEmail) {
-          await auth.signOut();
-          if (errEl) errEl.textContent = `❌ Wrong Gmail! Only ${requiredEmail} can access this panel.`;
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isMobile) {
+          // Store shareId and requiredEmail for after redirect
+          sessionStorage.setItem('pendingShareId', shareId);
+          sessionStorage.setItem('pendingRequiredEmail', requiredEmail);
+          await auth.signInWithRedirect(provider);
           return;
         }
-        // Email matches — fetch share data again and grant access
+        const result = await auth.signInWithPopup(provider);
+        const loggedEmail = (result.user.email || '').toLowerCase().trim();
+        if (loggedEmail !== requiredEmail.toLowerCase().trim()) {
+          await auth.signOut();
+          if (errEl) errEl.textContent = `❌ Wrong Gmail! Only ${requiredEmail} can access this panel.`;
+          if (btn) { btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" width="18" height="18"> Sign in with Google'; btn.disabled = false; }
+          return;
+        }
         const res = await fetch(`https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`);
         const shareData = await res.json();
         if (shareData && shareData.status === 'active') {
@@ -3792,7 +3858,9 @@
           if (errEl) errEl.textContent = 'Access has been revoked.';
         }
       } catch(err) {
+        console.error('Shared login error:', err);
         if (errEl) errEl.textContent = 'Login failed: ' + (err.message || err);
+        if (btn) { btn.innerHTML = '<img src="https://developers.google.com/identity/images/g-logo.png" width="18" height="18"> Sign in with Google'; btn.disabled = false; }
       }
     }
 
