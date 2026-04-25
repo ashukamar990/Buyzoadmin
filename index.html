@@ -4498,25 +4498,6 @@
           .then(r => r.json()).then(data => renderTags(data)).catch(() => renderTags(null));
       });
     }
-        
-        updateDashboardSearchTags();
-        
-        const tagsList = document.getElementById('searchTagsList');
-        if (tagsList) {
-          if (allSearchTags.length === 0) {
-            tagsList.innerHTML = '<p style="color: var(--secondary);">No search tags added yet.</p>';
-          } else {
-            tagsList.innerHTML = allSearchTags.map(tag => `
-              <div class="tag-item" onclick="showTagProducts('${tag.id}', '${(tag.name||'').replace(/'/g,"\\'")}')">
-                <span>${tag.name || ''}</span>
-                <span class="badge badge-info" style="margin-left: 8px;">${tag.type || 'general'}</span>
-                <i class="fas fa-times remove-tag" onclick="event.stopPropagation(); deleteSearchTag('${tag.id}')"></i>
-              </div>
-            `).join('');
-          }
-        }
-      });
-    }
 
     // Load Popular Searches
     function loadPopularSearches() {
