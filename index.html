@@ -2153,7 +2153,7 @@
             </div>
             <div class="card-body">
               <p style="margin-bottom: 16px; color: var(--secondary);">
-                Search tags appear as clickable suggestions when users search on the website. Click on any tag to manage its products.
+                Search tags appear as clickable suggestions when users search on the website. Click any tag to manage its linked products.
               </p>
               
               <div class="search-tags-section" style="background: none; padding: 0;">
@@ -2583,7 +2583,7 @@
           <label>Search Tags / Collections <span style="color:#94a3b8;font-weight:400;font-size:12px;">(Optional)</span></label>
           <div id="productTagsChipContainer" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid #d1d5db;border-radius:6px;min-height:44px;cursor:pointer;background:#fff;" onclick="document.getElementById('productTagsDropdown').classList.toggle('active-dropdown')">
             <div id="selectedTagsDisplay" style="display:flex;flex-wrap:wrap;gap:6px;flex:1;align-items:center;">
-              <span style="color:#94a3b8;font-size:13px;" id="tagsPlaceholder">Click to select tags...</span>
+              <span style="color:#94a3b8;font-size:13px;" id="tagsPlaceholder">Click to select tags/collections...</span>
             </div>
             <i class="fas fa-chevron-down" style="color:#94a3b8;align-self:center;font-size:12px;"></i>
           </div>
@@ -3688,8 +3688,8 @@
     function copyShareLink() {
       const input = document.getElementById('generatedShareLink');
       if (!input || !input.value) return;
-      navigator.clipboard ? navigator.clipboard.writeText(input.value).then(() => showToast('Link copied!', 'success'))
-        : (input.select(), document.execCommand('copy'), showToast('Link copied!', 'success'));
+      navigator.clipboard ? navigator.clipboard.writeText(input.value).then(() => showToast('Link copied to clipboard!', 'success'))
+        : (input.select(), document.execCommand('copy'), showToast('Link copied to clipboard!', 'success'));
     }
 
     function sendShareEmail() {
@@ -3800,7 +3800,7 @@
     let isSharedAdmin = false;
 
     function grantSharedAccess(shareId, shareData, user) {
-      isSharedAdmin = true; // Mark as shared admin - no write access
+      isSharedAdmin = true; // Shared admin - writes go through REST API with auth token
       sessionStorage.setItem('sharedAdminId', shareId);
       sessionStorage.setItem('sharedPermissions', JSON.stringify(shareData.permissions));
       
@@ -4032,8 +4032,8 @@
     }
 
     function copyText(text) {
-      navigator.clipboard ? navigator.clipboard.writeText(text).then(() => showToast('Link copied!', 'success'))
-        : (function(){ const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); showToast('Copied!', 'success'); })();
+      navigator.clipboard ? navigator.clipboard.writeText(text).then(() => showToast('Link copied to clipboard!', 'success'))
+        : (function(){ const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); showToast('Copied to clipboard!', 'success'); })();
     }
 
     async function suspendSharedAdmin(shareId) {
@@ -4086,7 +4086,7 @@
             <h2>Admin Sharing Guide</h2>
           </div>
           <div class="card-body">
-            <p>You can share limited admin access with team members. They will only see features you grant permission for.</p>
+            <p>Grant limited admin access to team members. They will only see the features you grant permission for.</p>
             <ul style="margin-top: 15px; margin-left: 20px;">
               <li>Click "Share Access" to create a new shared admin link</li>
               <li>Select specific permissions for each user</li>
@@ -5389,7 +5389,7 @@
       
       // Reset chip display
       const display = document.getElementById('selectedTagsDisplay');
-      if (display) display.innerHTML = '<span style="color:#94a3b8;font-size:13px;" id="tagsPlaceholder">Click to select tags...</span>';
+      if (display) display.innerHTML = '<span style="color:#94a3b8;font-size:13px;" id="tagsPlaceholder">Click to select tags/collections...</span>';
       const dropdown = document.getElementById('productTagsDropdown');
       if (dropdown) dropdown.classList.remove('active-dropdown');
 
@@ -5428,7 +5428,7 @@
         const tags = Object.entries(snap.val()).map(([k, v]) => ({ id: k, ...v })).filter(t => t.active !== false);
         renderTagCheckboxes(tags);
       }).catch(() => {
-        list.innerHTML = '<div style="color:#ef4444;text-align:center;padding:10px;font-size:13px;">Error loading tags</div>';
+        list.innerHTML = '<div style="color:#ef4444;text-align:center;padding:10px;font-size:13px;">Error loading tags. Please try again.</div>';
       });
     }
 
@@ -5481,7 +5481,7 @@
       const display = document.getElementById('selectedTagsDisplay');
       if (!display) return;
       if (selectedProductTagIds.size === 0) {
-        display.innerHTML = '<span style="color:#94a3b8;font-size:13px;" id="tagsPlaceholder">Click to select tags...</span>';
+        display.innerHTML = '<span style="color:#94a3b8;font-size:13px;" id="tagsPlaceholder">Click to select tags/collections...</span>';
         return;
       }
       // Get names from checked checkboxes
@@ -5490,7 +5490,7 @@
         chips.push(`<span class="tag-chip-selected">${cb.dataset.name}<span class="remove-chip" onclick="removeTagChip('${cb.value}', event)">×</span></span>`);
       });
       // Also handle tags selected but not yet rendered in filtered list
-      display.innerHTML = chips.length ? chips.join('') : '<span style="color:#94a3b8;font-size:13px;">Click to select tags...</span>';
+      display.innerHTML = chips.length ? chips.join('') : '<span style="color:#94a3b8;font-size:13px;">Click to select tags/collections...</span>';
     }
 
     function removeTagChip(tagId, e) {
@@ -5592,7 +5592,7 @@
         try {
           await firebaseRemove('searchTags/' + tagId);
           await firebaseRemove('tagProducts/' + tagId);
-          showToast('Tag deleted successfully', 'success');
+          showToast('Search tag deleted successfully', 'success');
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
       }
     }
@@ -5601,7 +5601,7 @@
       const bulkText = document.getElementById('bulkSearchTags').value.trim();
       if (!bulkText) { showToast('Please enter tags', 'error'); return; }
       const tags = bulkText.split(',').map(t => t.trim()).filter(Boolean);
-      if (!tags.length) { showToast('No valid tags found', 'error'); return; }
+      if (!tags.length) { showToast('No valid tags found found', 'error'); return; }
       try {
         for (const tag of tags) {
           await firebaseWrite('searchTags/tag_' + Date.now() + '_' + Math.random().toString(36).substr(2,6), { name: tag, type: 'general', active: true, createdAt: Date.now() });
@@ -5636,7 +5636,7 @@
       const bulkText = document.getElementById('bulkPopularSearches').value.trim();
       if (!bulkText) { showToast('Please enter searches', 'error'); return; }
       const searches = bulkText.split(',').map(s => s.trim()).filter(Boolean);
-      if (!searches.length) { showToast('No valid searches found', 'error'); return; }
+      if (!searches.length) { showToast('No valid searches found found', 'error'); return; }
       try {
         for (const term of searches) {
           await firebaseWrite('popularSearches/search_' + Date.now() + '_' + Math.random().toString(36).substr(2,6), { term, count: 1, active: true, createdAt: Date.now() });
@@ -5799,25 +5799,20 @@
       const trending = document.getElementById('productTrending').checked;
       const status = document.getElementById('productStatus').checked ? 'active' : 'inactive';
       
-      if (!name) { alert('Please enter product name'); return; }
-      if (!price || isNaN(price) || parseFloat(price) <= 0) { alert('Please enter a valid price'); return; }
-      if (!category) { alert('Please select a category'); return; }
-      if (!desc) { alert('Please enter product description'); return; }
-      if (uploadedImages.length === 0) { alert('Please upload at least one product image'); return; }
+      if (!name) { showToast('Please enter product name', 'error'); return; }
+      if (!price || isNaN(price) || parseFloat(price) <= 0) { showToast('Please enter a valid price', 'error'); return; }
+      if (!category) { showToast('Please select a category', 'error'); return; }
+      if (!desc) { showToast('Please enter product description', 'error'); return; }
+      if (uploadedImages.length === 0) { showToast('Please upload at least one product image', 'error'); return; }
       
       const saveBtn = document.getElementById('saveProductBtn');
       const originalText = saveBtn.innerHTML;
       saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
       saveBtn.disabled = true;
       
-      const productsRef = database.ref('products');
-      productsRef.once('value', snapshot => {
+      database.ref('products').once('value', snapshot => {
         const productsData = snapshot.val();
-        let products = [];
-        
-        if (productsData) {
-          products = Object.values(productsData);
-        }
+        let products = productsData ? Object.values(productsData) : [];
         
         let nextId = 1;
         if (products.length > 0) {
@@ -5846,19 +5841,19 @@
           timestamp: Date.now()
         };
         
-        productsRef.child(productId).set(newProduct)
+        // Use firebaseWrite - works for both super admin and shared admin
+        firebaseWrite('products/' + productId, newProduct)
           .then(() => {
             closeModal('addProductModal');
             loadProducts();
             loadTrendingProducts();
             if (currentAdminTab === 'dashboard') loadDashboardData();
-            alert('Product added successfully!');
+            showToast('Product added successfully!', 'success');
             saveBtn.innerHTML = originalText;
             saveBtn.disabled = false;
           })
           .catch(error => {
-            console.error('Error saving product:', error);
-            alert('Error saving product: ' + error.message);
+            showToast('Error saving product: ' + error.message, 'error');
             saveBtn.innerHTML = originalText;
             saveBtn.disabled = false;
           });
