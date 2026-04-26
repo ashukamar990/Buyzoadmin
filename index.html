@@ -3914,43 +3914,17 @@
     }
 
     // Helper: Firebase REST write with auth token
-    async function firebaseRestWrite(path, data, method = 'PUT') {
-      const token = await getFirebaseToken();
-      const url = `https://buyzocart-default-rtdb.firebaseio.com/${path}.json${token ? '?auth=' + token : ''}`;
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      if (!res.ok) throw new Error('Firebase write failed: ' + res.status);
-      return res.json();
-    }
-
-    // Helper: Firebase SDK write with REST fallback
+    // Firebase helpers - direct SDK (no REST fallback needed with proper rules)
     async function firebaseWrite(path, data) {
-      try {
-        await database.ref(path).set(data);
-      } catch(e) {
-        await firebaseRestWrite(path, data, 'PUT');
-      }
+      return database.ref(path).set(data);
     }
 
     async function firebaseUpdate(path, data) {
-      try {
-        await database.ref(path).update(data);
-      } catch(e) {
-        await firebaseRestWrite(path, data, 'PATCH');
-      }
+      return database.ref(path).update(data);
     }
 
     async function firebaseRemove(path) {
-      try {
-        await database.ref(path).remove();
-      } catch(e) {
-        const token = await getFirebaseToken();
-        const url = `https://buyzocart-default-rtdb.firebaseio.com/${path}.json${token ? '?auth=' + token : ''}`;
-        await fetch(url, { method: 'DELETE' });
-      }
+      return database.ref(path).remove();
     }
 
     function showSharedErrorPage(icon, title, message) {
@@ -5632,18 +5606,18 @@
       const active = document.getElementById('searchTagActive').checked;
       if (!name) { showToast('Please enter a tag name', 'error'); return; }
       try {
-        await firebaseWrite('searchTags/tag_' + Date.now(), { name, type, active, createdAt: Date.now() });
+        await database.ref('searchTags').push({ name, type, active, createdAt: Date.now() });
         closeModal('addSearchTagModal');
-        showToast('Search tag added successfully!', 'success');
-      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        showToast('Search tag added!', 'success');
+      } catch(e) { showToast('Error: ' + e.message, 'error'); console.error(e); }
     }
 
     async function deleteSearchTag(tagId) {
       if (confirm('Delete this search tag?')) {
         try {
-          await firebaseRemove('searchTags/' + tagId);
-          await firebaseRemove('tagProducts/' + tagId);
-          showToast('Search tag deleted successfully', 'success');
+          await database.ref('searchTags/' + tagId).remove();
+          await database.ref('tagProducts/' + tagId).remove().catch(() => {});
+          showToast('Tag deleted!', 'success');
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
       }
     }
@@ -5652,14 +5626,14 @@
       const bulkText = document.getElementById('bulkSearchTags').value.trim();
       if (!bulkText) { showToast('Please enter tags', 'error'); return; }
       const tags = bulkText.split(',').map(t => t.trim()).filter(Boolean);
-      if (!tags.length) { showToast('No valid tags found found', 'error'); return; }
+      if (!tags.length) { showToast('No valid tags found', 'error'); return; }
       try {
         for (const tag of tags) {
-          await firebaseWrite('searchTags/tag_' + Date.now() + '_' + Math.random().toString(36).substr(2,6), { name: tag, type: 'general', active: true, createdAt: Date.now() });
+          await database.ref('searchTags').push({ name: tag, type: 'general', active: true, createdAt: Date.now() });
         }
         document.getElementById('bulkSearchTags').value = '';
-        showToast(tags.length + ' tags added successfully!', 'success');
-      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        showToast(tags.length + ' tags added!', 'success');
+      } catch(e) { showToast('Error: ' + e.message, 'error'); console.error(e); }
     }
 
     async function savePopularSearch() {
@@ -5668,17 +5642,17 @@
       const active = document.getElementById('popularSearchActive').checked;
       if (!term) { showToast('Please enter a search term', 'error'); return; }
       try {
-        await firebaseWrite('popularSearches/search_' + Date.now(), { term, count, active, createdAt: Date.now() });
+        await database.ref('popularSearches').push({ term, count, active, createdAt: Date.now() });
         closeModal('addPopularSearchModal');
-        showToast('Popular search added successfully!', 'success');
-      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        showToast('Popular search added!', 'success');
+      } catch(e) { showToast('Error: ' + e.message, 'error'); console.error(e); }
     }
 
     async function deletePopularSearch(searchId) {
       if (confirm('Delete this popular search?')) {
         try {
-          await firebaseRemove('popularSearches/' + searchId);
-          showToast('Deleted successfully', 'success');
+          await database.ref('popularSearches/' + searchId).remove();
+          showToast('Deleted!', 'success');
         } catch(e) { showToast('Error: ' + e.message, 'error'); }
       }
     }
@@ -5687,14 +5661,14 @@
       const bulkText = document.getElementById('bulkPopularSearches').value.trim();
       if (!bulkText) { showToast('Please enter searches', 'error'); return; }
       const searches = bulkText.split(',').map(s => s.trim()).filter(Boolean);
-      if (!searches.length) { showToast('No valid searches found found', 'error'); return; }
+      if (!searches.length) { showToast('No valid searches found', 'error'); return; }
       try {
         for (const term of searches) {
-          await firebaseWrite('popularSearches/search_' + Date.now() + '_' + Math.random().toString(36).substr(2,6), { term, count: 1, active: true, createdAt: Date.now() });
+          await database.ref('popularSearches').push({ term, count: 1, active: true, createdAt: Date.now() });
         }
         document.getElementById('bulkPopularSearches').value = '';
-        showToast(searches.length + ' searches added successfully!', 'success');
-      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        showToast(searches.length + ' searches added!', 'success');
+      } catch(e) { showToast('Error: ' + e.message, 'error'); console.error(e); }
     }
 
 
@@ -5861,18 +5835,10 @@
       saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
       saveBtn.disabled = true;
       
-      // Async version to avoid callback issues
+      // Use async IIFE with push() for unique ID
       (async () => {
-        let nextId = 1;
-        try {
-          const snap = await database.ref('products').once('value');
-          const pData = snap.val();
-          if (pData) {
-            const ids = Object.values(pData).map(p => parseInt(p.id)).filter(id => !isNaN(id));
-            nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
-          }
-        } catch(e) { nextId = Date.now(); }
-        const productId = String(nextId);
+        const newRef = database.ref('products').push();
+        const productId = newRef.key;
         const sizes = sizesInput ? sizesInput.split(',').map(s => s.trim()).filter(s => s) : [];
         const tagsRaw = document.getElementById('productSearchTags')?.value?.trim() || '';
         const productTags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
@@ -5895,19 +5861,20 @@
         
         // Use firebaseWrite - works for both super admin and shared admin
         try {
-          await firebaseWrite('products/' + productId, newProduct);
+          await newRef.set(newProduct);
           closeModal('addProductModal');
           loadProducts();
           loadTrendingProducts();
           if (currentAdminTab === 'dashboard') loadDashboardData();
           showToast('Product added successfully!', 'success');
         } catch(error) {
-          showToast('Error saving product: ' + error.message, 'error');
+          showToast('Error: ' + error.message, 'error');
+          console.error('saveProduct error:', error);
         } finally {
           saveBtn.innerHTML = originalText;
           saveBtn.disabled = false;
         }
-      })(); // end async IIFE
+      })();
     }
 
     async function saveCategory() {
@@ -5922,23 +5889,9 @@
       if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
 
       try {
-        // Get next ID from Firebase - with proper promise chain
-        let nextId = Date.now(); // fallback: timestamp-based unique ID
-        try {
-          const snap = await database.ref('categories').once('value');
-          const cats = snap.val();
-          if (cats) {
-            const ids = Object.values(cats).map(c => parseInt(c.id)).filter(id => !isNaN(id));
-            nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
-          } else {
-            nextId = 1;
-          }
-        } catch(e) {
-          // If read fails, use timestamp - still unique
-          nextId = Date.now();
-        }
-
-        const categoryId = String(nextId);
+        // Use push() - Firebase auto-generates unique key, no need to read first
+        const newRef = database.ref('categories').push();
+        const categoryId = newRef.key;
         const newCategory = {
           id: categoryId,
           name: name,
@@ -5947,15 +5900,15 @@
           status: status,
           productCount: 0
         };
-
-        await firebaseWrite('categories/' + categoryId, newCategory);
+        await newRef.set(newCategory);
         allCategories.push(newCategory);
         updateCategoryDropdowns();
         closeModal('addCategoryModal');
         loadCategories();
         showToast('Category added successfully!', 'success');
       } catch(error) {
-        showToast('Error saving category: ' + error.message, 'error');
+        showToast('Error: ' + error.message, 'error');
+        console.error('saveCategory error:', error);
       } finally {
         if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Category'; }
       }
