@@ -4818,7 +4818,8 @@
         : database.ref('orders').once('value');
 
       doLoad.then(snap => {
-        const ordersData = snap.val() || {};
+        const raw = snap && typeof snap.val === 'function' ? snap.val() : snap;
+        const ordersData = raw || {};
         let orders = Object.entries(ordersData).map(([key, val]) => ({ ...val, id: key }));
 
         orders.sort((a, b) => (b.orderDate || 0) - (a.orderDate || 0));
@@ -5860,17 +5861,18 @@
       saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
       saveBtn.disabled = true;
       
-      database.ref('products').once('value', snapshot => {
-        const productsData = snapshot.val();
-        let products = productsData ? Object.values(productsData) : [];
-        
+      // Async version to avoid callback issues
+      (async () => {
         let nextId = 1;
-        if (products.length > 0) {
-          const ids = products.map(p => parseInt(p.id || p.key)).filter(id => !isNaN(id));
-          nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
-        }
-        
-        const productId = nextId.toString();
+        try {
+          const snap = await database.ref('products').once('value');
+          const pData = snap.val();
+          if (pData) {
+            const ids = Object.values(pData).map(p => parseInt(p.id)).filter(id => !isNaN(id));
+            nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+          }
+        } catch(e) { nextId = Date.now(); }
+        const productId = String(nextId);
         const sizes = sizesInput ? sizesInput.split(',').map(s => s.trim()).filter(s => s) : [];
         const tagsRaw = document.getElementById('productSearchTags')?.value?.trim() || '';
         const productTags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
@@ -5892,43 +5894,51 @@
         };
         
         // Use firebaseWrite - works for both super admin and shared admin
-        firebaseWrite('products/' + productId, newProduct)
-          .then(() => {
-            closeModal('addProductModal');
-            loadProducts();
-            loadTrendingProducts();
-            if (currentAdminTab === 'dashboard') loadDashboardData();
-            showToast('Product added successfully!', 'success');
-            saveBtn.innerHTML = originalText;
-            saveBtn.disabled = false;
-          })
-          .catch(error => {
-            showToast('Error saving product: ' + error.message, 'error');
-            saveBtn.innerHTML = originalText;
-            saveBtn.disabled = false;
-          });
-      });
+        try {
+          await firebaseWrite('products/' + productId, newProduct);
+          closeModal('addProductModal');
+          loadProducts();
+          loadTrendingProducts();
+          if (currentAdminTab === 'dashboard') loadDashboardData();
+          showToast('Product added successfully!', 'success');
+        } catch(error) {
+          showToast('Error saving product: ' + error.message, 'error');
+        } finally {
+          saveBtn.innerHTML = originalText;
+          saveBtn.disabled = false;
+        }
+      })(); // end async IIFE
     }
 
-    function saveCategory() {
+    async function saveCategory() {
       const name = document.getElementById('categoryName').value.trim();
       const description = document.getElementById('categoryDescription').value.trim();
       const status = document.getElementById('categoryStatus').checked ? 'active' : 'inactive';
       
       if (!name) { showToast('Please enter category name', 'error'); return; }
       if (!uploadedCategoryImage) { showToast('Please upload a category image', 'error'); return; }
-      
-      database.ref('categories').once('value', snapshot => {
-        const categoriesData = snapshot.val();
-        let categories = categoriesData ? Object.values(categoriesData) : [];
-        
-        let nextId = 1;
-        if (categories.length > 0) {
-          const ids = categories.map(c => parseInt(c.id || c.key)).filter(id => !isNaN(id));
-          nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+
+      const saveBtn = document.querySelector('#addCategoryModal .btn-primary');
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+
+      try {
+        // Get next ID from Firebase - with proper promise chain
+        let nextId = Date.now(); // fallback: timestamp-based unique ID
+        try {
+          const snap = await database.ref('categories').once('value');
+          const cats = snap.val();
+          if (cats) {
+            const ids = Object.values(cats).map(c => parseInt(c.id)).filter(id => !isNaN(id));
+            nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+          } else {
+            nextId = 1;
+          }
+        } catch(e) {
+          // If read fails, use timestamp - still unique
+          nextId = Date.now();
         }
-        
-        const categoryId = nextId.toString();
+
+        const categoryId = String(nextId);
         const newCategory = {
           id: categoryId,
           name: name,
@@ -5937,19 +5947,18 @@
           status: status,
           productCount: 0
         };
-        
-        firebaseWrite('categories/' + categoryId, newCategory)
-          .then(() => {
-            allCategories.push(newCategory);
-            updateCategoryDropdowns();
-            closeModal('addCategoryModal');
-            loadCategories();
-            showToast('Category added successfully!', 'success');
-          })
-          .catch(error => {
-            showToast('Error saving category: ' + error.message, 'error');
-          });
-      });
+
+        await firebaseWrite('categories/' + categoryId, newCategory);
+        allCategories.push(newCategory);
+        updateCategoryDropdowns();
+        closeModal('addCategoryModal');
+        loadCategories();
+        showToast('Category added successfully!', 'success');
+      } catch(error) {
+        showToast('Error saving category: ' + error.message, 'error');
+      } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Category'; }
+      }
     }
 
     function saveBanner() {
