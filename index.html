@@ -3132,7 +3132,8 @@
 
     // ===== SECURITY: Allowed admin emails =====
     const ALLOWED_ADMIN_EMAILS = [
-      'aryakaran836@gmail.com'
+      'aryakaran836@gmail.com',
+      'buyzocartshop@gmail.com'
     ];
 
     function isAllowedAdmin(email) {
@@ -3342,8 +3343,9 @@
           e.preventDefault();
           if (this.dataset.tab) {
             showTab(this.dataset.tab);
+            // AUTO-CLOSE sidebar on mobile after clicking any menu item
             if (window.innerWidth <= 1024) {
-              toggleSidebar();
+              closeSidebar();
             }
           }
         });
@@ -4360,64 +4362,91 @@
 
     // Load dashboard data
     function loadDashboardData() {
-      const ordersRef = database.ref('orders');
+      const ordersRef   = database.ref('orders');
       const productsRef = database.ref('products');
-      const usersRef = database.ref('users');
+      const usersRef    = database.ref('users');
+
+      // Show loading state
+      ['totalProducts','totalOrders','pendingOrders','trendingProducts','totalCustomersStat'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '...';
+      });
 
       Promise.all([
         ordersRef.once('value'),
         productsRef.once('value'),
         usersRef.once('value')
       ]).then(([ordersSnap, productsSnap, usersSnap]) => {
-        const ordersData = ordersSnap.val() || {};
+        // Safely handle null values
+        const ordersData   = ordersSnap.val()   || {};
         const productsData = productsSnap.val() || {};
-        const usersData = usersSnap.val() || {};
+        const usersData    = usersSnap.val()    || {};
 
-        const orders = Object.entries(ordersData).map(([key, val]) => ({ ...val, id: key }));
-        const products = Object.entries(productsData).map(([key, val]) => ({ ...val, id: key }));
+        const orders   = Object.entries(ordersData).map(([key, val]) => ({ ...val, id: key }));
+        const products = Object.entries(productsData)
+          .map(([key, val]) => ({ ...val, id: key }))
+          .filter(p => p.status !== 'inactive'); // exclude removed listings
         const totalCustomers = Object.keys(usersData).length;
 
         const trendingCount = products.filter(p => p.isTrending || p.trending).length;
-        const pendingCount = orders.filter(o => {
+        const pendingCount  = orders.filter(o => {
           const s = (o.status || '').toLowerCase();
           return s === 'confirmed' || s === 'pending';
         }).length;
 
-        document.getElementById('totalProducts').textContent = products.length;
-        document.getElementById('totalOrders').textContent = orders.length;
-        document.getElementById('pendingOrders').textContent = pendingCount;
-        document.getElementById('trendingProducts').textContent = trendingCount;
-        document.getElementById('totalCustomersStat').textContent = totalCustomers;
+        // Update stat cards
+        const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        setEl('totalProducts',     products.length);
+        setEl('totalOrders',       orders.length);
+        setEl('pendingOrders',     pendingCount);
+        setEl('trendingProducts',  trendingCount);
+        setEl('totalCustomersStat', totalCustomers);
 
+        // Earnings
         const totalEarnings = orders.reduce((sum, o) => sum + (parseFloat(o.totalAmount) || 0), 0);
-        const now = Date.now();
-        const weekAgo = now - 7 * 24 * 3600000;
-        const monthAgo = now - 30 * 24 * 3600000;
-        const weekEarnings = orders.filter(o => (o.orderDate || 0) >= weekAgo).reduce((s, o) => s + (parseFloat(o.totalAmount) || 0), 0);
+        const now       = Date.now();
+        const weekAgo   = now - 7  * 24 * 3600000;
+        const monthAgo  = now - 30 * 24 * 3600000;
+        const weekEarnings  = orders.filter(o => (o.orderDate || 0) >= weekAgo) .reduce((s, o) => s + (parseFloat(o.totalAmount) || 0), 0);
         const monthEarnings = orders.filter(o => (o.orderDate || 0) >= monthAgo).reduce((s, o) => s + (parseFloat(o.totalAmount) || 0), 0);
 
-        if (document.getElementById('totalEarnings')) document.getElementById('totalEarnings').textContent = '₹' + totalEarnings.toLocaleString();
-        if (document.getElementById('lastWeekEarnings')) document.getElementById('lastWeekEarnings').textContent = '₹' + weekEarnings.toLocaleString();
-        if (document.getElementById('lastMonthEarnings')) document.getElementById('lastMonthEarnings').textContent = '₹' + monthEarnings.toLocaleString();
+        setEl('totalEarnings',    '₹' + totalEarnings.toLocaleString('en-IN'));
+        setEl('lastWeekEarnings', '₹' + weekEarnings.toLocaleString('en-IN'));
+        setEl('lastMonthEarnings','₹' + monthEarnings.toLocaleString('en-IN'));
 
+        // Recent orders table
         const recentOrders = [...orders].sort((a, b) => (b.orderDate || 0) - (a.orderDate || 0)).slice(0, 10);
-        const recentOrdersHtml = recentOrders.length ? recentOrders.map(order => {
-          const statusColor = { confirmed:'#2563eb', shipped:'#f59e0b', delivered:'#22c55e', cancelled:'#ef4444', pending:'#94a3b8' };
-          const s = (order.status || 'confirmed').toLowerCase();
-          const name = order.userInfo?.fullName || order.username || 'N/A';
-          const date = order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-IN') : 'N/A';
-          return `<tr>
-            <td style="font-weight:600;">${order.orderId || '#' + order.id.slice(-6)}</td>
-            <td>${name}<br><small style="color:#64748b;">${order.userEmail || ''}</small></td>
-            <td>${order.productName || 'N/A'}</td>
-            <td style="font-weight:600;">₹${(order.totalAmount || 0).toLocaleString()}</td>
-            <td><span style="background:${statusColor[s]||'#94a3b8'}20;color:${statusColor[s]||'#94a3b8'};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">${order.status || 'Confirmed'}</span></td>
-            <td>${date}</td>
-          </tr>`;
-        }).join('') : '<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">No orders yet</td></tr>';
+        const statusColor = { confirmed:'#2563eb', shipped:'#f59e0b', delivered:'#22c55e', cancelled:'#ef4444', pending:'#94a3b8' };
 
-        document.getElementById('recentOrders').innerHTML = recentOrdersHtml;
-      }).catch(err => console.error('Dashboard error:', err));
+        const recentOrdersHtml = recentOrders.length
+          ? recentOrders.map(order => {
+              const s    = (order.status || 'confirmed').toLowerCase();
+              const name = order.userInfo?.fullName || order.username || 'N/A';
+              const date = order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-IN') : 'N/A';
+              const color = statusColor[s] || '#94a3b8';
+              return `<tr>
+                <td style="font-weight:600;">${order.orderId || '#' + (order.id || '').slice(-6)}</td>
+                <td>${name}<br><small style="color:#64748b;">${order.userEmail || ''}</small></td>
+                <td>${order.productName || 'N/A'}</td>
+                <td style="font-weight:600;">₹${(parseFloat(order.totalAmount) || 0).toLocaleString('en-IN')}</td>
+                <td><span style="background:${color}20;color:${color};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">${order.status || 'Confirmed'}</span></td>
+                <td>${date}</td>
+              </tr>`;
+            }).join('')
+          : '<tr><td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;">No orders yet</td></tr>';
+
+        const recentEl = document.getElementById('recentOrders');
+        if (recentEl) recentEl.innerHTML = recentOrdersHtml;
+
+      }).catch(err => {
+        console.error('Dashboard load error:', err);
+        showAdminToast('Dashboard load failed: ' + err.message, 'error');
+        // Show zeros instead of blank
+        ['totalProducts','totalOrders','pendingOrders','trendingProducts','totalCustomersStat'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = '0';
+        });
+      });
     }
 
     // Load products
