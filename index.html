@@ -37,11 +37,20 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
+    /* ─── BODY: block, not flex — prevents login/panel conflict ─── */
     body {
       background-color: #f1f5f9;
       color: #334155;
-      display: flex;
+      display: block;          /* FIXED: was flex — caused layout conflict */
       min-height: 100vh;
+      overflow-x: hidden;      /* FIXED: prevents horizontal scroll on mobile */
+    }
+
+    /* ─── ADMIN PANEL wrapper: flex row (sidebar + content) ─── */
+    #adminPanel {
+      display: flex;           /* side-by-side layout */
+      min-height: 100vh;
+      position: relative;
     }
 
     /* Login Styles */
@@ -81,17 +90,28 @@
       margin-bottom: 24px;
     }
 
-    /* Sidebar Styles */
+    /* ─── SIDEBAR: fixed, full height, desktop always visible ─── */
     .sidebar {
       width: var(--sidebar-width);
       background: var(--dark);
       color: white;
       height: 100vh;
       position: fixed;
-      transition: all 0.3s ease;
+      top: 0;
+      left: 0;                 /* FIXED: explicit left:0 */
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* smooth slide */
       z-index: 1000;
       overflow-y: auto;
+      overflow-x: hidden;
+      flex-shrink: 0;
+      /* Desktop: always visible (no transform needed) */
+      transform: translateX(0);
     }
+
+    /* Custom scrollbar for sidebar */
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
 
     .sidebar-header {
       padding: 20px;
@@ -138,37 +158,50 @@
       text-align: center;
     }
 
+    /* ─── SIDEBAR CLOSE BUTTON: hidden on desktop, shown on mobile ─── */
     .sidebar-close {
-      display: none;
+      display: none;           /* hidden by default (desktop) */
       position: absolute;
-      top: 10px;
-      right: 10px;
-      background: none;
+      top: 12px;
+      right: 12px;
+      background: rgba(255,255,255,0.1);
       border: none;
-      font-size: 24px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 20px;
       color: #94a3b8;
       cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      z-index: 10;
     }
+    .sidebar-close:hover { background: rgba(255,255,255,0.2); color: white; }
 
-    /* Main Content */
+    /* ─── MAIN CONTENT: offset by sidebar width on desktop ─── */
     .main-content {
       flex: 1;
-      margin-left: var(--sidebar-width);
-      transition: all 0.3s ease;
+      min-width: 0;            /* FIXED: prevents flex overflow */
+      margin-left: var(--sidebar-width); /* FIXED: pushes content right of sidebar */
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      width: calc(100% - var(--sidebar-width));
+      min-height: 100vh;
+      background-color: #f1f5f9;
     }
 
-    /* Header */
+    /* ─── HEADER: sticky, above content, below sidebar/overlay ─── */
     .header {
       height: var(--header-height);
       background: white;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 30px;
+      padding: 0 24px;
       position: sticky;
       top: 0;
-      z-index: 100;
+      z-index: 100;            /* FIXED: below sidebar (1000) and overlay (999) */
     }
 
     .header-left {
@@ -177,8 +210,9 @@
       gap: 15px;
     }
 
+    /* ─── HAMBURGER: hidden on desktop, shown on mobile/tablet ─── */
     .menu-toggle {
-      display: none;
+      display: none;           /* hidden on desktop */
       background: var(--primary);
       color: white;
       border: none;
@@ -188,8 +222,11 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 20px;
+      font-size: 18px;
+      flex-shrink: 0;
+      transition: background 0.2s;
     }
+    .menu-toggle:hover { background: var(--primary-dark, #1d4ed8); }
 
     .header-left h1 {
       font-size: 1.8rem;
@@ -712,80 +749,161 @@
       width: auto;
     }
 
-    /* Mobile Overlay */
+    /* ─── OVERLAY: smooth fade, blocks interaction behind sidebar ─── */
     .sidebar-overlay {
-      display: none;
+      display: none;           /* hidden by default */
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 999;            /* just below sidebar (1000) */
+      backdrop-filter: blur(1px);
+      -webkit-backdrop-filter: blur(1px);
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
-
     .sidebar-overlay.active {
       display: block;
+      opacity: 1;
     }
 
-    /* Responsive */
+    /* ══════════════════════════════════════════════
+       RESPONSIVE — TABLET & MOBILE
+       ══════════════════════════════════════════════ */
+
+    /* ─── TABLET (≤1024px): sidebar hidden by default, toggle shows it ─── */
     @media (max-width: 1024px) {
+
+      /* Sidebar slides off-screen to the left by default */
       .sidebar {
-        transform: translateX(-100%);
+        transform: translateX(-100%);  /* HIDDEN off-screen */
         width: 280px;
+        box-shadow: none;
       }
-      
+
+      /* When .active class added via JS — slides in */
       .sidebar.active {
-        transform: translateX(0);
+        transform: translateX(0);      /* VISIBLE */
+        box-shadow: 4px 0 24px rgba(0,0,0,0.25);
       }
-      
+
+      /* Show close button inside sidebar on mobile */
+      .sidebar-close {
+        display: flex;
+      }
+
+      /* Main content takes FULL WIDTH — no margin */
       .main-content {
-        margin-left: 0;
+        margin-left: 0 !important;    /* FIXED: full width on mobile */
+        width: 100% !important;
       }
-      
+
+      /* Show hamburger button in header */
       .menu-toggle {
         display: flex;
       }
-      
-      .sidebar-close {
-        display: block;
-      }
-
-      .sidebar-overlay.active {
-        display: block;
-      }
     }
 
+    /* ─── MOBILE (≤768px): tighter spacing ─── */
     @media (max-width: 768px) {
+
+      /* Tighter header */
       .header {
-        padding: 0 15px;
+        padding: 0 12px;
+        height: 60px;
       }
 
+      /* Smaller page title */
+      #adminPageTitle {
+        font-size: 1.1rem !important;
+      }
+
+      /* Reduced content padding */
       .content {
-        padding: 15px;
+        padding: 12px;
       }
 
+      /* Stats: 1 column */
       .stats-container {
         grid-template-columns: 1fr;
+        gap: 12px;
       }
 
-      .form-row {
-        flex-direction: column;
-        gap: 0;
-      }
-      
+      /* Earnings cards: 1 column */
       .earnings-cards {
         grid-template-columns: 1fr;
       }
 
+      /* Forms stacked */
+      .form-row {
+        flex-direction: column;
+        gap: 0;
+      }
+
+      /* Order details grid: 1 column */
+      .order-details-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* Table: horizontal scroll */
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Tabs: horizontal scroll */
       .tabs {
         flex-wrap: nowrap;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 4px;
+        padding-bottom: 4px;
       }
-
       .tab {
         white-space: nowrap;
+        flex-shrink: 0;
       }
+
+      /* Cards full padding reduction */
+      .card {
+        border-radius: 8px;
+      }
+      .card-header, .card-body {
+        padding: 14px;
+      }
+
+      /* Sidebar width for very small screens */
+      .sidebar {
+        width: 260px;
+      }
+
+      /* Modal full screen on mobile */
+      .modal-content {
+        width: 95vw;
+        max-height: 90vh;
+        overflow-y: auto;
+        margin: 5vh auto;
+      }
+
+      /* User info text hidden on small screens */
+      .user-info {
+        display: none;
+      }
+
+      /* Buttons smaller */
+      .btn-sm {
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+    }
+
+    /* ─── VERY SMALL (≤400px) ─── */
+    @media (max-width: 400px) {
+      .content { padding: 8px; }
+      .header  { padding: 0 8px; }
+      .sidebar { width: 100vw; }   /* Full screen sidebar on tiny screens */
     }
 
     @keyframes fadeIn {
@@ -1334,7 +1452,7 @@
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
   <!-- Admin Panel -->
-  <div id="adminPanel" style="display: none">
+  <div id="adminPanel" style="display:none; flex-direction:row; min-height:100vh;">
     <!-- Sidebar -->
     <div class="sidebar" id="adminSidebar">
       <div class="sidebar-header">
@@ -3046,7 +3164,7 @@
 
     function onAdminLoginSuccess() {
       document.getElementById('adminLoginPage').style.display = 'none';
-      document.getElementById('adminPanel').style.display = 'block';
+      document.getElementById('adminPanel').style.display = 'flex';
       loadDashboardData();
       loadProducts();
       loadCategories();
@@ -3274,13 +3392,7 @@
         });
       });
 
-      document.getElementById('sidebarOverlay')?.addEventListener('click', function() {
-        // Close sidebar when overlay (outside area) is clicked
-        const sidebar = document.getElementById('adminSidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        if (sidebar) sidebar.classList.remove('active');
-        if (overlay) overlay.classList.remove('active');
-      });
+      document.getElementById('sidebarOverlay')?.addEventListener('click', closeSidebar);
     }
 
     function closeModal(modalId) {
@@ -3290,9 +3402,43 @@
     function toggleSidebar() {
       const sidebar = document.getElementById('adminSidebar');
       const overlay = document.getElementById('sidebarOverlay');
-      sidebar.classList.toggle('active');
-      overlay.classList.toggle('active');
+      if (!sidebar || !overlay) return;
+
+      const isOpen = sidebar.classList.contains('active');
+
+      if (isOpen) {
+        /* ── CLOSE sidebar ── */
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';          /* restore scroll */
+      } else {
+        /* ── OPEN sidebar ── */
+        sidebar.classList.add('active');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';    /* prevent bg scroll on mobile */
+      }
     }
+
+    /* Close sidebar when clicking outside (overlay) */
+    function closeSidebar() {
+      const sidebar = document.getElementById('adminSidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (!sidebar || !overlay) return;
+      sidebar.classList.remove('active');
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    /* Auto-close sidebar on resize to desktop */
+    window.addEventListener('resize', function() {
+      if (window.innerWidth > 1024) {
+        const sidebar  = document.getElementById('adminSidebar');
+        const overlay  = document.getElementById('sidebarOverlay');
+        if (sidebar)  sidebar.classList.remove('active');
+        if (overlay)  overlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
 
     // ===== ADMIN SHARING SYSTEM =====
     function addAdminSharingMenuItem() {
@@ -3537,7 +3683,7 @@
       }).catch(() => {});
 
       document.getElementById('adminLoginPage').style.display = 'none';
-      document.getElementById('adminPanel').style.display = 'block';
+      document.getElementById('adminPanel').style.display = 'flex';
 
       // Load data
       loadDashboardData(); loadProducts(); loadCategories(); loadCategoriesForDropdown();
@@ -4076,6 +4222,11 @@
       };
       document.getElementById('adminPageTitle').textContent = titleMap[tabName] || tabName;
       currentAdminTab = tabName;
+
+      /* ── Auto-close sidebar on mobile after selecting a tab ── */
+      if (window.innerWidth <= 1024) {
+        closeSidebar();
+      }
       
       if (tabName === 'dashboard') loadDashboardData();
       else if (tabName === 'products') loadProducts();
@@ -6520,6 +6671,50 @@
         if (currentAdminTab === 'orders') loadOrders();
       });
     }
+
+    /* ══════════════════════════════════════════════
+       SWIPE GESTURE: swipe right to open sidebar,
+       swipe left to close — mobile UX improvement
+       ══════════════════════════════════════════════ */
+    (function initSwipeGesture() {
+      let touchStartX = 0;
+      let touchStartY = 0;
+      const SWIPE_THRESHOLD = 60;   // px to trigger swipe
+      const EDGE_ZONE      = 30;    // px from left edge to trigger open
+
+      document.addEventListener('touchstart', function(e) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+
+      document.addEventListener('touchend', function(e) {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+
+        /* Only handle mostly-horizontal swipes */
+        if (Math.abs(dy) > Math.abs(dx) * 0.8) return;
+
+        const sidebar = document.getElementById('adminSidebar');
+        if (!sidebar) return;
+
+        /* Swipe RIGHT from left edge → open sidebar */
+        if (dx > SWIPE_THRESHOLD && touchStartX < EDGE_ZONE && !sidebar.classList.contains('active')) {
+          if (window.innerWidth <= 1024) toggleSidebar();
+        }
+
+        /* Swipe LEFT when sidebar open → close sidebar */
+        if (dx < -SWIPE_THRESHOLD && sidebar.classList.contains('active')) {
+          closeSidebar();
+        }
+      }, { passive: true });
+    })();
+
+    /* ══════════════════════════════════════════════
+       PREVENT GREY/BLANK SCREEN:
+       Ensure body background is always set.
+       ══════════════════════════════════════════════ */
+    document.body.style.backgroundColor = '#f1f5f9';
+    document.body.style.minHeight = '100vh';
 
     window.addEventListener('DOMContentLoaded', initAdminPanel);
   </script>
