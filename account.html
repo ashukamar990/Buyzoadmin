@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Account - Buyzo Cart</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-light: #3b82f6;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --transition: all 0.2s ease;
+      --bg-secondary: #f1f5f9;
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --border: #334155;
+      --shadow: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+      --bg-secondary: #0f172a;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    input, textarea, select {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; height: auto; pointer-events: none; -webkit-user-drag: none; }
+    
+    /* Loading Screen */
+    #loadingScreen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+      z-index: 9999; gap: 14px;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loadingScreen p { color: var(--text-secondary); font-size: 14px; font-weight: 500; }
+
+    /* Header */
+    .acc-header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 50;
+      padding: 0.75rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: var(--shadow);
+    }
+    .acc-brand {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-weight: 700; font-size: 1.2rem; cursor: pointer;
+      color: var(--text);
+    }
+    .acc-brand-chip {
+      background: var(--primary); color: white;
+      padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.9rem;
+    }
+    .acc-header-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.45rem 1rem; border: 1px solid var(--border);
+      border-radius: 8px; background: transparent; color: var(--text);
+      cursor: pointer; font-size: 0.85rem; font-family: inherit;
+      transition: var(--transition); font-weight: 500;
+    }
+    .back-btn:hover { background: var(--bg-secondary); border-color: var(--primary); }
+
+    /* User Chip */
+    .user-chip {
+      display: none; align-items: center; gap: 0.5rem;
+      padding: 0.35rem 0.75rem; border: 1px solid var(--border);
+      border-radius: 40px; background: var(--bg-secondary);
+    }
+    .user-chip-avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--primary); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 0.75rem; overflow: hidden;
+    }
+    .user-chip-avatar img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; display: none; }
+    .user-chip-name { font-weight: 500; font-size: 0.85rem; color: var(--text); }
+
+    /* Main */
+    .acc-main { max-width: 1100px; margin: 2rem auto; padding: 0 1.25rem; }
+    .page { display: none; animation: fadeIn 0.3s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow);
+      transition: var(--transition); margin-bottom: 1.5rem;
+    }
+    .card:hover { box-shadow: var(--shadow-md); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .card-title { font-size: 1.1rem; font-weight: 600; color: var(--text); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+
+    /* Forms */
+    .form-group { margin-bottom: 1.25rem; }
+    .form-label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); }
+    .form-control {
+      width: 100%; padding: 0.625rem 0.875rem;
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--bg); color: var(--text); font-size: 0.875rem;
+      font-family: inherit; transition: var(--transition);
+    }
+    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .form-control:read-only { background: var(--bg-secondary); cursor: not-allowed; }
+    textarea.form-control { resize: vertical; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+      padding: 0.625rem 1.25rem; border-radius: var(--radius-sm);
+      font-weight: 500; font-size: 0.875rem; border: none; cursor: pointer;
+      background: var(--primary); color: white; font-family: inherit;
+      transition: var(--transition);
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-outline {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.5rem 1rem; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); background: transparent; color: var(--text);
+      cursor: pointer; font-size: 0.875rem; font-family: inherit;
+      transition: var(--transition); font-weight: 500;
+    }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-danger {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.625rem 1.25rem; background: var(--error); color: white;
+      border: none; border-radius: var(--radius-sm); cursor: pointer;
+      font-size: 0.875rem; font-family: inherit; transition: var(--transition); font-weight: 500;
+    }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-sm { padding: 0.4rem 0.875rem; font-size: 0.8rem; }
+
+    /* Account Header */
+    .account-header {
+      display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem;
+      padding: 2rem; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: var(--radius); color: white;
+    }
+    .account-avatar {
+      width: 90px; height: 90px; border-radius: 50%;
+      background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2rem; font-weight: 600; border: 3px solid rgba(255,255,255,0.3);
+      flex-shrink: 0; overflow: hidden;
+    }
+    .account-avatar-img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; display: none; }
+    .account-info h1 { font-size: 1.7rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .account-info p { opacity: 0.9; font-size: 0.95rem; }
+
+    /* Menu Grid */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+    .menu-item {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem 1rem;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 0.65rem; cursor: pointer; transition: var(--transition);
+      text-align: center;
+    }
+    .menu-item:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .menu-icon {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--primary); color: white;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .menu-icon svg { width: 24px; height: 24px; }
+    .menu-label { font-weight: 600; color: var(--text); font-size: 0.9rem; }
+
+    /* Settings */
+    .settings-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 0; border-bottom: 1px solid var(--border);
+    }
+    .settings-item:last-child { border-bottom: none; }
+    .settings-info h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .settings-info p { font-size: 0.8rem; color: var(--text-secondary); }
+
+    /* Toggle */
+    .toggle { position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: #cbd5e1;
+      border-radius: 34px; transition: 0.3s;
+    }
+    .toggle-slider:before {
+      content: ''; position: absolute; height: 18px; width: 18px;
+      left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--primary); }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+    /* Danger Zone */
+    .danger-zone { border-color: #fecaca; }
+    [data-theme="dark"] .danger-zone { border-color: #7f1d1d; }
+
+    /* Address Card */
+    .address-card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;
+      position: relative; transition: var(--transition);
+    }
+    .address-card.default { border-color: var(--primary); }
+    .address-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .address-type-badge {
+      background: var(--bg-secondary); color: var(--text-secondary);
+      padding: 0.15rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+      text-transform: capitalize;
+    }
+    .default-badge {
+      background: #dcfce7; color: #16a34a;
+      padding: 0.15rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+    }
+    .address-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
+
+    /* Product Card (Wishlist) */
+    .product-card {
+      display: flex; gap: 1rem; padding: 1rem;
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: var(--radius); transition: var(--transition); margin-bottom: 1rem;
+    }
+    .product-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); }
+    .product-image { width: 90px; height: 90px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0; }
+    .product-details { flex: 1; }
+    .product-title { font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem; }
+    .product-price { font-weight: 700; color: var(--primary); margin-bottom: 0.25rem; }
+    .product-rating { color: #f59e0b; font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .star.inactive { color: var(--border); }
+
+    /* Order Card */
+    .order-card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem;
+      transition: var(--transition);
+    }
+    .order-card:hover { box-shadow: var(--shadow-md); }
+    .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+    .order-id { font-weight: 700; font-size: 0.95rem; }
+    .order-status {
+      padding: 0.25rem 0.75rem; border-radius: 20px;
+      font-size: 0.75rem; font-weight: 600; text-transform: capitalize;
+    }
+    .order-status.pending { background: #fef3c7; color: #d97706; }
+    .order-status.confirmed { background: #dcfce7; color: #16a34a; }
+    .order-status.shipped { background: #dbeafe; color: #1d4ed8; }
+    .order-status.delivered { background: #dcfce7; color: #15803d; }
+    .order-status.cancelled { background: #fee2e2; color: #dc2626; }
+    .order-items { display: flex; flex-direction: column; gap: 0.75rem; }
+    .order-item { display: flex; gap: 0.75rem; align-items: center; }
+    .order-item-image { width: 56px; height: 56px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0; }
+
+    /* Login Activity */
+    .activity-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.75rem 0; border-bottom: 1px solid var(--border);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-time { font-size: 0.875rem; font-weight: 500; }
+    .activity-device { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem; }
+    .activity-status { background: #dcfce7; color: #16a34a; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center; padding: 3rem 1rem;
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .empty-state-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .empty-state-description { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.25rem; }
+
+    /* Modal */
+    .modal {
+      display: none; position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.5); align-items: center; justify-content: center;
+      padding: 1rem;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: var(--card-bg); border-radius: var(--radius);
+      padding: 1.75rem; max-width: 480px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: fadeIn 0.2s ease;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+    .modal-title { font-size: 1.1rem; font-weight: 600; }
+    .modal-close {
+      background: none; border: none; font-size: 1.5rem; cursor: pointer;
+      color: var(--text-secondary); line-height: 1; padding: 0.25rem;
+    }
+    .modal-footer { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; flex-wrap: wrap; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #1e293b; color: white; padding: 0.75rem 1.5rem;
+      border-radius: 50px; font-size: 0.875rem; font-weight: 500;
+      z-index: 9999; opacity: 0; transition: all 0.3s ease; pointer-events: none;
+      white-space: nowrap; max-width: 90vw; text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .acc-header { padding: 0.65rem 1rem; }
+      .acc-main { padding: 0 0.75rem; margin-top: 1.25rem; }
+      .account-header { padding: 1.25rem; gap: 1rem; }
+      .account-info h1 { font-size: 1.3rem; }
+      .account-avatar { width: 70px; height: 70px; font-size: 1.7rem; }
+      .account-avatar-img { width: 70px; height: 70px; }
+      .grid { grid-template-columns: 1fr; }
+      .menu-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+  <!-- Loading Screen -->
+  <div id="loadingScreen">
+    <div class="spinner"></div>
+    <p>Loading your account...</p>
+  </div>
+
+  <!-- Header -->
+  <header class="acc-header">
+    <div class="acc-brand" onclick="window.location.href='/'">
+      <span class="acc-brand-chip">BUYZO</span>
+      <span>Cart</span>
+    </div>
+    <div class="acc-header-actions">
+      <div class="user-chip" id="userChip">
+        <div class="user-chip-avatar">
+          <img id="chipAvatarImg" alt="" />
+          <span id="chipAvatarInitial">U</span>
+        </div>
+        <span class="user-chip-name" id="chipUserName">User</span>
+      </div>
+      <button class="back-btn" onclick="window.location.href='/'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Home
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="acc-main">
+    
+    <!-- ========== ACCOUNT DASHBOARD ========== -->
+    <section class="page active" id="accountPage">
+      <div class="account-header">
+        <div class="account-avatar" id="accountPageAvatar">
+          <img class="account-avatar-img" id="accountPageAvatarImg" alt="" />
+          <span id="accountPageAvatarInitial">U</span>
+        </div>
+        <div class="account-info">
+          <h1 id="accountPageName">User Name</h1>
+          <p id="accountPageEmail">user@email.com</p>
+        </div>
+      </div>
+
+      <!-- Menu Grid -->
+      <div class="menu-grid">
+        <div class="menu-item" onclick="accShowSubPage('ordersPage')">
+          <div class="menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          </div>
+          <span class="menu-label">My Orders</span>
+        </div>
+        <div class="menu-item" onclick="accShowSubPage('wishlistPage')">
+          <div class="menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <span class="menu-label">Wishlist</span>
+        </div>
+        <div class="menu-item" onclick="accShowSubPage('addressPage')">
+          <div class="menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <span class="menu-label">Addresses</span>
+        </div>
+        <div class="menu-item" onclick="accShowSubPage('settingsPage')">
+          <div class="menu-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <span class="menu-label">Settings</span>
+        </div>
+        <!-- SELL PRODUCT - Opens in new tab -->
+        <div class="menu-item" onclick="window.open('sell-product.html', '_blank')" id="sellProductMenuItem">
+          <div class="menu-icon" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <span class="menu-label">Sell Product</span>
+        </div>
+      </div>
+
+      <!-- Profile & Security Cards -->
+      <div class="grid">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Profile Information</h3></div>
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-control" id="profileName" placeholder="Enter your full name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" class="form-control" id="profileEmail" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" id="profilePhone" placeholder="Enter your phone number">
+          </div>
+          <button class="btn" id="saveProfile">Save Changes</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Account Security</h3></div>
+          <div class="settings-item">
+            <div class="settings-info"><h4>Change Password</h4><p>Update your password regularly</p></div>
+            <button class="btn-outline btn-sm" id="changePasswordBtn">Change</button>
+          </div>
+          <div class="settings-item">
+            <div class="settings-info"><h4>Two-Factor Authentication</h4><p>Extra security for your account</p></div>
+            <label class="toggle">
+              <input type="checkbox" id="twoFactorToggle" disabled>
+              <span class="toggle-slider" style="opacity:0.4"></span>
+            </label>
+          </div>
+          <div class="settings-item">
+            <div class="settings-info"><h4>Last Login</h4><p id="lastLoginTime">Loading...</p></div>
+            <button class="btn-outline btn-sm" id="viewLoginActivity">View All</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Session</h3></div>
+          <p style="margin-bottom:1rem;color:var(--text-secondary)">Sign out from your account on this device.</p>
+          <button class="btn-danger" id="accountLogoutBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Logout
+          </button>
+        </div>
+
+        <div class="card danger-zone">
+          <div class="card-header"><h3 class="card-title">Danger Zone</h3></div>
+          <p style="margin-bottom:1rem;color:var(--text-secondary)">Once you delete your account, there is no going back.</p>
+          <button class="btn-danger" id="deleteAccountBtn">Delete Account</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== SETTINGS PAGE ========== -->
+    <section class="page" id="settingsPage">
+      <button class="btn-outline btn-sm" onclick="accShowSubPage('accountPage')" style="margin-bottom:1.5rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to Account
+      </button>
+      <h2 style="margin-bottom:1.5rem">Settings</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Notifications</h3></div>
+          <div class="settings-item">
+            <div class="settings-info"><h4>Email Notifications</h4><p>Receive order updates via email</p></div>
+            <label class="toggle"><input type="checkbox" id="emailNotifications" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-item">
+            <div class="settings-info"><h4>SMS Notifications</h4><p>Receive order updates via SMS</p></div>
+            <label class="toggle"><input type="checkbox" id="smsNotifications" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-item">
+            <div class="settings-info"><h4>Push Notifications</h4><p>Receive in-app push notifications</p></div>
+            <label class="toggle"><input type="checkbox" id="pushNotifications" checked><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Privacy</h3></div>
+          <div class="settings-item">
+            <div class="settings-info"><h4>Recommendations</h4><p>Personalized product recommendations</p></div>
+            <label class="toggle"><input type="checkbox" id="personalizedRecs" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-item">
+            <div class="settings-info"><h4>Data Sharing</h4><p>Help us improve our services</p></div>
+            <label class="toggle"><input type="checkbox" id="dataSharing" checked><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Appearance</h3></div>
+          <div class="settings-item">
+            <div class="settings-info"><h4>Dark Mode</h4><p>Toggle light/dark theme</p></div>
+            <label class="toggle"><input type="checkbox" id="darkModeToggle"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-item">
+            <div class="settings-info"><h4>Language</h4><p>Select preferred language</p></div>
+            <select class="form-control" id="languageSelect" style="width:auto"><option value="en">English</option></select>
+          </div>
+          <div class="settings-item">
+            <div class="settings-info"><h4>Currency</h4><p id="currencyDisplay">₹ INR</p></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn" id="saveSettings" style="margin-top:1.5rem">Save Settings</button>
+    </section>
+
+    <!-- ========== ADDRESSES PAGE ========== -->
+    <section class="page" id="addressPage">
+      <button class="btn-outline btn-sm" onclick="accShowSubPage('accountPage')" style="margin-bottom:1.5rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to Account
+      </button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem">
+        <h2>My Addresses</h2>
+        <button class="btn" id="addNewAddress">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add New Address
+        </button>
+      </div>
+      <div id="savedAddresses"></div>
+      <div class="card" id="newAddressForm" style="display:none">
+        <div class="card-header"><h3 class="card-title" id="addressFormTitle">Add New Address</h3></div>
+        <div class="form-group"><label class="form-label">Full Name *</label><input type="text" class="form-control" id="addressName" placeholder="Enter full name"></div>
+        <div class="form-group"><label class="form-label">Mobile Number *</label><input type="tel" class="form-control" id="addressMobile" placeholder="10-digit mobile number"></div>
+        <div class="form-group"><label class="form-label">Pincode *</label><input type="text" class="form-control" id="addressPincode" placeholder="Pincode"></div>
+        <div class="form-group"><label class="form-label">City *</label><input type="text" class="form-control" id="addressCity" placeholder="City"></div>
+        <div class="form-group"><label class="form-label">State *</label><input type="text" class="form-control" id="addressState" placeholder="State"></div>
+        <div class="form-group"><label class="form-label">Address Type</label><select class="form-control" id="addressType"><option value="home">Home</option><option value="work">Work</option><option value="other">Other</option></select></div>
+        <div class="form-group"><label class="form-label">House / Street *</label><textarea class="form-control" id="addressStreet" placeholder="House no., Building, Street, Area" rows="3"></textarea></div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+          <button class="btn" id="saveAddress">Save Address</button>
+          <button class="btn-outline" id="cancelAddAddress">Cancel</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== WISHLIST PAGE ========== -->
+    <section class="page" id="wishlistPage">
+      <button class="btn-outline btn-sm" onclick="accShowSubPage('accountPage')" style="margin-bottom:1.5rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to Account
+      </button>
+      <h2 style="margin-bottom:1.5rem">My Wishlist</h2>
+      <div id="wishlistItems"></div>
+    </section>
+
+    <!-- ========== ORDERS PAGE ========== -->
+    <section class="page" id="ordersPage">
+      <button class="btn-outline btn-sm" onclick="accShowSubPage('accountPage')" style="margin-bottom:1.5rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to Account
+      </button>
+      <h2 style="margin-bottom:1.5rem">My Orders</h2>
+      <div id="ordersList"></div>
+    </section>
+
+  </main>
+
+  <!-- ========== TOAST ========== -->
+  <div class="toast" id="accToast"></div>
+
+  <!-- ========== CHANGE PASSWORD MODAL ========== -->
+  <div class="modal" id="changePasswordModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Change Password</h3>
+        <button class="modal-close" onclick="accCloseModal('changePasswordModal')">×</button>
+      </div>
+      <p>We will send a password reset link to:</p>
+      <p style="font-weight:600;color:var(--primary);margin:1rem 0" id="changePasswordEmail"></p>
+      <div class="modal-footer">
+        <button class="btn-outline" id="cancelChangePassword">Cancel</button>
+        <button class="btn" id="sendResetLink">Send Reset Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ALERT MODAL ========== -->
+  <div class="modal" id="alertModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="alertTitle">Alert</h3>
+        <button class="modal-close" onclick="accCloseModal('alertModal')">×</button>
+      </div>
+      <p id="alertMessage" style="margin-bottom:1.5rem"></p>
+      <div class="modal-footer">
+        <button class="btn-outline" id="alertCancelBtn">Cancel</button>
+        <button class="btn" id="alertConfirmBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== LOGIN ACTIVITY MODAL ========== -->
+  <div class="modal" id="loginActivityModal">
+    <div class="modal-content" style="max-width:560px">
+      <div class="modal-header">
+        <h3 class="modal-title">Login Activity</h3>
+        <button class="modal-close" onclick="accCloseModal('loginActivityModal')">×</button>
+      </div>
+      <div id="loginActivityList"></div>
+    </div>
+  </div>
+
+  <!-- ========== FIREBASE SDK & APP LOGIC ========== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+    import { getDatabase, ref, set, get, update, remove, query, orderByChild, equalTo, push, onValue } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+
+    // ========== FIREBASE CONFIG ==========
+    const firebaseConfig = {
+      apiKey: "AIzaSyCHFUx3Y1L3mvyLyDMHVKQE6eXi50_fewE",
+      authDomain: "buyzocart.firebaseapp.com",
+      databaseURL: "https://buyzocart-default-rtdb.firebaseio.com",
+      projectId: "buyzocart",
+      storageBucket: "buyzocart.firebasestorage.app",
+      messagingSenderId: "640560737762",
+      appId: "1:640560737762:web:7fe368df6486d6da759dbb"
+    };
+
+    // Initialize
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    // Global reference
+    window._accFb = { db, auth, ref, set, get, update, remove, query, orderByChild, equalTo, push, onValue };
+    window._accDb = db;
+    window._accAuth = auth;
+
+    // ========== SAFETY TIMEOUT - Auto hide loading screen after 6 seconds ==========
+    setTimeout(() => {
+      const ls = document.getElementById('loadingScreen');
+      if (ls && ls.style.display !== 'none') {
+        console.warn('⚠️ Loading screen auto-hidden after 6s timeout');
+        ls.style.display = 'none';
+      }
+    }, 6000);
+
+    // ========== DARK MODE ==========
+    (function() {
+      const saved = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', saved);
+      const tog = document.getElementById('darkModeToggle');
+      if (tog) tog.checked = (saved === 'dark');
+    })();
+
+    // ========== AUTH STATE LISTENER ==========
+    onAuthStateChanged(auth, async (user) => {
+      document.getElementById('loadingScreen').style.display = 'none';
+      console.log('🔔 Auth state changed. User:', user ? user.email : 'null');
+
+      if (!user) {
+        console.log('❌ No user, redirecting to home...');
+        window.location.href = '/';
+        return;
+      }
+
+      window._accCurrentUser = user;
+      console.log('✅ User authenticated:', user.email);
+
+      // Update UI
+      updateUIForUser(user);
+
+      // Load ALL data in parallel
+      try {
+        await Promise.all([
+          loadUserProfile(user),
+          loadAddresses(user),
+          loadWishlist(user),
+          loadOrders(user),
+          loadCurrency(),
+          loadNotificationSettings(user)
+        ]);
+
+        // Real-time listeners for instant updates
+        setupRealTimeListeners(user);
+
+        // Check seller status
+        checkSellerStatus(user);
+      } catch (error) {
+        console.error('❌ Data load error:', error);
+      }
+    });
+
+    // ========== UPDATE UI ==========
+    function updateUIForUser(user) {
+      const chip = document.getElementById('userChip');
+      if (chip) chip.style.display = 'flex';
+
+      const initial = (user.displayName || user.email || 'U').charAt(0).toUpperCase();
+
+      if (user.photoURL) {
+        const chipImg = document.getElementById('chipAvatarImg');
+        if (chipImg) { chipImg.src = user.photoURL; chipImg.style.display = 'block'; }
+        document.getElementById('chipAvatarInitial').style.display = 'none';
+        const pgImg = document.getElementById('accountPageAvatarImg');
+        if (pgImg) { pgImg.src = user.photoURL; pgImg.style.display = 'block'; }
+        document.getElementById('accountPageAvatarInitial').style.display = 'none';
+      } else {
+        document.getElementById('chipAvatarInitial').textContent = initial;
+        document.getElementById('accountPageAvatarInitial').textContent = initial;
+      }
+
+      document.getElementById('chipUserName').textContent = user.displayName || 'User';
+      document.getElementById('accountPageName').textContent = user.displayName || 'User';
+      document.getElementById('accountPageEmail').textContent = user.email;
+      document.getElementById('profileEmail').value = user.email;
+    }
+
+    // ========== LOAD USER PROFILE ==========
+    async function loadUserProfile(user) {
+      try {
+        const snap = await get(ref(db, 'users/' + user.uid));
+        if (snap.exists()) {
+          const data = snap.val();
+          document.getElementById('profileName').value = data.name || user.displayName || '';
+          document.getElementById('profilePhone').value = data.phone || '';
+          if (data.lastLoginAt) {
+            document.getElementById('lastLoginTime').textContent = new Date(data.lastLoginAt).toLocaleString();
+          }
+        }
+      } catch (e) {
+        console.error('Profile load error:', e);
+      }
+    }
+
+    // ========== LOAD CURRENCY ==========
+    async function loadCurrency() {
+      try {
+        const snap = await get(ref(db, 'adminSettings'));
+        if (snap.exists()) {
+          const s = snap.val();
+          const display = document.getElementById('currencyDisplay');
+          if (display) display.textContent = (s.currencySymbol || '₹') + ' ' + (s.currencyCode || 'INR');
+        }
+      } catch (e) {}
+    }
+
+    // ========== NOTIFICATION SETTINGS ==========
+    function loadNotificationSettings(user) {
+      const saved = localStorage.getItem('bz_settings_' + user.uid);
+      if (!saved) return;
+      try {
+        const s = JSON.parse(saved);
+        const fields = ['emailNotifications','smsNotifications','pushNotifications','personalizedRecs','dataSharing'];
+        fields.forEach(f => {
+          const el = document.getElementById(f);
+          if (el && s[f] !== undefined) el.checked = s[f];
+        });
+      } catch (e) {}
+    }
+
+    // ========== REAL-TIME LISTENERS ==========
+    function setupRealTimeListeners(user) {
+      // Real-time address updates
+      const addrRef = query(ref(db, 'addresses'), orderByChild('userId'), equalTo(user.uid));
+      onValue(addrRef, (snap) => {
+        const container = document.getElementById('savedAddresses');
+        if (!container || !document.getElementById('addressPage').classList.contains('active')) return;
+        renderAddressList(snap, container);
+      });
+
+      // Real-time wishlist updates
+      const wishRef = ref(db, 'wishlist/' + user.uid);
+      onValue(wishRef, (snap) => {
+        const container = document.getElementById('wishlistItems');
+        if (!container || !document.getElementById('wishlistPage').classList.contains('active')) return;
+        renderWishlistItems(snap, container);
+      });
+
+      // Real-time order updates (both as buyer and seller)
+      const ordersRef = query(ref(db, 'orders'), orderByChild('userId'), equalTo(user.uid));
+      onValue(ordersRef, (snap) => {
+        const container = document.getElementById('ordersList');
+        if (!container || !document.getElementById('ordersPage').classList.contains('active')) return;
+        renderOrdersList(snap, container);
+      });
+    }
+
+    // ========== CHECK SELLER STATUS ==========
+    async function checkSellerStatus(user) {
+      try {
+        const snap = await get(ref(db, 'sellerRequests/' + user.uid));
+        const menuItem = document.getElementById('sellProductMenuItem');
+        if (!menuItem) return;
+
+        if (snap.exists()) {
+          const data = snap.val();
+          if (data.status === 'approved') {
+            const label = menuItem.querySelector('.menu-label');
+            if (label) label.textContent = 'My Shop';
+            const icon = menuItem.querySelector('.menu-icon');
+            if (icon) icon.style.background = 'linear-gradient(135deg,#16a34a,#059669)';
+          }
+        }
+      } catch (e) {}
+    }
+
+    // ========== PAGE NAVIGATION ==========
+    window.accShowSubPage = function(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      const pg = document.getElementById(pageId);
+      if (pg) { pg.classList.add('active'); window.scrollTo(0, 0); }
+    };
+
+    // ========== TOAST ==========
+    window.accShowToast = function(msg, type = 'success') {
+      const t = document.getElementById('accToast');
+      if (!t) return;
+      t.textContent = msg;
+      t.className = 'toast ' + type;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    };
+
+    // ========== MODAL ==========
+    window.accOpenModal = function(id) { document.getElementById(id)?.classList.add('active'); };
+    window.accCloseModal = function(id) { document.getElementById(id)?.classList.remove('active'); };
+
+    // ========== ALERT ==========
+    let _alertCallback = null;
+    window.accShowAlert = function(title, msg, callback) {
+      document.getElementById('alertTitle').textContent = title;
+      document.getElementById('alertMessage').textContent = msg;
+      _alertCallback = callback;
+      accOpenModal('alertModal');
+    };
+
+    // ========== ADDRESS RENDERING ==========
+    function renderAddressList(snap, container) {
+      container.innerHTML = '';
+      if (!snap.exists()) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📍</div><div class="empty-state-title">No saved addresses</div><div class="empty-state-description">Add an address to speed up checkout</div></div>';
+        return;
+      }
+      snap.forEach(child => {
+        const a = { id: child.key, ...child.val() };
+        const card = document.createElement('div');
+        card.className = 'address-card' + (a.isDefault ? ' default' : '');
+        card.innerHTML = `
+          <div class="address-card-header">
+            <span class="address-type-badge">${a.type || 'home'}</span>
+            ${a.isDefault ? '<span class="default-badge">✓ Default</span>' : ''}
+          </div>
+          <div style="font-weight:600;margin-bottom:0.25rem">${a.name}</div>
+          <div style="color:var(--text-secondary);font-size:0.875rem">${a.street}, ${a.city}, ${a.state} - ${a.pincode}</div>
+          <div style="color:var(--text-secondary);font-size:0.875rem;margin-top:0.25rem">📞 ${a.mobile}</div>
+          <div class="address-actions">
+            <button class="btn-outline btn-sm edit-addr" data-id="${a.id}">Edit</button>
+            <button class="btn-outline btn-sm delete-addr" data-id="${a.id}">Delete</button>
+            ${!a.isDefault ? `<button class="btn-outline btn-sm default-addr" data-id="${a.id}">Set Default</button>` : ''}
+          </div>`;
+        container.appendChild(card);
+      });
+    }
+
+    // ========== WISHLIST RENDERING ==========
+    function renderWishlistItems(snap, container) {
+      container.innerHTML = '';
+      if (!snap.exists()) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❤️</div><div class="empty-state-title">Empty Wishlist</div><div class="empty-state-description">Save products you love</div></div>';
+        return;
+      }
+      snap.forEach(child => {
+        const item = child.val();
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+          <img src="${item.image || 'https://placehold.co/100'}" alt="${item.name || ''}" class="product-image" onerror="this.src='https://placehold.co/100'">
+          <div class="product-details">
+            <div class="product-title">${item.name || 'Product'}</div>
+            <div class="product-price">₹${parseFloat(item.price || 0).toLocaleString('en-IN')}</div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button class="btn-outline btn-sm remove-wish" data-id="${child.key}">Remove</button>
+              <button class="btn btn-sm view-prod" data-id="${child.key}">View</button>
+            </div>
+          </div>`;
+        container.appendChild(card);
+      });
+    }
+
+    // ========== ORDERS RENDERING ==========
+    function renderOrdersList(snap, container) {
+      container.innerHTML = '';
+      if (!snap.exists()) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-title">No Orders Yet</div><div class="empty-state-description">Start shopping to see your orders</div></div>';
+        return;
+      }
+      const orders = [];
+      snap.forEach(child => orders.push({ id: child.key, ...child.val() }));
+      orders.sort((a, b) => (b.orderDate || b.timestamp || 0) - (a.orderDate || a.timestamp || 0));
+
+      orders.forEach(order => {
+        const status = (order.status || 'pending').toLowerCase();
+        const date = new Date(order.orderDate || order.timestamp || Date.now()).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+        const items = order.items || [{ name: order.productName || 'Product', image: order.productImage || '', price: order.productPrice || order.price || 0, quantity: order.quantity || 1 }];
+
+        const card = document.createElement('div');
+        card.className = 'order-card';
+        card.innerHTML = `
+          <div class="order-header">
+            <div><div class="order-id">${order.orderId || '#' + String(order.id).slice(-8).toUpperCase()}</div><div style="font-size:0.75rem;color:var(--text-secondary)">${date}</div></div>
+            <span class="order-status ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+          </div>
+          <div class="order-items">
+            ${items.map(item => `
+              <div class="order-item">
+                <img src="${item.image || item.productImage || 'https://placehold.co/60'}" alt="${item.name}" class="order-item-image" onerror="this.src='https://placehold.co/60'">
+                <div style="flex:1"><div style="font-weight:500">${item.name}</div><div style="font-size:0.875rem;color:var(--text-secondary)">Qty: ${item.quantity || 1}</div><div style="font-weight:600;color:var(--primary)">₹${parseFloat(item.price || 0).toLocaleString('en-IN')}</div></div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="margin-top:1rem;font-weight:600;border-top:1px solid var(--border);padding-top:0.75rem">Total: ₹${parseFloat(order.totalAmount || order.total || 0).toLocaleString('en-IN')}</div>`;
+        container.appendChild(card);
+      });
+    }
+
+    // ========== LOAD ADDRESSES (Initial) ==========
+    async function loadAddresses(user) {
+      const container = document.getElementById('savedAddresses');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align:center;padding:2rem;"><div class="spinner" style="margin:0 auto;"></div></div>';
+      try {
+        const snap = await get(query(ref(db, 'addresses'), orderByChild('userId'), equalTo(user.uid)));
+        renderAddressList(snap, container);
+      } catch (e) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">Could not load addresses.</p>';
+      }
+    }
+
+    // ========== LOAD WISHLIST (Initial) ==========
+    async function loadWishlist(user) {
+      const container = document.getElementById('wishlistItems');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align:center;padding:2rem;"><div class="spinner" style="margin:0 auto;"></div></div>';
+      try {
+        const snap = await get(ref(db, 'wishlist/' + user.uid));
+        renderWishlistItems(snap, container);
+      } catch (e) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">Could not load wishlist.</p>';
+      }
+    }
+
+    // ========== LOAD ORDERS (Initial) ==========
+    async function loadOrders(user) {
+      const container = document.getElementById('ordersList');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align:center;padding:2rem;"><div class="spinner" style="margin:0 auto;"></div></div>';
+      try {
+        const snap = await get(query(ref(db, 'orders'), orderByChild('userId'), equalTo(user.uid)));
+        renderOrdersList(snap, container);
+      } catch (e) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">Could not load orders.</p>';
+      }
+    }
+
+    // ========== ADDRESS FORM ==========
+    let _editingAddressId = null;
+
+    window.accShowAddressForm = function(address = null) {
+      document.getElementById('newAddressForm').style.display = 'block';
+      document.getElementById('addNewAddress').style.display = 'none';
+      if (address) {
+        _editingAddressId = address.id;
+        document.getElementById('addressFormTitle').textContent = 'Edit Address';
+        document.getElementById('addressName').value = address.name || '';
+        document.getElementById('addressMobile').value = address.mobile || '';
+        document.getElementById('addressPincode').value = address.pincode || '';
+        document.getElementById('addressCity').value = address.city || '';
+        document.getElementById('addressState').value = address.state || '';
+        document.getElementById('addressStreet').value = address.street || '';
+        document.getElementById('addressType').value = address.type || 'home';
+      } else {
+        _editingAddressId = null;
+        document.getElementById('addressFormTitle').textContent = 'Add New Address';
+        ['addressName','addressMobile','addressPincode','addressCity','addressState','addressStreet'].forEach(id => {
+          document.getElementById(id).value = '';
+        });
+        document.getElementById('addressType').value = 'home';
+      }
+    };
+
+    window.accHideAddressForm = function() {
+      document.getElementById('newAddressForm').style.display = 'none';
+      document.getElementById('addNewAddress').style.display = 'inline-flex';
+      _editingAddressId = null;
+    };
+
+    // ========== EVENT DELEGATION (All dynamic buttons) ==========
+    document.addEventListener('click', async function(e) {
+      // Save Profile
+      if (e.target.id === 'saveProfile') {
+        const user = window._accCurrentUser;
+        if (!user) { accShowToast('Please login first', 'error'); return; }
+        const name = document.getElementById('profileName')?.value?.trim();
+        const phone = document.getElementById('profilePhone')?.value?.trim();
+        if (!name) { accShowToast('Enter your name', 'error'); return; }
+        try {
+          await update(ref(db, 'users/' + user.uid), { name, phone, updatedAt: Date.now() });
+          document.getElementById('accountPageName').textContent = name;
+          document.getElementById('chipUserName').textContent = name;
+          const init = name.charAt(0).toUpperCase();
+          document.getElementById('chipAvatarInitial').textContent = init;
+          document.getElementById('accountPageAvatarInitial').textContent = init;
+          accShowToast('Profile updated! ✅', 'success');
+        } catch (e) {
+          accShowToast('Failed to update', 'error');
+        }
+      }
+
+      // Change Password
+      if (e.target.id === 'changePasswordBtn') {
+        document.getElementById('changePasswordEmail').textContent = window._accCurrentUser?.email || '';
+        accOpenModal('changePasswordModal');
+      }
+
+      // Send Reset Link
+      if (e.target.id === 'sendResetLink') {
+        const user = window._accCurrentUser;
+        if (!user) return;
+        try {
+          await sendPasswordResetEmail(auth, user.email);
+          accShowToast('Reset link sent! Check email', 'success');
+          accCloseModal('changePasswordModal');
+        } catch (e) {
+          accShowToast('Failed to send email', 'error');
+        }
+      }
+
+      // Cancel Change Password
+      if (e.target.id === 'cancelChangePassword') {
+        accCloseModal('changePasswordModal');
+      }
+
+      // Logout
+      if (e.target.id === 'accountLogoutBtn') {
+        accShowAlert('Logout', 'Are you sure you want to logout?', async () => {
+          try {
+            await signOut(auth);
+            accShowToast('Logged out', 'success');
+            setTimeout(() => window.location.href = '/', 800);
+          } catch (e) {
+            accShowToast('Logout failed', 'error');
+          }
+        });
+      }
+
+      // Delete Account
+      if (e.target.id === 'deleteAccountBtn') {
+        accShowAlert('Delete Account', 'This cannot be undone. Contact support.', () => {
+          accShowToast('Contact support to delete account', 'error');
+        });
+      }
+
+      // Alert Confirm
+      if (e.target.id === 'alertConfirmBtn') {
+        if (_alertCallback) { _alertCallback(); _alertCallback = null; }
+        accCloseModal('alertModal');
+      }
+
+      // Alert Cancel
+      if (e.target.id === 'alertCancelBtn') {
+        accCloseModal('alertModal');
+      }
+
+      // Login Activity
+      if (e.target.id === 'viewLoginActivity') {
+        try {
+          const snap = await get(ref(db, 'loginActivity/' + window._accCurrentUser?.uid));
+          const list = document.getElementById('loginActivityList');
+          list.innerHTML = '';
+          if (!snap.exists()) {
+            list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:2rem;">No activity found</p>';
+          } else {
+            const acts = [];
+            snap.forEach(c => acts.push({ id: c.key, ...c.val() }));
+            acts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            acts.forEach(a => {
+              const div = document.createElement('div');
+              div.className = 'activity-item';
+              div.innerHTML = `<div><div class="activity-time">${new Date(a.timestamp).toLocaleString()}</div><div class="activity-device">${a.deviceType || 'Unknown'}</div></div><span class="activity-status">✓ Success</span>`;
+              list.appendChild(div);
+            });
+          }
+          accOpenModal('loginActivityModal');
+        } catch (e) {
+          accShowToast('Could not load activity', 'error');
+        }
+      }
+
+      // Save Address
+      if (e.target.id === 'saveAddress') {
+        const user = window._accCurrentUser;
+        if (!user) { accShowToast('Please login first', 'error'); return; }
+        const addr = {
+          name: document.getElementById('addressName')?.value?.trim() || '',
+          mobile: document.getElementById('addressMobile')?.value?.trim() || '',
+          pincode: document.getElementById('addressPincode')?.value?.trim() || '',
+          city: document.getElementById('addressCity')?.value?.trim() || '',
+          state: document.getElementById('addressState')?.value?.trim() || '',
+          street: document.getElementById('addressStreet')?.value?.trim() || '',
+          type: document.getElementById('addressType')?.value || 'home',
+          userId: user.uid,
+          updatedAt: Date.now()
+        };
+        if (!addr.name || !addr.mobile || !addr.pincode || !addr.city || !addr.state || !addr.street) {
+          accShowToast('All fields required', 'error');
+          return;
+        }
+        const btn = e.target;
+        btn.disabled = true; btn.textContent = 'Saving...';
+        try {
+          if (_editingAddressId) {
+            await update(ref(db, 'addresses/' + _editingAddressId), addr);
+          } else {
+            addr.createdAt = Date.now();
+            await push(ref(db, 'addresses'), addr);
+          }
+          accShowToast('Address saved! ✅', 'success');
+          accHideAddressForm();
+        } catch (err) {
+          accShowToast('Failed to save', 'error');
+        } finally {
+          btn.disabled = false; btn.textContent = 'Save Address';
+        }
+      }
+
+      // Cancel Address
+      if (e.target.id === 'cancelAddAddress') {
+        accHideAddressForm();
+      }
+
+      // Add New Address button
+      if (e.target.id === 'addNewAddress') {
+        accShowAddressForm();
+      }
+
+      // Save Settings
+      if (e.target.id === 'saveSettings') {
+        const user = window._accCurrentUser;
+        if (!user) { accShowToast('Please login first', 'error'); return; }
+        const fields = ['emailNotifications','smsNotifications','pushNotifications','personalizedRecs','dataSharing'];
+        const settings = {};
+        fields.forEach(f => {
+          const el = document.getElementById(f);
+          settings[f] = el ? el.checked : true;
+        });
+        localStorage.setItem('bz_settings_' + user.uid, JSON.stringify(settings));
+        try {
+          await set(ref(db, 'users/' + user.uid + '/settings'), settings);
+          accShowToast('Settings saved! ✅', 'success');
+        } catch (e) {
+          accShowToast('Saved locally', 'success');
+        }
+      }
+
+      // Dark Mode Toggle
+      if (e.target.id === 'darkModeToggle') {
+        const theme = e.target.checked ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+      }
+
+      // Edit Address (delegated)
+      if (e.target.classList.contains('edit-addr')) {
+        const id = e.target.getAttribute('data-id');
+        try {
+          const snap = await get(ref(db, 'addresses/' + id));
+          if (snap.exists()) {
+            accShowAddressForm({ id, ...snap.val() });
+          }
+        } catch (err) {}
+      }
+
+      // Delete Address (delegated)
+      if (e.target.classList.contains('delete-addr')) {
+        const id = e.target.getAttribute('data-id');
+        accShowAlert('Delete Address', 'Are you sure?', async () => {
+          try {
+            await remove(ref(db, 'addresses/' + id));
+            accShowToast('Deleted', 'success');
+          } catch (err) {
+            accShowToast('Failed', 'error');
+          }
+        });
+      }
+
+      // Set Default Address (delegated)
+      if (e.target.classList.contains('default-addr')) {
+        const id = e.target.getAttribute('data-id');
+        const user = window._accCurrentUser;
+        if (!user) { accShowToast('Please login first', 'error'); return; }
+        try {
+          const snap = await get(query(ref(db, 'addresses'), orderByChild('userId'), equalTo(user.uid)));
+          const updates = {};
+          snap.forEach(child => { updates['addresses/' + child.key + '/isDefault'] = (child.key === id); });
+          await update(ref(db), updates);
+          accShowToast('Default set!', 'success');
+        } catch (err) {
+          accShowToast('Failed', 'error');
+        }
+      }
+
+      // Remove from Wishlist (delegated)
+      if (e.target.classList.contains('remove-wish')) {
+        const pid = e.target.getAttribute('data-id');
+        const user = window._accCurrentUser;
+        if (!user) { accShowToast('Please login first', 'error'); return; }
+        try {
+          await remove(ref(db, 'wishlist/' + user.uid + '/' + pid));
+          accShowToast('Removed from wishlist', 'success');
+        } catch (err) {
+          accShowToast('Failed', 'error');
+        }
+      }
+
+      // View Product from Wishlist
+      if (e.target.classList.contains('view-prod')) {
+        window.location.href = '/';
+      }
+    });
+
+    // ========== MODAL OVERLAY CLICK ==========
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('modal') && e.target.classList.contains('active')) {
+        e.target.classList.remove('active');
+      }
+    });
+
+    // ========== ESC TO CLOSE ==========
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+      }
+    });
+
+    console.log('✅ Account Page Ready - All systems operational');
+    console.log('📋 Features: Orders | Addresses | Wishlist | Settings | Sell Product');
+  </script>
+</body>
+</html>
