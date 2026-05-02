@@ -30,27 +30,6 @@
       --header-height: 70px;
     }
 
-    /* ── ORDER STATUS BADGES ── */
-    .status-badge-admin {
-      display: inline-block; padding: 3px 10px; border-radius: 20px;
-      font-size: 11px; font-weight: 700; white-space: nowrap;
-    }
-    .status-placed     { background: #fef3c7; color: #d97706; }
-    .status-confirmed  { background: #dbeafe; color: #1d4ed8; }
-    .status-shipped    { background: #f3e8ff; color: #7c3aed; }
-    .status-delivered  { background: #dcfce7; color: #15803d; }
-    .status-cancelled  { background: #fee2e2; color: #dc2626; }
-
-    /* ── DELIVERY ASSIGN SECTION ── */
-    .delivery-assign-section {
-      background: #f0f9ff; border: 1px solid #bae6fd;
-      border-radius: 10px; padding: 14px; margin-top: 12px;
-    }
-    .admin-cancel-section {
-      background: #fff5f5; border: 1px solid #fecaca;
-      border-radius: 10px; padding: 14px; margin-top: 12px;
-    }
-
     * {
       margin: 0;
       padding: 0;
@@ -3019,40 +2998,35 @@
           <span class="order-total-value" id="orderTotal"></span>
         </div>
         
-        <!-- ── STATUS UPDATE ── -->
-        <div style="margin-top:20px;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
-          <div style="font-weight:700;font-size:13px;color:#64748b;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Update Order Status</div>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <select id="orderDetailsStatus" class="form-control" style="flex:1;min-width:160px;" onchange="updateOrderStatusFromDetails()">
-              <option value="placed">📦 Placed</option>
-              <option value="confirmed">✅ Confirmed</option>
-              <option value="shipped">🚚 Shipped</option>
-              <option value="delivered">✓ Delivered</option>
-              <option value="cancelled">✗ Cancelled</option>
-            </select>
-          </div>
+        <div style="margin-top:20px;padding:14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Update Status</div>
+          <select id="orderDetailsStatus" class="form-control" style="width:100%;" onchange="updateOrderStatusFromDetails()">
+            <option value="placed">📦 Placed</option>
+            <option value="confirmed">✅ Confirmed</option>
+            <option value="shipped">🚚 Shipped</option>
+            <option value="delivered">✓ Delivered</option>
+            <option value="cancelled">✗ Cancelled</option>
+          </select>
         </div>
 
-        <!-- ── DELIVERY BOY ASSIGN ── -->
-        <div style="margin-top:14px;padding:16px;background:#f0f9ff;border-radius:10px;border:1px solid #bae6fd;">
-          <div style="font-weight:700;font-size:13px;color:#0369a1;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">🛵 Assign Delivery Partner</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-            <select id="deliveryBoySelect" class="form-control" style="flex:1;min-width:160px;">
-              <option value="">Loading delivery partners...</option>
+        <div style="margin-top:12px;padding:14px;background:#f0f9ff;border-radius:10px;border:1px solid #bae6fd;">
+          <div style="font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🛵 Assign Delivery Partner</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <select id="deliveryBoySelect" class="form-control" style="flex:1;min-width:150px;">
+              <option value="">Loading...</option>
             </select>
             <button class="btn btn-primary btn-sm" onclick="assignDeliveryBoy()">Assign</button>
           </div>
-          <div id="currentAssignee" style="margin-top:8px;font-size:12px;color:#64748b;"></div>
+          <div id="currentAssignee" style="margin-top:6px;font-size:12px;color:#0369a1;"></div>
         </div>
 
-        <!-- ── ADMIN CANCEL ── -->
-        <div style="margin-top:14px;padding:16px;background:#fff5f5;border-radius:10px;border:1px solid #fecaca;" id="adminCancelSection">
-          <div style="font-weight:700;font-size:13px;color:#dc2626;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">⚠️ Cancel Order</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-            <input type="text" id="adminCancelReason" class="form-control" placeholder="Cancel reason (optional)" style="flex:1;min-width:160px;">
-            <button class="btn btn-danger btn-sm" onclick="cancelOrderByAdmin()">Cancel Order</button>
+        <div id="adminCancelSection" style="margin-top:12px;padding:14px;background:#fff5f5;border-radius:10px;border:1px solid #fecaca;">
+          <div style="font-size:12px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">⚠️ Cancel Order</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="text" id="adminCancelReason" class="form-control" placeholder="Reason (optional)" style="flex:1;min-width:150px;">
+            <button class="btn btn-danger btn-sm" onclick="cancelOrderByAdmin()">Cancel</button>
           </div>
-          <p style="font-size:11px;color:#94a3b8;margin-top:6px;">Only allowed for Placed or Confirmed orders. Cannot cancel Shipped or Delivered orders.</p>
+          <p style="font-size:11px;color:#94a3b8;margin-top:6px;margin-bottom:0;">Only for Placed / Confirmed orders. Cannot cancel Shipped or Delivered.</p>
         </div>
       </div>
       <div class="modal-footer">
@@ -3363,7 +3337,6 @@
             // Re-attach Firebase listeners if disconnected
             if (currentAdminTab === 'dashboard') {
               loadDashboardData();
-        startOrdersRealtimeListener();
             }
             // Reconnect Firebase realtime database
             database.goOnline && database.goOnline();
@@ -4563,13 +4536,13 @@
               const s    = (order.status || 'confirmed').toLowerCase();
               const name = order.userInfo?.fullName || order.username || 'N/A';
               const date = order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-IN') : 'N/A';
-              const color = statusColor[s] || '#94a3b8'; // placed=orange, confirmed=blue, shipped=purple, delivered=green, cancelled=red
+              const color = statusColor[s] || '#94a3b8';
               return `<tr>
                 <td style="font-weight:600;">${order.orderId || '#' + (order.id || '').slice(-6)}</td>
                 <td>${name}<br><small style="color:#64748b;">${order.userEmail || ''}</small></td>
                 <td>${order.productName || 'N/A'}</td>
                 <td style="font-weight:600;">₹${(parseFloat(order.totalAmount) || 0).toLocaleString('en-IN')}</td>
-                <td><span style="background:${color}20;color:${color};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">${(order.status||'placed').charAt(0).toUpperCase()+(order.status||'placed').slice(1).replace('_',' ')}</span></td>
+                <td><span style="background:${color}20;color:${color};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">${(order.status||'placed').replace('_',' ')}</span></td>
                 <td>${date}</td>
               </tr>`;
             }).join('')
@@ -4700,18 +4673,6 @@
     }
 
     // Load orders with date filter
-    // ──── Real-time Orders Listener ──────────────────
-    let _ordersListener = null;
-    function startOrdersRealtimeListener() {
-      if (_ordersListener) return; // already listening
-      _ordersListener = database.ref('orders').on('value', () => {
-        if (currentAdminTab === 'orders' || currentAdminTab === 'dashboard') {
-          loadOrders();
-          if (currentAdminTab === 'dashboard') loadDashboardData();
-        }
-      }, err => console.warn('Orders listener error:', err));
-    }
-
     function loadOrders() {
       database.ref('orders').once('value').then(snap => {
         const ordersData = snap.val() || {};
@@ -4764,12 +4725,12 @@
             <td>${order.productName || 'N/A'}<br><small>Qty: ${order.quantity||1} | Size: ${order.size||'N/A'}</small></td>
             <td style="font-weight:600;">₹${(order.totalAmount || 0).toLocaleString()}</td>
             <td>
-              <select onchange="updateOrderStatus('${order.id}', this.value)" class="form-control" style="width:auto;min-width:140px;">
-                <option value="placed"     ${s==='placed'?'selected':''}>📦 Placed</option>
-                <option value="confirmed"  ${s==='confirmed'?'selected':''}>✅ Confirmed</option>
-                <option value="shipped"    ${s==='shipped'?'selected':''}>🚚 Shipped</option>
-                <option value="delivered"  ${s==='delivered'?'selected':''}>✓ Delivered</option>
-                <option value="cancelled"  ${s==='cancelled'?'selected':''}>✗ Cancelled</option>
+              <select onchange="updateOrderStatus('${order.id}', this.value)" class="form-control" style="width:auto;min-width:145px;">
+                <option value="placed"    ${s==='placed'?'selected':''}>📦 Placed</option>
+                <option value="confirmed" ${s==='confirmed'?'selected':''}>✅ Confirmed</option>
+                <option value="shipped"   ${s==='shipped'?'selected':''}>🚚 Shipped</option>
+                <option value="delivered" ${s==='delivered'?'selected':''}>✓ Delivered</option>
+                <option value="cancelled" ${s==='cancelled'?'selected':''}>✗ Cancelled</option>
               </select>
             </td>
             <td>${date}</td>
@@ -4841,31 +4802,20 @@
       loadOrders();
     }
 
-    // ──── Status flow config ─────────────────────────
-    const ADMIN_STATUS_FLOW = ['placed','confirmed','shipped','delivered'];
-    const ADMIN_CANCELLABLE = ['placed','confirmed']; // cancel allowed only here
-    const ADMIN_CANCEL_BLOCKED = ['shipped','delivered']; // cannot cancel
-
-    function updateOrderStatus(orderId, newStatus, skipConfirm) {
-      if (!skipConfirm && !confirm(\`Update order status to "${newStatus}"?\`)) return;
-      const updates = { status: newStatus, updatedAt: Date.now() };
-      if (newStatus === 'delivered') {
-        updates.deliveredDate = Date.now();
-        updates['tracking/delivered'] = Date.now();
-      }
-      if (newStatus === 'shipped')   updates['tracking/shipped']   = Date.now();
-      if (newStatus === 'confirmed') updates['tracking/confirmed']  = Date.now();
+    function updateOrderStatus(orderId, newStatus) {
+      var updates = { status: newStatus, updatedAt: Date.now() };
+      if (newStatus === 'delivered') { updates.deliveredDate = Date.now(); }
       if (newStatus === 'cancelled') {
-        updates.cancelledBy   = 'admin';
-        updates.cancelledAt   = Date.now();
-        updates.cancelReason  = updates.cancelReason || 'Cancelled by Admin';
+        updates.cancelledBy  = 'admin';
+        updates.cancelledAt  = Date.now();
+        updates.cancelReason = 'Cancelled by Admin';
       }
       database.ref('orders/' + orderId).update(updates)
-        .then(() => {
+        .then(function() {
           loadOrders();
           if (currentAdminTab === 'dashboard') loadDashboardData();
         })
-        .catch(err => alert('Error updating status: ' + err.message));
+        .catch(function(err) { alert('Error updating status: ' + err.message); });
     }
 
     function applyBulkAction() {
@@ -4945,91 +4895,99 @@
         updateStatusTimeline(order.status || 'placed');
         document.getElementById('orderDetailsModal').classList.add('active');
         loadDeliveryBoys();
-        // Show current assignee
-        const assigneeEl = document.getElementById('currentAssignee');
-        if (assigneeEl) assigneeEl.innerHTML = order.assignedDeliveryBoyName ? `Currently assigned to: <strong>${order.assignedDeliveryBoyName}</strong>` : 'Not yet assigned';
-        // Hide cancel section if already shipped/delivered/cancelled
-        const cancelSec = document.getElementById('adminCancelSection');
-        if (cancelSec) cancelSec.style.display = ['shipped','delivered','cancelled'].includes((order.status||'').toLowerCase()) ? 'none' : 'block';
+        var assigneeEl = document.getElementById('currentAssignee');
+        if (assigneeEl) assigneeEl.innerHTML = order.assignedDeliveryBoyName ? 'Currently: <strong>' + order.assignedDeliveryBoyName + '</strong>' : 'Not yet assigned';
+        var cancelSec = document.getElementById('adminCancelSection');
+        if (cancelSec) { var st = (order.status||'').toLowerCase(); cancelSec.style.display = (st === 'shipped' || st === 'delivered' || st === 'cancelled') ? 'none' : 'block'; }
       }).catch(err => { console.error(err); alert('Error loading order details'); });
     }
 
     function updateStatusTimeline(currentStatus) {
-      const s = (currentStatus || 'placed').toLowerCase();
-      const statuses = ['placed', 'confirmed', 'shipped', 'delivered'];
-      const labels = { placed: 'Placed', confirmed: 'Confirmed', shipped: 'Shipped', delivered: 'Delivered' };
-      const icons = { placed: 'fa-box', confirmed: 'fa-check-circle', shipped: 'fa-truck', delivered: 'fa-box-open' };
-      const timeline = document.getElementById('orderStatusTimeline');
+      var s = (currentStatus || 'placed').toLowerCase();
+      var statuses = ['placed', 'confirmed', 'shipped', 'delivered'];
+      var labels = { placed: 'Placed', confirmed: 'Confirmed', shipped: 'Shipped', delivered: 'Delivered' };
+      var icons  = { placed: 'fa-box', confirmed: 'fa-check-circle', shipped: 'fa-truck', delivered: 'fa-box-open' };
+      var timeline = document.getElementById('orderStatusTimeline');
       if (!timeline) return;
-      const currentIdx = statuses.indexOf(s);
-      let html = statuses.map((st, i) => {
-        const done = i < currentIdx;
-        const active = i === currentIdx;
-        return `<div class="status-step ${done ? 'completed' : active ? 'active' : ''}">
-          <div class="status-icon"><i class="fas ${done ? 'fa-check' : icons[st]}"></i></div>
-          <div class="status-label">${labels[st]}</div>
-        </div>`;
-      }).join('');
+      var currentIdx = statuses.indexOf(s);
+      var html = '';
       if (s === 'cancelled') {
-        html = `<div class="status-step active" style="color:#ef4444"><div class="status-icon" style="background:#fee2e2;border-color:#ef4444;color:#ef4444"><i class="fas fa-times"></i></div><div class="status-label">Cancelled</div></div>`;
+        html = '<div class="status-step active" style="color:#ef4444"><div class="status-icon" style="background:#fee2e2;border-color:#ef4444;color:#ef4444"><i class="fas fa-times"></i></div><div class="status-label">Cancelled</div></div>';
+      } else {
+        html = statuses.map(function(st, i) {
+          var done   = i < currentIdx;
+          var active = i === currentIdx;
+          var cls    = done ? 'completed' : active ? 'active' : '';
+          var icon   = done ? 'fa-check' : icons[st];
+          return '<div class="status-step ' + cls + '"><div class="status-icon"><i class="fas ' + icon + '"></i></div><div class="status-label">' + labels[st] + '</div></div>';
+        }).join('');
       }
       timeline.innerHTML = html;
     }
 
     function updateOrderStatusFromDetails() {
-      const orderId = document.getElementById('orderDetailsStatus').getAttribute('data-order-id');
-      const status  = document.getElementById('orderDetailsStatus').value;
+      var orderId = document.getElementById('orderDetailsStatus').getAttribute('data-order-id');
+      var status  = document.getElementById('orderDetailsStatus').value;
       if (!orderId) return;
-      updateOrderStatus(orderId, status, false);
-      updateStatusTimeline(status);
+      var updates = { status: status, updatedAt: Date.now() };
+      if (status === 'delivered') { updates.deliveredDate = Date.now(); }
+      if (status === 'cancelled') {
+        updates.cancelledBy = 'admin';
+        updates.cancelledAt = Date.now();
+        updates.cancelReason = 'Cancelled by Admin';
+      }
+      database.ref('orders/' + orderId).update(updates)
+        .then(function() {
+          updateStatusTimeline(status);
+          loadOrders();
+          if (currentAdminTab === 'dashboard') loadDashboardData();
+        })
+        .catch(function(err) { alert('Error: ' + err.message); });
     }
 
-    // ──── Load Delivery Boys ─────────────────────────
     function loadDeliveryBoys() {
-      const sel = document.getElementById('deliveryBoySelect');
+      var sel = document.getElementById('deliveryBoySelect');
       if (!sel) return;
-      database.ref('users').orderByChild('role').equalTo('delivery').once('value').then(snap => {
-        if (!snap.exists()) {
-          sel.innerHTML = '<option value="">No delivery partners found</option>';
-          return;
-        }
-        let opts = '<option value="">-- Select Delivery Partner --</option>';
-        snap.forEach(child => {
-          const u = child.val();
-          opts += `<option value="${child.key}">${u.displayName || u.fullName || u.email || child.key}</option>`;
-        });
-        sel.innerHTML = opts;
-      }).catch(() => { sel.innerHTML = '<option value="">Error loading partners</option>'; });
+      database.ref('users').orderByChild('role').equalTo('delivery').once('value')
+        .then(function(snap) {
+          if (!snap.exists()) { sel.innerHTML = '<option value="">No delivery partners found</option>'; return; }
+          var opts = '<option value="">-- Select Partner --</option>';
+          snap.forEach(function(child) {
+            var u = child.val();
+            var name = u.displayName || u.fullName || u.name || u.email || child.key;
+            opts += '<option value="' + child.key + '">' + name + '</option>';
+          });
+          sel.innerHTML = opts;
+        })
+        .catch(function() { sel.innerHTML = '<option value="">Error loading</option>'; });
     }
 
-    // ──── Assign Delivery Boy ─────────────────────────
     function assignDeliveryBoy() {
-      const orderId = document.getElementById('orderDetailsStatus').getAttribute('data-order-id');
-      const uid     = document.getElementById('deliveryBoySelect').value;
-      const name    = document.getElementById('deliveryBoySelect').selectedOptions[0]?.text || '';
+      var orderId = document.getElementById('orderDetailsStatus').getAttribute('data-order-id');
+      var sel     = document.getElementById('deliveryBoySelect');
+      var uid     = sel ? sel.value : '';
+      var name    = sel ? (sel.selectedOptions[0] ? sel.selectedOptions[0].text : '') : '';
       if (!uid) { alert('Please select a delivery partner'); return; }
       database.ref('orders/' + orderId).update({
         assignedDeliveryBoyId: uid,
         assignedDeliveryBoyName: name,
         assignedAt: Date.now()
-      }).then(() => {
-        document.getElementById('currentAssignee').innerHTML = `✅ Assigned to: <strong>${name}</strong>`;
-        showAdminToast('Delivery partner assigned!', 'success');
+      }).then(function() {
+        var el = document.getElementById('currentAssignee');
+        if (el) el.innerHTML = 'Assigned to: <strong>' + name + '</strong>';
+        adminToast('Delivery partner assigned!', 'success');
         loadOrders();
-      }).catch(err => alert('Error: ' + err.message));
+      }).catch(function(err) { alert('Error: ' + err.message); });
     }
 
-    // ──── Cancel Order by Admin ───────────────────────
     function cancelOrderByAdmin() {
-      const orderId = document.getElementById('orderDetailsStatus').getAttribute('data-order-id');
-      const reason  = document.getElementById('adminCancelReason').value.trim() || 'Cancelled by Admin';
+      var orderId = document.getElementById('orderDetailsStatus').getAttribute('data-order-id');
+      var reason  = (document.getElementById('adminCancelReason').value || '').trim() || 'Cancelled by Admin';
       if (!orderId) return;
-      // Check current status first
-      database.ref('orders/' + orderId + '/status').once('value').then(snap => {
-        const currentStatus = (snap.val() || 'placed').toLowerCase();
-        const nonCancellable = ['shipped', 'delivered'];
-        if (nonCancellable.includes(currentStatus)) {
-          alert('Cannot cancel this order. Status is "' + currentStatus + '". Only Placed or Confirmed orders can be cancelled.');
+      database.ref('orders/' + orderId + '/status').once('value').then(function(snap) {
+        var cur = (snap.val() || 'placed').toLowerCase();
+        if (cur === 'shipped' || cur === 'delivered') {
+          alert('Cannot cancel. Order is already "' + cur + '". Only Placed or Confirmed orders can be cancelled.');
           return;
         }
         if (!confirm('Cancel this order? This cannot be undone.')) return;
@@ -5038,31 +4996,32 @@
           cancelledBy: 'admin',
           cancelReason: reason,
           cancelledAt: Date.now()
-        }).then(() => {
+        }).then(function() {
           updateStatusTimeline('cancelled');
           document.getElementById('orderDetailsStatus').value = 'cancelled';
-          showAdminToast('Order cancelled successfully', 'success');
+          var sec = document.getElementById('adminCancelSection');
+          if (sec) sec.style.display = 'none';
+          adminToast('Order cancelled', 'success');
           loadOrders();
-        }).catch(err => alert('Error: ' + err.message));
+        }).catch(function(err) { alert('Error: ' + err.message); });
       });
     }
 
-    // ──── Admin Toast ─────────────────────────────────
-    function showAdminToast(msg, type) {
-      let toast = document.getElementById('adminToast');
-      if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'adminToast';
-        toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);padding:12px 24px;border-radius:50px;font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;';
-        document.body.appendChild(toast);
+    function adminToast(msg, type) {
+      var t = document.getElementById('_adminToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = '_adminToast';
+        t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:11px 22px;border-radius:50px;font-size:13px;font-weight:600;z-index:99999;opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none;';
+        document.body.appendChild(t);
       }
-      toast.textContent = msg;
-      toast.style.background = type === 'success' ? '#16a34a' : type === 'error' ? '#dc2626' : '#1e293b';
-      toast.style.color = '#fff';
-      toast.style.opacity = '1';
-      toast.style.transform = 'translateX(-50%) translateY(0)';
-      clearTimeout(toast._t);
-      toast._t = setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateX(-50%) translateY(20px)'; }, 3000);
+      t.textContent = msg;
+      t.style.background = type === 'success' ? '#16a34a' : '#dc2626';
+      t.style.color = '#fff';
+      t.style.opacity = '1';
+      t.style.transform = 'translateX(-50%) translateY(0)';
+      clearTimeout(t._t);
+      t._t = setTimeout(function() { t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(20px)'; }, 3000);
     }
 
     function printOrderDetails() {
