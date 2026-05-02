@@ -1798,12 +1798,56 @@
         
         <!-- Trending Tab -->
         <div class="tab-content" id="trending">
+
+          <!-- Auto-Trending Info Banner -->
+          <div style="background:linear-gradient(135deg,#1e293b,#2563eb);border-radius:12px;padding:20px 24px;margin-bottom:20px;color:white;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+            <div>
+              <div style="font-size:1rem;font-weight:700;margin-bottom:4px;">🤖 Auto-Trending System</div>
+              <div style="font-size:13px;opacity:0.85;">Top ordered products aur highest rated products automatically trending ban jaate hain. Admin manually bhi add/remove kar sakta hai.</div>
+              <div id="autoTrendingLastRun" style="font-size:11px;opacity:0.65;margin-top:4px;">Last run: Never</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);" onclick="showAutoTrendingSettings()">
+                <i class="fas fa-sliders-h"></i> Settings
+              </button>
+              <button class="btn btn-sm" style="background:#22c55e;color:white;" onclick="runAutoTrending(true)" id="autoTrendingBtn">
+                <i class="fas fa-sync-alt"></i> Run Auto-Update Now
+              </button>
+            </div>
+          </div>
+
+          <!-- Stats Row -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#ef4444);"><i class="fas fa-fire"></i></div>
+              <div class="stat-info"><h3 id="trendTotalCount">0</h3><p>Total Trending</p></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#2563eb,#7c3aed);"><i class="fas fa-robot"></i></div>
+              <div class="stat-info"><h3 id="trendAutoCount">0</h3><p>Auto Trending</p></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:linear-gradient(135deg,#16a34a,#15803d);"><i class="fas fa-user-check"></i></div>
+              <div class="stat-info"><h3 id="trendManualCount">0</h3><p>Manually Added</p></div>
+            </div>
+          </div>
+
+          <!-- Filter Tabs -->
+          <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+            <button class="btn btn-sm" id="trendFilterAll" style="background:var(--primary);color:white;" onclick="filterTrendingView('all')">All Products</button>
+            <button class="btn btn-sm" id="trendFilterTrending" style="background:#f1f5f9;color:#334155;" onclick="filterTrendingView('trending')">🔥 Trending Only</button>
+            <button class="btn btn-sm" id="trendFilterAuto" style="background:#f1f5f9;color:#334155;" onclick="filterTrendingView('auto')">🤖 Auto Only</button>
+            <button class="btn btn-sm" id="trendFilterManual" style="background:#f1f5f9;color:#334155;" onclick="filterTrendingView('manual')">👤 Manual Only</button>
+          </div>
+
           <div class="card">
             <div class="card-header">
-              <h2>Trending Products Control</h2>
+              <h2>Products List</h2>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="text" class="form-control" id="trendingSearch" placeholder="Search products..." style="width:200px;" oninput="loadTrendingProducts()">
+              </div>
             </div>
             <div class="card-body">
-              <p style="margin-bottom: 16px">Select products to feature in the "Trending Now" section on the website.</p>
               <div class="table-responsive">
                 <table id="trendingTable">
                   <thead>
@@ -1811,15 +1855,56 @@
                       <th>Image</th>
                       <th>Name</th>
                       <th>Price</th>
-                      <th>Trending</th>
+                      <th>Orders</th>
+                      <th>Rating</th>
+                      <th>Trending Type</th>
+                      <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody id="trendingTableBody">
-                    <!-- Will be populated by JavaScript -->
+                    <tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8;">Loading...</td></tr>
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto-Trending Settings Modal -->
+        <div class="modal" id="autoTrendingSettingsModal">
+          <div class="modal-content" style="max-width:480px;">
+            <div class="modal-header">
+              <h3>⚙️ Auto-Trending Settings</h3>
+              <button class="close" onclick="closeModal('autoTrendingSettingsModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label>Top N Products by Orders (auto-trend karein)</label>
+                <input type="number" id="autoTrendTopOrders" class="form-control" value="5" min="1" max="20" placeholder="e.g. 5">
+                <small style="color:#64748b;">Jinke sabse zyada orders aaye hain</small>
+              </div>
+              <div class="form-group" style="margin-top:16px;">
+                <label>Top N Products by Rating (auto-trend karein)</label>
+                <input type="number" id="autoTrendTopRating" class="form-control" value="5" min="1" max="20" placeholder="e.g. 5">
+                <small style="color:#64748b;">Jinki average rating sabse zyada hai (min 1 review)</small>
+              </div>
+              <div class="form-group" style="margin-top:16px;">
+                <label>Minimum Orders Required</label>
+                <input type="number" id="autoTrendMinOrders" class="form-control" value="1" min="0" placeholder="e.g. 1">
+                <small style="color:#64748b;">Isse kam orders wale auto-trending nahi honge</small>
+              </div>
+              <div style="background:#fef9c3;border:1px solid #fcd34d;border-radius:8px;padding:12px;margin-top:12px;font-size:13px;color:#92400e;">
+                <strong>📌 Note:</strong> Admin ne manually jo trending lock kiye hain ya manually remove kiye hain, unhe auto system affect nahi karega jab tak tum "Override Locks" enable na karo.
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
+                <input type="checkbox" id="autoTrendOverrideLocks" style="width:16px;height:16px;">
+                <label for="autoTrendOverrideLocks" style="font-size:13px;cursor:pointer;">Override manual locks (sabko reset karke fresh auto-trend lagao)</label>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" onclick="closeModal('autoTrendingSettingsModal')">Cancel</button>
+              <button class="btn btn-primary" onclick="saveAutoTrendingSettings()"><i class="fas fa-save"></i> Save & Run</button>
             </div>
           </div>
         </div>
@@ -4237,7 +4322,14 @@
       else if (tabName === 'offers') loadOffers();
       else if (tabName === 'reviews') { _reviewFilter = 'pending'; loadAdminReviews(); }
       else if (tabName === 'notifications') loadNotifHistory();
-      else if (tabName === 'trending') loadTrendingProducts();
+      else if (tabName === 'trending') {
+        loadTrendingProducts();
+        // Auto-run once per session on first visit to trending tab
+        if (!window._autoTrendRanThisSession) {
+          window._autoTrendRanThisSession = true;
+          runAutoTrending(false);
+        }
+      }
       else if (tabName === 'similar-products') loadSimilarProducts();
       else if (tabName === 'search-tags') loadSearchTags();
       else if (tabName === 'popular-searches') loadPopularSearches();
@@ -4388,7 +4480,7 @@
           .filter(p => p.status !== 'inactive'); // exclude removed listings
         const totalCustomers = Object.keys(usersData).length;
 
-        const trendingCount = products.filter(p => p.isTrending || p.trending).length;
+        const trendingCount = products.filter(p => p.isTrending || p.trending || p.autoTrending).length;
         const pendingCount  = orders.filter(o => {
           const s = (o.status || '').toLowerCase();
           return s === 'confirmed' || s === 'pending';
@@ -4825,58 +4917,372 @@
       printWindow.print();
     }
 
-    // Load trending products
+    // ══════════════════════════════════════════════
+    //  AUTO-TRENDING SYSTEM
+    // ══════════════════════════════════════════════
+
+    let _trendingViewFilter = 'all'; // 'all' | 'trending' | 'auto' | 'manual'
+    let _allTrendingProducts = [];   // cache for filter
+
+    function filterTrendingView(type) {
+      _trendingViewFilter = type;
+      // Update button styles
+      ['all','trending','auto','manual'].forEach(t => {
+        const btn = document.getElementById('trendFilter' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (btn) btn.style.cssText = t === type
+          ? 'background:var(--primary);color:white;'
+          : 'background:#f1f5f9;color:#334155;';
+      });
+      renderTrendingTable(_allTrendingProducts);
+    }
+
+    // Load trending: fetches products + orders + reviews then renders
     function loadTrendingProducts() {
-      const productsRef = database.ref('products');
-      productsRef.once('value', snapshot => {
-        const productsData = snapshot.val();
-        let products = [];
-        
-        if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => ({
-            ...value,
-            id: value.id || key
-          }));
+      document.getElementById('trendingTableBody').innerHTML =
+        '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+
+      Promise.all([
+        database.ref('products').once('value'),
+        database.ref('orders').once('value'),
+        database.ref('reviews').once('value')
+      ]).then(([prodSnap, orderSnap, reviewSnap]) => {
+
+        const products = prodSnap.exists()
+          ? Object.entries(prodSnap.val()).map(([k, v]) => ({ id: k, ...v }))
+          : [];
+
+        // Order count per product id
+        const orderCount = {};
+        if (orderSnap.exists()) {
+          Object.values(orderSnap.val()).forEach(o => {
+            const pid = o.productId || o.id;
+            if (pid) orderCount[pid] = (orderCount[pid] || 0) + 1;
+          });
         }
-        
-        const trendingHtml = products.map(product => {
-          const images = product.images || [];
-          const mainImage = images.length > 0 ? images[0] : '';
-          
-          return `
-            <tr>
-              <td><img src="${mainImage}" class="product-image" onerror="this.src='https://via.placeholder.com/50'"></td>
-              <td>${product.title || 'No Name'}</td>
-              <td>₹${product.price || 0}</td>
-              <td>${product.trending ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>'}</td>
-              <td>
-                <button class="btn ${product.trending ? 'btn-danger' : 'btn-success'} btn-sm" onclick="toggleTrending('${product.id}', ${!product.trending})">
-                  <i class="fas ${product.trending ? 'fa-times' : 'fa-fire'}"></i> 
-                  ${product.trending ? 'Remove' : 'Add'}
-                </button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-        
-        document.getElementById('trendingTableBody').innerHTML = trendingHtml || '<tr><td colspan="5" style="text-align: center">No products found</td></tr>';
-      }).catch(error => {
-        console.error('Error loading trending products:', error);
+
+        // Average rating per product id
+        const ratingData = {};
+        if (reviewSnap.exists()) {
+          Object.values(reviewSnap.val()).forEach(r => {
+            const pid = r.productId;
+            if (!pid || !r.rating) return;
+            if (!ratingData[pid]) ratingData[pid] = { total: 0, count: 0 };
+            ratingData[pid].total += parseFloat(r.rating);
+            ratingData[pid].count += 1;
+          });
+        }
+
+        // Attach order count + avg rating to products
+        const enriched = products.map(p => ({
+          ...p,
+          orderCount: orderCount[p.id] || 0,
+          avgRating: ratingData[p.id]
+            ? (ratingData[p.id].total / ratingData[p.id].count).toFixed(1)
+            : (p.rating || p.ratingOverride || 0)
+        }));
+
+        _allTrendingProducts = enriched;
+        renderTrendingTable(enriched);
+
+        // Update stat cards
+        const totalTrend  = enriched.filter(p => p.trending || p.autoTrending).length;
+        const autoTrend   = enriched.filter(p => p.autoTrending && !p.manualTrending).length;
+        const manualTrend = enriched.filter(p => p.manualTrending).length;
+        const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setEl('trendTotalCount',  totalTrend);
+        setEl('trendAutoCount',   autoTrend);
+        setEl('trendManualCount', manualTrend);
+
+      }).catch(err => {
+        document.getElementById('trendingTableBody').innerHTML =
+          `<tr><td colspan="8" style="text-align:center;color:#ef4444;padding:20px;">Error: ${err.message}</td></tr>`;
       });
     }
 
-    function toggleTrending(productId, isTrending) {
-      database.ref('products/' + productId).update({ trending: isTrending })
+    function renderTrendingTable(products) {
+      const search = (document.getElementById('trendingSearch')?.value || '').toLowerCase();
+
+      let filtered = products;
+      if (search) filtered = filtered.filter(p => (p.title || '').toLowerCase().includes(search));
+
+      if (_trendingViewFilter === 'trending') filtered = filtered.filter(p => p.trending || p.autoTrending);
+      else if (_trendingViewFilter === 'auto')   filtered = filtered.filter(p => p.autoTrending && !p.manualTrending);
+      else if (_trendingViewFilter === 'manual') filtered = filtered.filter(p => p.manualTrending);
+
+      if (!filtered.length) {
+        document.getElementById('trendingTableBody').innerHTML =
+          '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8;">No products found</td></tr>';
+        return;
+      }
+
+      // Sort: trending first
+      filtered.sort((a, b) => {
+        const aT = (a.trending || a.autoTrending) ? 1 : 0;
+        const bT = (b.trending || b.autoTrending) ? 1 : 0;
+        return bT - aT;
+      });
+
+      document.getElementById('trendingTableBody').innerHTML = filtered.map(p => {
+        const img = (p.images && p.images[0]) || '';
+        const isTrending    = p.trending || p.autoTrending;
+        const isAuto        = p.autoTrending && !p.manualTrending;
+        const isManual      = p.manualTrending || (p.trending && !p.autoTrending);
+        const isBoth        = p.autoTrending && p.manualTrending;
+        const isLocked      = p.trendingLocked;
+
+        // Trending type badge
+        let typeBadge = '';
+        if (!isTrending) {
+          typeBadge = '<span style="color:#94a3b8;font-size:12px;">—</span>';
+        } else if (isBoth) {
+          typeBadge = '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">🤖+👤 Both</span>';
+        } else if (isAuto) {
+          const reason = p.autoTrendingReason === 'rating' ? '⭐ Top Rated' : '📦 Most Ordered';
+          typeBadge = `<span style="background:#f3e8ff;color:#7c3aed;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">🤖 Auto · ${reason}</span>`;
+        } else if (isManual) {
+          typeBadge = '<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">👤 Manual</span>';
+        }
+        if (isLocked) {
+          typeBadge += ' <span style="background:#fef3c7;color:#d97706;padding:1px 6px;border-radius:20px;font-size:10px;font-weight:700;">🔒 Locked</span>';
+        }
+
+        // Status badge
+        const statusBadge = isTrending
+          ? '<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">🔥 Trending</span>'
+          : '<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">Not Trending</span>';
+
+        // Stars display
+        const rating = parseFloat(p.avgRating) || 0;
+        const stars = rating > 0
+          ? `<span style="color:#f59e0b;">★</span> ${rating} <span style="font-size:11px;color:#94a3b8;">(${(p.reviewCount||0)})</span>`
+          : '<span style="color:#94a3b8;font-size:12px;">No reviews</span>';
+
+        // Action buttons
+        let actions = '';
+        if (isTrending) {
+          actions = `<button class="btn btn-danger btn-sm" onclick="removeTrendingProduct('${p.id}')" title="Remove from Trending">
+            <i class="fas fa-times"></i> Remove
+          </button>`;
+        } else {
+          actions = `<button class="btn btn-success btn-sm" onclick="addManualTrending('${p.id}')" title="Add to Trending">
+            <i class="fas fa-fire"></i> Add
+          </button>`;
+        }
+        // Lock/Unlock button
+        if (isTrending) {
+          actions += ` <button class="btn btn-sm" style="background:${isLocked?'#fef9c3':'#f1f5f9'};color:${isLocked?'#d97706':'#64748b'};" onclick="toggleTrendingLock('${p.id}', ${!isLocked})" title="${isLocked?'Unlock - auto system can change this':'Lock - auto system cannot remove this'}">
+            <i class="fas ${isLocked?'fa-lock':'fa-lock-open'}"></i>
+          </button>`;
+        }
+
+        return `<tr>
+          <td><img src="${img}" class="product-image" onerror="this.src='https://via.placeholder.com/50'" style="width:44px;height:44px;border-radius:6px;object-fit:cover;"></td>
+          <td style="font-weight:500;">${p.title || 'No Name'}</td>
+          <td>₹${(p.price || 0).toLocaleString()}</td>
+          <td><span style="font-weight:700;color:#2563eb;">${p.orderCount || 0}</span></td>
+          <td>${stars}</td>
+          <td>${typeBadge}</td>
+          <td>${statusBadge}</td>
+          <td><div style="display:flex;gap:6px;flex-wrap:wrap;">${actions}</div></td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── Manual Add ──────────────────────────────────────────────────
+    function addManualTrending(productId) {
+      database.ref('products/' + productId).update({
+        trending: true,
+        manualTrending: true,
+        trendingLocked: true   // manual = locked by default
+      }).then(() => {
+        showAdminToast('✅ Product added to Trending!', 'success');
+        loadTrendingProducts();
+        loadDashboardData();
+      }).catch(err => alert('Error: ' + err.message));
+    }
+
+    // ── Remove (works for both auto and manual) ──────────────────────
+    function removeTrendingProduct(productId) {
+      database.ref('products/' + productId).update({
+        trending: false,
+        manualTrending: false,
+        autoTrending: false,
+        trendingLocked: false,
+        autoTrendingRemoved: true   // flag so auto won't re-add
+      }).then(() => {
+        showAdminToast('Product removed from Trending.', 'success');
+        loadTrendingProducts();
+        loadDashboardData();
+      }).catch(err => alert('Error: ' + err.message));
+    }
+
+    // ── Lock / Unlock ────────────────────────────────────────────────
+    function toggleTrendingLock(productId, lock) {
+      database.ref('products/' + productId).update({ trendingLocked: lock })
         .then(() => {
+          showAdminToast(lock ? '🔒 Product locked - auto system nahi hatayega' : '🔓 Product unlocked', 'success');
           loadTrendingProducts();
-          if (currentAdminTab === 'dashboard') loadDashboardData();
-          if (currentAdminTab === 'products') loadProducts();
-          alert('Trending status updated!');
-        })
-        .catch(error => {
-          console.error('Error updating trending status:', error);
-          alert('Error updating trending status');
+        }).catch(err => alert('Error: ' + err.message));
+    }
+
+    // Keep old toggleTrending as alias for backward compatibility
+    function toggleTrending(productId, isTrending) {
+      if (isTrending) addManualTrending(productId);
+      else removeTrendingProduct(productId);
+    }
+
+    // ── Auto-Trending Core ───────────────────────────────────────────
+    async function runAutoTrending(showToast = false) {
+      const btn = document.getElementById('autoTrendingBtn');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...'; }
+
+      try {
+        // Load settings from Firebase (or defaults)
+        const settSnap = await database.ref('adminSettings/autoTrending').once('value');
+        const settings = settSnap.exists() ? settSnap.val() : {};
+        const topOrders  = parseInt(settings.topOrders  || 5);
+        const topRating  = parseInt(settings.topRating  || 5);
+        const minOrders  = parseInt(settings.minOrders  || 1);
+        const override   = settings.overrideLocks === true;
+
+        // Fetch products + orders + reviews
+        const [prodSnap, orderSnap, reviewSnap] = await Promise.all([
+          database.ref('products').once('value'),
+          database.ref('orders').once('value'),
+          database.ref('reviews').once('value')
+        ]);
+
+        const products = prodSnap.exists()
+          ? Object.entries(prodSnap.val()).map(([k, v]) => ({ id: k, ...v }))
+          : [];
+
+        // Count orders per productId
+        const orderCount = {};
+        if (orderSnap.exists()) {
+          Object.values(orderSnap.val()).forEach(o => {
+            const pid = o.productId || o.id;
+            if (pid) orderCount[pid] = (orderCount[pid] || 0) + 1;
+          });
+        }
+
+        // Average rating per productId
+        const ratingData = {};
+        if (reviewSnap.exists()) {
+          Object.values(reviewSnap.val()).forEach(r => {
+            const pid = r.productId;
+            if (!pid || !r.rating) return;
+            if (!ratingData[pid]) ratingData[pid] = { total: 0, count: 0 };
+            ratingData[pid].total += parseFloat(r.rating);
+            ratingData[pid].count += 1;
+          });
+        }
+
+        // Score each product
+        const scored = products
+          .filter(p => p.status !== 'inactive')
+          .map(p => ({
+            ...p,
+            orderCount: orderCount[p.id] || 0,
+            avgRating:  ratingData[p.id] ? (ratingData[p.id].total / ratingData[p.id].count) : parseFloat(p.rating || p.ratingOverride || 0),
+            reviewCount: ratingData[p.id] ? ratingData[p.id].count : 0
+          }));
+
+        // Top by orders (minimum order threshold)
+        const topByOrders = scored
+          .filter(p => p.orderCount >= minOrders)
+          .sort((a, b) => b.orderCount - a.orderCount)
+          .slice(0, topOrders)
+          .map(p => p.id);
+
+        // Top by rating
+        const topByRating = scored
+          .filter(p => p.avgRating > 0)
+          .sort((a, b) => b.avgRating - a.avgRating)
+          .slice(0, topRating)
+          .map(p => p.id);
+
+        const autoTrendSet = new Set([...topByOrders, ...topByRating]);
+
+        // Build Firebase multi-path updates
+        const updates = {};
+        products.forEach(p => {
+          const shouldAutoTrend = autoTrendSet.has(p.id);
+          const isLocked = p.trendingLocked && !override;
+          const wasRemoved = p.autoTrendingRemoved && !override;
+
+          if (shouldAutoTrend && !isLocked && !wasRemoved) {
+            const reason = topByOrders.includes(p.id) && topByRating.includes(p.id)
+              ? 'both'
+              : topByOrders.includes(p.id) ? 'orders' : 'rating';
+            updates[`products/${p.id}/autoTrending`]       = true;
+            updates[`products/${p.id}/trending`]           = true;
+            updates[`products/${p.id}/autoTrendingReason`] = reason;
+            updates[`products/${p.id}/autoTrendingAt`]     = Date.now();
+            if (override) {
+              updates[`products/${p.id}/autoTrendingRemoved`] = false;
+            }
+          } else if (!shouldAutoTrend && p.autoTrending && !p.trendingLocked) {
+            // Was auto-trending but no longer qualifies → remove auto flag
+            updates[`products/${p.id}/autoTrending`]       = false;
+            updates[`products/${p.id}/autoTrendingReason`] = null;
+            // Only set trending false if also not manually trending
+            if (!p.manualTrending) {
+              updates[`products/${p.id}/trending`] = false;
+            }
+          }
         });
+
+        if (Object.keys(updates).length) {
+          await database.ref().update(updates);
+        }
+
+        // Save last run timestamp
+        await database.ref('adminSettings/autoTrending/lastRun').set(Date.now());
+
+        const el = document.getElementById('autoTrendingLastRun');
+        if (el) el.textContent = 'Last run: ' + new Date().toLocaleString('en-IN');
+
+        if (showToast) showAdminToast(`✅ Auto-trending updated! ${autoTrendSet.size} products trending.`, 'success');
+        loadTrendingProducts();
+        loadDashboardData();
+
+      } catch(err) {
+        console.error('Auto-trending error:', err);
+        if (showToast) showAdminToast('Error running auto-trending: ' + err.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> Run Auto-Update Now'; }
+      }
+    }
+
+    // ── Settings Modal ───────────────────────────────────────────────
+    function showAutoTrendingSettings() {
+      database.ref('adminSettings/autoTrending').once('value').then(snap => {
+        const s = snap.exists() ? snap.val() : {};
+        const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+        setVal('autoTrendTopOrders', s.topOrders || 5);
+        setVal('autoTrendTopRating', s.topRating || 5);
+        setVal('autoTrendMinOrders', s.minOrders || 1);
+        const ov = document.getElementById('autoTrendOverrideLocks');
+        if (ov) ov.checked = false;
+        if (s.lastRun) {
+          const el = document.getElementById('autoTrendingLastRun');
+          if (el) el.textContent = 'Last run: ' + new Date(s.lastRun).toLocaleString('en-IN');
+        }
+        document.getElementById('autoTrendingSettingsModal').classList.add('active');
+      });
+    }
+
+    async function saveAutoTrendingSettings() {
+      const settings = {
+        topOrders:      parseInt(document.getElementById('autoTrendTopOrders').value) || 5,
+        topRating:      parseInt(document.getElementById('autoTrendTopRating').value) || 5,
+        minOrders:      parseInt(document.getElementById('autoTrendMinOrders').value) || 1,
+        overrideLocks:  document.getElementById('autoTrendOverrideLocks').checked
+      };
+      await database.ref('adminSettings/autoTrending').update(settings);
+      closeModal('autoTrendingSettingsModal');
+      showAdminToast('Settings saved! Running auto-update...', 'success');
+      runAutoTrending(true);
     }
 
     // Load similar products
@@ -5532,6 +5938,10 @@
       uploadedImages = [];
       if (!files.length) return;
 
+      const usingImgBB = ADMIN_IMGBB_KEY && ADMIN_IMGBB_KEY !== 'YOUR_IMGBB_API_KEY_HERE';
+      const saveBtn = document.getElementById('saveProductBtn');
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...'; }
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const localUrl = URL.createObjectURL(file);
@@ -5541,20 +5951,28 @@
         const img = document.createElement('img');
         img.src = localUrl;
         img.style.cssText = 'width:80px;height:80px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;display:block;';
+        const progressBar = document.createElement('div');
+        progressBar.style.cssText = 'position:absolute;bottom:0;left:0;right:0;height:3px;background:#2563eb;width:0%;border-radius:0 0 8px 8px;transition:width 0.3s;';
         previewItem.appendChild(img);
+        previewItem.appendChild(progressBar);
         previewContainer.appendChild(previewItem);
 
         try {
-          const base64 = await fileToBase64(file);
-          uploadedImages.push(base64);
+          progressBar.style.width = '40%';
+          const url = await uploadImageToImgBBAdmin(file);
+          uploadedImages.push(url);
+          progressBar.style.width = '100%';
           const badge = document.createElement('div');
           badge.style.cssText = 'position:absolute;bottom:2px;left:2px;right:2px;background:rgba(34,197,94,0.92);color:#fff;font-size:9px;border-radius:4px;padding:2px 4px;text-align:center;font-weight:700;';
-          badge.textContent = '✓ Done';
+          badge.textContent = usingImgBB ? '✓ ImgBB' : '✓ Done';
           previewItem.appendChild(badge);
         } catch(err) {
           console.error('Upload failed:', err.message);
+          progressBar.style.background = '#ef4444';
         }
       }
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Product'; }
+      if (usingImgBB) showAdminToast('✅ ' + uploadedImages.length + ' image(s) uploaded to ImgBB!', 'success');
     }
 
     function fileToBase64(file) {
@@ -5584,14 +6002,15 @@
       const file = e.target.files[0];
       if (!file) return;
       const preview = document.getElementById('categoryImagePreview');
-      preview.innerHTML = '<div style="color:#2563eb;padding:8px;font-size:13px;">Processing...</div>';
+      preview.innerHTML = '<div style="color:#2563eb;padding:8px;font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Uploading...</div>';
       uploadedCategoryImage = null;
       try {
-        const base64 = await fileToBase64(file);
-        uploadedCategoryImage = base64;
+        const url = await uploadImageToImgBBAdmin(file);
+        uploadedCategoryImage = url;
+        const isImgBB = url.startsWith('http');
         preview.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <img src="${base64}" style="height:60px;width:60px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;">
-          <div><div style="color:#22c55e;font-size:12px;font-weight:700;">✓ Ready</div></div></div>`;
+          <img src="${url}" style="height:60px;width:60px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;" onerror="this.style.border='2px solid red'">
+          <div><div style="color:#22c55e;font-size:12px;font-weight:700;">✓ ${isImgBB?'Uploaded to ImgBB':'Ready (Base64)'}</div></div></div>`;
       } catch(err) {
         preview.innerHTML = `<div style="color:#ef4444;font-size:12px;">✗ ${err.message}</div>`;
       }
@@ -5601,20 +6020,52 @@
       const file = e.target.files[0];
       if (!file) return;
       const preview = document.getElementById('bannerImagePreview');
-      preview.innerHTML = '<div style="color:#2563eb;padding:8px;font-size:13px;">Processing...</div>';
+      preview.innerHTML = '<div style="color:#2563eb;padding:8px;font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Uploading...</div>';
       uploadedBannerImage = null;
       try {
-        const base64 = await fileToBase64(file);
-        uploadedBannerImage = base64;
+        const url = await uploadImageToImgBBAdmin(file);
+        uploadedBannerImage = url;
+        const isImgBB = url.startsWith('http');
         preview.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <img src="${base64}" style="height:60px;width:120px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;">
-          <div><div style="color:#22c55e;font-size:12px;font-weight:700;">✓ Ready</div></div></div>`;
+          <img src="${url}" style="height:60px;width:120px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;" onerror="this.style.border='2px solid red'">
+          <div><div style="color:#22c55e;font-size:12px;font-weight:700;">✓ ${isImgBB?'Uploaded to ImgBB':'Ready (Base64)'}</div></div></div>`;
       } catch(err) {
         preview.innerHTML = `<div style="color:#ef4444;font-size:12px;">✗ ${err.message}</div>`;
       }
     }
 
-    function saveProduct() {
+    // ── IMGBB CONFIG FOR ADMIN ─────────────────────────────────────
+    // Get your FREE key at https://api.imgbb.com/ → Login → API
+    const ADMIN_IMGBB_KEY = 'YOUR_IMGBB_API_KEY_HERE'; // ← YAHAN KEY DALO
+
+    async function uploadImageToImgBBAdmin(file) {
+      if (!ADMIN_IMGBB_KEY || ADMIN_IMGBB_KEY === 'YOUR_IMGBB_API_KEY_HERE') {
+        // Fallback: convert to base64
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = e => resolve(e.target.result);
+          reader.onerror = () => resolve('');
+          reader.readAsDataURL(file);
+        });
+      }
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const base64 = e.target.result.split(',')[1];
+          const formData = new FormData();
+          formData.append('key', ADMIN_IMGBB_KEY);
+          formData.append('image', base64);
+          try {
+            const res = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: formData });
+            const data = await res.json();
+            resolve(data.success ? data.data.url : e.target.result);
+          } catch(err) { resolve(e.target.result); }
+        };
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(file);
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────
       const name = document.getElementById('productName').value.trim();
       const price = document.getElementById('productPrice').value.trim();
       const stock = document.getElementById('productStock').value.trim();
@@ -6274,28 +6725,25 @@
       updateHeroLivePreview();
     }
 
-    function uploadHeroBgImage(event) {
+    async function uploadHeroBgImage(event) {
       const file = event.target.files[0];
       if (!file) return;
       const bar = document.getElementById('heroBgUploadBar');
       const prog = document.getElementById('heroBgUploadProgress');
       if (prog) prog.style.display = 'block';
-      const storageRef = firebase.storage().ref('hero/bg_' + Date.now() + '_' + file.name);
-      const task = storageRef.put(file);
-      task.on('state_changed',
-        snap => { if (bar) bar.style.width = Math.round((snap.bytesTransferred / snap.totalBytes) * 100) + '%'; },
-        err => { alert('Upload error: ' + err.message); if (prog) prog.style.display = 'none'; },
-        () => {
-          task.snapshot.ref.getDownloadURL().then(url => {
-            document.getElementById('heroBgControl').value = url;
-            previewHeroBgAdmin();
-            if (prog) prog.style.display = 'none';
-            showAdminToast('Hero image uploaded!', 'success');
-          });
-        }
-      );
+      if (bar) bar.style.width = '40%';
+      try {
+        const url = await uploadImageToImgBBAdmin(file);
+        if (bar) bar.style.width = '100%';
+        document.getElementById('heroBgControl').value = url;
+        previewHeroBgAdmin();
+        setTimeout(() => { if (prog) prog.style.display = 'none'; }, 600);
+        showAdminToast(url.startsWith('http') ? 'Hero image uploaded to ImgBB! ✅' : 'Hero image ready (Base64)', 'success');
+      } catch(err) {
+        alert('Upload error: ' + err.message);
+        if (prog) prog.style.display = 'none';
+      }
     }
-
     function updateHeroLivePreview() {
       const heading    = document.getElementById('heroHeadingControl')?.value    || 'Welcome to Buyzo Cart';
       const subheading = document.getElementById('heroSubheadingControl')?.value || 'Fast checkout. Best prices.';
@@ -6461,7 +6909,11 @@
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
               <div>
                 <div style="font-weight:700;font-size:15px;margin-bottom:2px;">${r.businessName || r.name || 'Unknown Business'}</div>
-                <div style="font-size:12px;color:var(--text-secondary);">${r.name} &nbsp;·&nbsp; ${r.email || ''} &nbsp;·&nbsp; ${r.phone || ''}</div>
+                <div style="font-size:12px;color:var(--text-secondary);">
+                  ${r.name} &nbsp;·&nbsp;
+                  <a href="javascript:void(0)" onclick="viewSellerActivity('${r.uid}','${(r.email||'').replace(/'/g,"\\'")}','${(r.name||'').replace(/'/g,"\\'")}');event.stopPropagation();" style="color:var(--primary);font-weight:600;text-decoration:underline;" title="View seller activity">${r.email || ''}</a>
+                  &nbsp;·&nbsp; ${r.phone || ''}
+                </div>
               </div>
               <span style="background:${statusBg[r.status]||'#f1f5f9'};color:${statusColors[r.status]||'#64748b'};
                 padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;">
@@ -6746,6 +7198,142 @@
     document.body.style.minHeight = '100vh';
 
     window.addEventListener('DOMContentLoaded', initAdminPanel);
+  </script>
+
+  <!-- ===== SELLER ACTIVITY MODAL ===== -->
+  <div class="modal" id="sellerActivityModal" style="z-index:3000;">
+    <div class="modal-content" style="max-width:700px;max-height:90vh;overflow-y:auto;">
+      <div class="modal-header">
+        <h3 id="sellerActivityTitle">Seller Activity</h3>
+        <button class="close" onclick="closeModal('sellerActivityModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="sellerActivityBody">
+        <p style="text-align:center;color:#94a3b8;padding:30px;">Loading...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── SELLER ACTIVITY VIEWER ─────────────────────────────────────────
+    async function viewSellerActivity(uid, email, name) {
+      document.getElementById('sellerActivityTitle').textContent = '📊 ' + (name || email) + ' — Activity';
+      document.getElementById('sellerActivityBody').innerHTML = '<p style="text-align:center;color:#94a3b8;padding:30px;"><i class="fas fa-spinner fa-spin"></i> Loading seller data...</p>';
+      document.getElementById('sellerActivityModal').classList.add('active');
+
+      try {
+        const [prodSnap, orderSnap] = await Promise.all([
+          database.ref('sellerProducts/' + uid).once('value'),
+          database.ref('orders').once('value')
+        ]);
+
+        const products = prodSnap.exists()
+          ? Object.entries(prodSnap.val()).map(([k, v]) => ({ id: k, ...v }))
+          : [];
+
+        const allOrders = orderSnap.exists()
+          ? Object.entries(orderSnap.val()).map(([k, v]) => ({ id: k, ...v }))
+          : [];
+
+        const sellerOrders = allOrders.filter(o => o.sellerId === uid);
+        const revenue = sellerOrders
+          .filter(o => (o.status || '').toLowerCase() === 'delivered')
+          .reduce((s, o) => s + (parseFloat(o.totalAmount) || 0), 0);
+        const pending = sellerOrders.filter(o => ['pending','confirmed'].includes((o.status||'').toLowerCase())).length;
+
+        const statusColors = {confirmed:'#dbeafe',shipped:'#fef3c7',delivered:'#dcfce7',cancelled:'#fee2e2'};
+        const statusText   = {confirmed:'#1d4ed8',shipped:'#d97706',delivered:'#16a34a',cancelled:'#dc2626'};
+
+        document.getElementById('sellerActivityBody').innerHTML = `
+          <p style="font-size:12px;color:#64748b;margin-bottom:14px;"><i class="fas fa-envelope" style="color:#2563eb;margin-right:4px;"></i>${email}</p>
+
+          <!-- Stats -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;">
+            <div style="background:#eff6ff;border-radius:10px;padding:16px;text-align:center;">
+              <div style="font-size:1.8rem;font-weight:800;color:#2563eb;">${products.length}</div>
+              <div style="font-size:12px;color:#64748b;font-weight:500;">Products Listed</div>
+            </div>
+            <div style="background:#f0fdf4;border-radius:10px;padding:16px;text-align:center;">
+              <div style="font-size:1.8rem;font-weight:800;color:#16a34a;">${sellerOrders.length}</div>
+              <div style="font-size:12px;color:#64748b;font-weight:500;">Total Orders</div>
+            </div>
+            <div style="background:#fef9c3;border-radius:10px;padding:16px;text-align:center;">
+              <div style="font-size:1.8rem;font-weight:800;color:#d97706;">${pending}</div>
+              <div style="font-size:12px;color:#64748b;font-weight:500;">Pending Orders</div>
+            </div>
+            <div style="background:#fdf4ff;border-radius:10px;padding:16px;text-align:center;">
+              <div style="font-size:1.1rem;font-weight:800;color:#7c3aed;">₹${revenue.toLocaleString('en-IN')}</div>
+              <div style="font-size:12px;color:#64748b;font-weight:500;">Revenue (Delivered)</div>
+            </div>
+          </div>
+
+          <!-- Products -->
+          <div style="margin-bottom:20px;">
+            <h4 style="margin-bottom:10px;font-size:14px;font-weight:700;border-bottom:1px solid #e2e8f0;padding-bottom:8px;">📦 Products Listed</h4>
+            ${products.length ? `
+              <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                  <thead><tr style="background:#f8fafc;">
+                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;">Image</th>
+                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;">Name</th>
+                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;">Price</th>
+                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;">Stock</th>
+                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;">Status</th>
+                  </tr></thead>
+                  <tbody>
+                    ${products.slice(0,10).map(p => `
+                      <tr>
+                        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;">
+                          <img src="${(p.images&&p.images[0])||'https://placehold.co/40'}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;" onerror="this.src='https://placehold.co/40'">
+                        </td>
+                        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;font-weight:500;">${p.title||'N/A'}</td>
+                        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;">₹${(p.price||0).toLocaleString()}</td>
+                        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;">${p.stock||0}</td>
+                        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;">
+                          <span style="background:${p.status==='active'?'#dcfce7':'#fee2e2'};color:${p.status==='active'?'#16a34a':'#dc2626'};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">${p.status||'active'}</span>
+                        </td>
+                      </tr>`).join('')}
+                    ${products.length > 10 ? `<tr><td colspan="5" style="text-align:center;padding:8px;color:#94a3b8;font-size:12px;">...and ${products.length-10} more</td></tr>` : ''}
+                  </tbody>
+                </table>
+              </div>` : '<p style="color:#94a3b8;text-align:center;padding:20px;">No products listed yet</p>'}
+          </div>
+
+          <!-- Orders -->
+          <div>
+            <h4 style="margin-bottom:10px;font-size:14px;font-weight:700;border-bottom:1px solid #e2e8f0;padding-bottom:8px;">📋 Orders Received</h4>
+            ${sellerOrders.length ? `
+              <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                  <thead><tr style="background:#f8fafc;">
+                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;">Order ID</th>
+                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;">Product</th>
+                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;">Amount</th>
+                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;">Status</th>
+                    <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;">Date</th>
+                  </tr></thead>
+                  <tbody>
+                    ${sellerOrders.slice().sort((a,b)=>(b.orderDate||0)-(a.orderDate||0)).slice(0,8).map(o => {
+                      const s = (o.status||'confirmed').toLowerCase();
+                      return `<tr>
+                        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;font-weight:600;">${o.orderId||'#'+o.id.slice(-6).toUpperCase()}</td>
+                        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;">${o.productName||'N/A'}</td>
+                        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;font-weight:600;">₹${(o.totalAmount||0).toLocaleString()}</td>
+                        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;">
+                          <span style="background:${statusColors[s]||'#f1f5f9'};color:${statusText[s]||'#334155'};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">${s}</span>
+                        </td>
+                        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b;">${o.orderDate?new Date(o.orderDate).toLocaleDateString('en-IN'):'N/A'}</td>
+                      </tr>`;
+                    }).join('')}
+                    ${sellerOrders.length > 8 ? `<tr><td colspan="5" style="text-align:center;padding:8px;color:#94a3b8;font-size:12px;">...and ${sellerOrders.length-8} more</td></tr>` : ''}
+                  </tbody>
+                </table>
+              </div>` : '<p style="color:#94a3b8;text-align:center;padding:20px;">No orders yet</p>'}
+          </div>
+        `;
+      } catch(err) {
+        document.getElementById('sellerActivityBody').innerHTML = `<p style="color:#ef4444;text-align:center;padding:30px;">Error: ${err.message}</p>`;
+      }
+    }
   </script>
 </body>
 </html>
