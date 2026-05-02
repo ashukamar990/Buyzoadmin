@@ -30,6 +30,27 @@
       --header-height: 70px;
     }
 
+    /* ── ORDER STATUS BADGES ── */
+    .status-badge-admin {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; white-space: nowrap;
+    }
+    .status-placed     { background: #fef3c7; color: #d97706; }
+    .status-confirmed  { background: #dbeafe; color: #1d4ed8; }
+    .status-shipped    { background: #f3e8ff; color: #7c3aed; }
+    .status-delivered  { background: #dcfce7; color: #15803d; }
+    .status-cancelled  { background: #fee2e2; color: #dc2626; }
+
+    /* ── DELIVERY ASSIGN SECTION ── */
+    .delivery-assign-section {
+      background: #f0f9ff; border: 1px solid #bae6fd;
+      border-radius: 10px; padding: 14px; margin-top: 12px;
+    }
+    .admin-cancel-section {
+      background: #fff5f5; border: 1px solid #fecaca;
+      border-radius: 10px; padding: 14px; margin-top: 12px;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -1784,10 +1805,11 @@
               <div style="margin-top: 16px">
                 <select id="bulkStatusAction" style="width: auto; margin-right: 12px" class="form-control">
                   <option value="">Bulk Action</option>
-                  <option value="Confirmed">Mark as Confirmed</option>
-                  <option value="Shipped">Mark as Shipped</option>
-                  <option value="Delivered">Mark as Delivered</option>
-                  <option value="Cancelled">Mark as Cancelled</option>
+                  <option value="placed">📦 Mark as Placed</option>
+                  <option value="confirmed">✅ Mark as Confirmed</option>
+                  <option value="shipped">🚚 Mark as Shipped</option>
+                  <option value="delivered">✓ Mark as Delivered</option>
+                  <option value="cancelled">✗ Mark as Cancelled</option>
                 </select>
                 <button class="btn btn-primary" onclick="applyBulkAction()">Apply</button>
               </div>
@@ -2997,15 +3019,40 @@
           <span class="order-total-value" id="orderTotal"></span>
         </div>
         
-        <div style="margin-top: 20px;">
-          <label for="orderDetailsStatus">Update Status:</label>
-          <select id="orderDetailsStatus" class="form-control" style="width: auto; margin-top: 5px;" onchange="updateOrderStatusFromDetails()">
-            <option value="Pending">Pending</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Shipped">Shipped</option>
-            <option value="Delivered">Delivered</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
+        <!-- ── STATUS UPDATE ── -->
+        <div style="margin-top:20px;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="font-weight:700;font-size:13px;color:#64748b;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Update Order Status</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <select id="orderDetailsStatus" class="form-control" style="flex:1;min-width:160px;" onchange="updateOrderStatusFromDetails()">
+              <option value="placed">📦 Placed</option>
+              <option value="confirmed">✅ Confirmed</option>
+              <option value="shipped">🚚 Shipped</option>
+              <option value="delivered">✓ Delivered</option>
+              <option value="cancelled">✗ Cancelled</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ── DELIVERY BOY ASSIGN ── -->
+        <div style="margin-top:14px;padding:16px;background:#f0f9ff;border-radius:10px;border:1px solid #bae6fd;">
+          <div style="font-weight:700;font-size:13px;color:#0369a1;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">🛵 Assign Delivery Partner</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <select id="deliveryBoySelect" class="form-control" style="flex:1;min-width:160px;">
+              <option value="">Loading delivery partners...</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="assignDeliveryBoy()">Assign</button>
+          </div>
+          <div id="currentAssignee" style="margin-top:8px;font-size:12px;color:#64748b;"></div>
+        </div>
+
+        <!-- ── ADMIN CANCEL ── -->
+        <div style="margin-top:14px;padding:16px;background:#fff5f5;border-radius:10px;border:1px solid #fecaca;" id="adminCancelSection">
+          <div style="font-weight:700;font-size:13px;color:#dc2626;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">⚠️ Cancel Order</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <input type="text" id="adminCancelReason" class="form-control" placeholder="Cancel reason (optional)" style="flex:1;min-width:160px;">
+            <button class="btn btn-danger btn-sm" onclick="cancelOrderByAdmin()">Cancel Order</button>
+          </div>
+          <p style="font-size:11px;color:#94a3b8;margin-top:6px;">Only allowed for Placed or Confirmed orders. Cannot cancel Shipped or Delivered orders.</p>
         </div>
       </div>
       <div class="modal-footer">
@@ -3316,6 +3363,7 @@
             // Re-attach Firebase listeners if disconnected
             if (currentAdminTab === 'dashboard') {
               loadDashboardData();
+        startOrdersRealtimeListener();
             }
             // Reconnect Firebase realtime database
             database.goOnline && database.goOnline();
@@ -4508,20 +4556,20 @@
 
         // Recent orders table
         const recentOrders = [...orders].sort((a, b) => (b.orderDate || 0) - (a.orderDate || 0)).slice(0, 10);
-        const statusColor = { confirmed:'#2563eb', shipped:'#f59e0b', delivered:'#22c55e', cancelled:'#ef4444', pending:'#94a3b8' };
+        const statusColor = { placed:'#d97706', confirmed:'#2563eb', shipped:'#7c3aed', delivered:'#22c55e', cancelled:'#ef4444', pending:'#94a3b8' };
 
         const recentOrdersHtml = recentOrders.length
           ? recentOrders.map(order => {
               const s    = (order.status || 'confirmed').toLowerCase();
               const name = order.userInfo?.fullName || order.username || 'N/A';
               const date = order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-IN') : 'N/A';
-              const color = statusColor[s] || '#94a3b8';
+              const color = statusColor[s] || '#94a3b8'; // placed=orange, confirmed=blue, shipped=purple, delivered=green, cancelled=red
               return `<tr>
                 <td style="font-weight:600;">${order.orderId || '#' + (order.id || '').slice(-6)}</td>
                 <td>${name}<br><small style="color:#64748b;">${order.userEmail || ''}</small></td>
                 <td>${order.productName || 'N/A'}</td>
                 <td style="font-weight:600;">₹${(parseFloat(order.totalAmount) || 0).toLocaleString('en-IN')}</td>
-                <td><span style="background:${color}20;color:${color};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">${order.status || 'Confirmed'}</span></td>
+                <td><span style="background:${color}20;color:${color};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">${(order.status||'placed').charAt(0).toUpperCase()+(order.status||'placed').slice(1).replace('_',' ')}</span></td>
                 <td>${date}</td>
               </tr>`;
             }).join('')
@@ -4652,6 +4700,18 @@
     }
 
     // Load orders with date filter
+    // ──── Real-time Orders Listener ──────────────────
+    let _ordersListener = null;
+    function startOrdersRealtimeListener() {
+      if (_ordersListener) return; // already listening
+      _ordersListener = database.ref('orders').on('value', () => {
+        if (currentAdminTab === 'orders' || currentAdminTab === 'dashboard') {
+          loadOrders();
+          if (currentAdminTab === 'dashboard') loadDashboardData();
+        }
+      }, err => console.warn('Orders listener error:', err));
+    }
+
     function loadOrders() {
       database.ref('orders').once('value').then(snap => {
         const ordersData = snap.val() || {};
@@ -4690,7 +4750,7 @@
         const startIndex = (currentOrdersPage - 1) * ordersPerPage;
         const paged = orders.slice(startIndex, startIndex + ordersPerPage);
 
-        const statusColor = { confirmed:'#2563eb', shipped:'#f59e0b', delivered:'#22c55e', cancelled:'#ef4444', pending:'#94a3b8' };
+        const statusColor = { placed:'#d97706', confirmed:'#2563eb', shipped:'#7c3aed', delivered:'#22c55e', cancelled:'#ef4444', pending:'#94a3b8' };
 
         const html = paged.length ? paged.map(order => {
           const s = (order.status || 'confirmed').toLowerCase();
@@ -4704,11 +4764,12 @@
             <td>${order.productName || 'N/A'}<br><small>Qty: ${order.quantity||1} | Size: ${order.size||'N/A'}</small></td>
             <td style="font-weight:600;">₹${(order.totalAmount || 0).toLocaleString()}</td>
             <td>
-              <select onchange="updateOrderStatus('${order.id}', this.value)" class="form-control" style="width:auto;min-width:130px;">
-                <option value="confirmed" ${s==='confirmed'?'selected':''}>Confirmed</option>
-                <option value="shipped" ${s==='shipped'?'selected':''}>Shipped</option>
-                <option value="delivered" ${s==='delivered'?'selected':''}>Delivered</option>
-                <option value="cancelled" ${s==='cancelled'?'selected':''}>Cancelled</option>
+              <select onchange="updateOrderStatus('${order.id}', this.value)" class="form-control" style="width:auto;min-width:140px;">
+                <option value="placed"     ${s==='placed'?'selected':''}>📦 Placed</option>
+                <option value="confirmed"  ${s==='confirmed'?'selected':''}>✅ Confirmed</option>
+                <option value="shipped"    ${s==='shipped'?'selected':''}>🚚 Shipped</option>
+                <option value="delivered"  ${s==='delivered'?'selected':''}>✓ Delivered</option>
+                <option value="cancelled"  ${s==='cancelled'?'selected':''}>✗ Cancelled</option>
               </select>
             </td>
             <td>${date}</td>
@@ -4780,9 +4841,25 @@
       loadOrders();
     }
 
-    function updateOrderStatus(orderId, status) {
-      const updates = { status };
-      if (status === 'delivered') updates.deliveredDate = Date.now();
+    // ──── Status flow config ─────────────────────────
+    const ADMIN_STATUS_FLOW = ['placed','confirmed','shipped','delivered'];
+    const ADMIN_CANCELLABLE = ['placed','confirmed']; // cancel allowed only here
+    const ADMIN_CANCEL_BLOCKED = ['shipped','delivered']; // cannot cancel
+
+    function updateOrderStatus(orderId, newStatus, skipConfirm) {
+      if (!skipConfirm && !confirm(\`Update order status to "${newStatus}"?\`)) return;
+      const updates = { status: newStatus, updatedAt: Date.now() };
+      if (newStatus === 'delivered') {
+        updates.deliveredDate = Date.now();
+        updates['tracking/delivered'] = Date.now();
+      }
+      if (newStatus === 'shipped')   updates['tracking/shipped']   = Date.now();
+      if (newStatus === 'confirmed') updates['tracking/confirmed']  = Date.now();
+      if (newStatus === 'cancelled') {
+        updates.cancelledBy   = 'admin';
+        updates.cancelledAt   = Date.now();
+        updates.cancelReason  = updates.cancelReason || 'Cancelled by Admin';
+      }
       database.ref('orders/' + orderId).update(updates)
         .then(() => {
           loadOrders();
@@ -4862,19 +4939,26 @@
         document.getElementById('orderTotal').textContent = '₹' + (order.totalAmount || subtotal + 50).toLocaleString();
 
         const statusSelect = document.getElementById('orderDetailsStatus');
-        statusSelect.value = order.status || 'confirmed';
+        statusSelect.value = (order.status || 'placed').toLowerCase();
         statusSelect.setAttribute('data-order-id', orderId);
 
-        updateStatusTimeline(order.status || 'confirmed');
+        updateStatusTimeline(order.status || 'placed');
         document.getElementById('orderDetailsModal').classList.add('active');
+        loadDeliveryBoys();
+        // Show current assignee
+        const assigneeEl = document.getElementById('currentAssignee');
+        if (assigneeEl) assigneeEl.innerHTML = order.assignedDeliveryBoyName ? `Currently assigned to: <strong>${order.assignedDeliveryBoyName}</strong>` : 'Not yet assigned';
+        // Hide cancel section if already shipped/delivered/cancelled
+        const cancelSec = document.getElementById('adminCancelSection');
+        if (cancelSec) cancelSec.style.display = ['shipped','delivered','cancelled'].includes((order.status||'').toLowerCase()) ? 'none' : 'block';
       }).catch(err => { console.error(err); alert('Error loading order details'); });
     }
 
     function updateStatusTimeline(currentStatus) {
-      const s = (currentStatus || 'confirmed').toLowerCase();
-      const statuses = ['confirmed', 'shipped', 'delivered'];
-      const labels = { confirmed: 'Confirmed', shipped: 'Shipped', delivered: 'Delivered' };
-      const icons = { confirmed: 'fa-check-circle', shipped: 'fa-truck', delivered: 'fa-box-open' };
+      const s = (currentStatus || 'placed').toLowerCase();
+      const statuses = ['placed', 'confirmed', 'shipped', 'delivered'];
+      const labels = { placed: 'Placed', confirmed: 'Confirmed', shipped: 'Shipped', delivered: 'Delivered' };
+      const icons = { placed: 'fa-box', confirmed: 'fa-check-circle', shipped: 'fa-truck', delivered: 'fa-box-open' };
       const timeline = document.getElementById('orderStatusTimeline');
       if (!timeline) return;
       const currentIdx = statuses.indexOf(s);
@@ -4887,25 +4971,98 @@
         </div>`;
       }).join('');
       if (s === 'cancelled') {
-        html = `<div class="status-step active"><div class="status-icon"><i class="fas fa-times"></i></div><div class="status-label">Cancelled</div></div>`;
+        html = `<div class="status-step active" style="color:#ef4444"><div class="status-icon" style="background:#fee2e2;border-color:#ef4444;color:#ef4444"><i class="fas fa-times"></i></div><div class="status-label">Cancelled</div></div>`;
       }
       timeline.innerHTML = html;
     }
 
     function updateOrderStatusFromDetails() {
       const orderId = document.getElementById('orderDetailsStatus').getAttribute('data-order-id');
-      const status = document.getElementById('orderDetailsStatus').value;
-      if (confirm(`Update order status to "${status}"?`)) {
-        const updates = { status };
-        if (status === 'delivered') updates.deliveredDate = Date.now();
-        database.ref('orders/' + orderId).update(updates)
-          .then(() => {
-            updateStatusTimeline(status);
-            loadOrders();
-            if (currentAdminTab === 'dashboard') loadDashboardData();
-          })
-          .catch(err => alert('Error updating status: ' + err.message));
+      const status  = document.getElementById('orderDetailsStatus').value;
+      if (!orderId) return;
+      updateOrderStatus(orderId, status, false);
+      updateStatusTimeline(status);
+    }
+
+    // ──── Load Delivery Boys ─────────────────────────
+    function loadDeliveryBoys() {
+      const sel = document.getElementById('deliveryBoySelect');
+      if (!sel) return;
+      database.ref('users').orderByChild('role').equalTo('delivery').once('value').then(snap => {
+        if (!snap.exists()) {
+          sel.innerHTML = '<option value="">No delivery partners found</option>';
+          return;
+        }
+        let opts = '<option value="">-- Select Delivery Partner --</option>';
+        snap.forEach(child => {
+          const u = child.val();
+          opts += `<option value="${child.key}">${u.displayName || u.fullName || u.email || child.key}</option>`;
+        });
+        sel.innerHTML = opts;
+      }).catch(() => { sel.innerHTML = '<option value="">Error loading partners</option>'; });
+    }
+
+    // ──── Assign Delivery Boy ─────────────────────────
+    function assignDeliveryBoy() {
+      const orderId = document.getElementById('orderDetailsStatus').getAttribute('data-order-id');
+      const uid     = document.getElementById('deliveryBoySelect').value;
+      const name    = document.getElementById('deliveryBoySelect').selectedOptions[0]?.text || '';
+      if (!uid) { alert('Please select a delivery partner'); return; }
+      database.ref('orders/' + orderId).update({
+        assignedDeliveryBoyId: uid,
+        assignedDeliveryBoyName: name,
+        assignedAt: Date.now()
+      }).then(() => {
+        document.getElementById('currentAssignee').innerHTML = `✅ Assigned to: <strong>${name}</strong>`;
+        showAdminToast('Delivery partner assigned!', 'success');
+        loadOrders();
+      }).catch(err => alert('Error: ' + err.message));
+    }
+
+    // ──── Cancel Order by Admin ───────────────────────
+    function cancelOrderByAdmin() {
+      const orderId = document.getElementById('orderDetailsStatus').getAttribute('data-order-id');
+      const reason  = document.getElementById('adminCancelReason').value.trim() || 'Cancelled by Admin';
+      if (!orderId) return;
+      // Check current status first
+      database.ref('orders/' + orderId + '/status').once('value').then(snap => {
+        const currentStatus = (snap.val() || 'placed').toLowerCase();
+        const nonCancellable = ['shipped', 'delivered'];
+        if (nonCancellable.includes(currentStatus)) {
+          alert('Cannot cancel this order. Status is "' + currentStatus + '". Only Placed or Confirmed orders can be cancelled.');
+          return;
+        }
+        if (!confirm('Cancel this order? This cannot be undone.')) return;
+        database.ref('orders/' + orderId).update({
+          status: 'cancelled',
+          cancelledBy: 'admin',
+          cancelReason: reason,
+          cancelledAt: Date.now()
+        }).then(() => {
+          updateStatusTimeline('cancelled');
+          document.getElementById('orderDetailsStatus').value = 'cancelled';
+          showAdminToast('Order cancelled successfully', 'success');
+          loadOrders();
+        }).catch(err => alert('Error: ' + err.message));
+      });
+    }
+
+    // ──── Admin Toast ─────────────────────────────────
+    function showAdminToast(msg, type) {
+      let toast = document.getElementById('adminToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'adminToast';
+        toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);padding:12px 24px;border-radius:50px;font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;';
+        document.body.appendChild(toast);
       }
+      toast.textContent = msg;
+      toast.style.background = type === 'success' ? '#16a34a' : type === 'error' ? '#dc2626' : '#1e293b';
+      toast.style.color = '#fff';
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateX(-50%) translateY(20px)'; }, 3000);
     }
 
     function printOrderDetails() {
@@ -6987,7 +7144,7 @@
         // Orders by status
         const statusCount = {};
         list.forEach(o => { const s = o.status||'confirmed'; statusCount[s] = (statusCount[s]||0)+1; });
-        const statusColors = { confirmed:'#2563eb', shipped:'#d97706', delivered:'#16a34a', cancelled:'#ef4444' };
+        const statusColors = { placed:'#d97706', confirmed:'#2563eb', shipped:'#7c3aed', delivered:'#16a34a', cancelled:'#ef4444' };
         document.getElementById('orderStatusChart').innerHTML = Object.entries(statusCount).map(([s,c]) => `
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
             <div style="flex:1;background:#f1f5f9;border-radius:6px;height:28px;overflow:hidden;position:relative;">
@@ -7242,8 +7399,8 @@
           .reduce((s, o) => s + (parseFloat(o.totalAmount) || 0), 0);
         const pending = sellerOrders.filter(o => ['pending','confirmed'].includes((o.status||'').toLowerCase())).length;
 
-        const statusColors = {confirmed:'#dbeafe',shipped:'#fef3c7',delivered:'#dcfce7',cancelled:'#fee2e2'};
-        const statusText   = {confirmed:'#1d4ed8',shipped:'#d97706',delivered:'#16a34a',cancelled:'#dc2626'};
+        const statusColors = {placed:'#fef3c7',confirmed:'#dbeafe',shipped:'#f3e8ff',delivered:'#dcfce7',cancelled:'#fee2e2'};
+        const statusText   = {placed:'#d97706',confirmed:'#1d4ed8',shipped:'#7c3aed',delivered:'#16a34a',cancelled:'#dc2626'};
 
         document.getElementById('sellerActivityBody').innerHTML = `
           <p style="font-size:12px;color:#64748b;margin-bottom:14px;"><i class="fas fa-envelope" style="color:#2563eb;margin-right:4px;"></i>${email}</p>
