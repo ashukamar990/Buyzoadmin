@@ -3643,7 +3643,7 @@
             const toEmail = recipientEmail || '';
             const subject = 'Admin Panel Access — Buyzo Cart';
             const body = `Access Link: ${shareLink}`;
-            window.location.href = 'mailto:' + encodeURIComponent(toEmail || '') + '?subject=' + encodeURIComponent(subject || '') + '&body=' + encodeURIComponent(body || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+            window.location.href = 'mailto:' + encodeURIComponent(toEmail || '') + '?subject=' + encodeURIComponent(subject || '') + '&body=' + encodeURIComponent(body || '');
           } else {
             showToast('Firebase permission error — Database Rules check karein', 'error');
             if (btn) { btn.innerHTML = '<i class="fas fa-paper-plane"></i> Generate Link & Send Email'; btn.disabled = false; }
@@ -3667,7 +3667,7 @@
       const link = document.getElementById('generatedShareLink').value;
       const subject = 'Admin Panel Access — Buyzo Cart';
       const body = `Access Link: ${link}`;
-      window.location.href = 'mailto:' + encodeURIComponent(toEmail || '') + '?subject=' + encodeURIComponent(subject || '') + '&body=' + encodeURIComponent(body || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+      window.location.href = 'mailto:' + encodeURIComponent(toEmail || '') + '?subject=' + encodeURIComponent(subject || '') + '&body=' + encodeURIComponent(body || '');
     }
 
     function sendShareEmailAgain() {
@@ -3676,7 +3676,7 @@
       if (!link) return;
       const subject = 'Admin Panel Access — Buyzo Cart';
       const body = `Namaste,\n\nAapko Buyzo Cart Admin Panel ka limited access diya gaya hai.\n\n🔗 Access Link:\n${link}\n\n— Buyzo Cart Admin Team`;
-      window.location.href = 'mailto:' + encodeURIComponent(toEmail || '') + '?subject=' + encodeURIComponent(subject || '') + '&body=' + encodeURIComponent(body || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+      window.location.href = 'mailto:' + encodeURIComponent(toEmail || '') + '?subject=' + encodeURIComponent(subject || '') + '&body=' + encodeURIComponent(body || '');
     }
 
     async function checkSharedAccess() {
