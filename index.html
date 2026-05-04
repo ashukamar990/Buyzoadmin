@@ -1478,6 +1478,7 @@
         <li><a href="#" class="menu-item" data-tab="seller-requests"><i class="fas fa-user-check"></i><span>Seller Requests</span></a></li>
         <li><a href="#" class="menu-item" data-tab="hero"><i class="fas fa-star"></i><span>Hero Section</span></a></li>
         <li><a href="#" class="menu-item" data-tab="user-listings"><i class="fas fa-store"></i><span>User Listings</span></a></li>
+            <li><a href="#" class="menu-item" data-tab="brands"><i class="fas fa-award"></i><span>Brands</span></a></li>
         <li><a href="#" class="menu-item" data-tab="analytics"><i class="fas fa-chart-bar"></i><span>Analytics</span></a></li>
         <li><a href="#" class="menu-item" data-tab="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
         <li><a href="#" class="menu-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
@@ -2395,6 +2396,37 @@
                 </table>
               </div>
               <div id="userListingsPagination" style="display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Brands Tab -->
+        <div class="tab-content" id="brands">
+          <div class="card">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+              <h2><i class="fas fa-award" style="color:var(--primary);margin-right:8px"></i>Brand Management</h2>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-sm btn-outline" onclick="loadBrandsPanel()"><i class="fas fa-sync"></i> Refresh</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+                <div style="background:#fff8e6;border:1px solid #fde68a;border-radius:10px;padding:14px;text-align:center;">
+                  <div style="font-size:1.5rem;font-weight:800;color:#d97706;" id="brandTotalCount">0</div>
+                  <div style="font-size:12px;color:#64748b;">Total Brands</div>
+                </div>
+                <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px;text-align:center;">
+                  <div style="font-size:1.5rem;font-weight:800;color:#15803d;" id="brandVerifiedCount">0</div>
+                  <div style="font-size:12px;color:#64748b;">Blue Tick ✓ Brands</div>
+                </div>
+              </div>
+
+              <!-- Search -->
+              <div style="position:relative;margin-bottom:16px;">
+                <input type="text" id="brandSearchAdmin" placeholder="🔍 Search brands..." oninput="filterBrandsPanel()" class="form-control">
+              </div>
+
+              <div id="brandsPanelList"><p style="color:#94a3b8;text-align:center;padding:30px">Loading brands...</p></div>
             </div>
           </div>
         </div>
@@ -3585,7 +3617,7 @@
     }
 
     function generateShareLink() {
-      const recipientEmail = document.getElementById('shareRecipientEmail') ? document.getElementById('shareRecipientEmail').value.trim() : '';
+      const recipientEmail = (document.getElementById('shareAdminEmail') || document.getElementById('shareRecipientEmail') || {value:''}).value.trim();
       
       const permissions = [];
       document.querySelectorAll('[id^="perm"]:checked').forEach(cb => {
@@ -3862,48 +3894,56 @@
     }
 
     async function showManageSharedAdmins() {
-      const modal = document.getElementById('manageSharedAdminsModal');
-      const listDiv = document.getElementById('sharedAdminsList');
-      
-      const snapshot = await database.ref('sharedAdmins').once('value');
-      const sharedAdmins = snapshot.val() || {};
-      
-      listDiv.innerHTML = Object.entries(sharedAdmins).map(([id, data]) => `
-        <div class="shared-admin-card">
-          <div style="display: flex; justify-content: space-between; align-items: start;">
-            <div>
-              <strong>${data.email}</strong>
-              <div style="margin-top: 8px;">
-                ${data.permissions.map(p => `<span class="permission-badge" style="background: #dbeafe; color: #1d4ed8;">${p}</span>`).join('')}
-              </div>
-              <div style="margin-top: 8px; font-size: 12px; color: var(--secondary);">
-                Created: ${new Date(data.createdAt).toLocaleDateString()}
-                ${data.lastAccessed ? ` • Last access: ${new Date(data.lastAccessed).toLocaleDateString()}` : ''}
-              </div>
-            </div>
-            <div>
-              <span class="${data.status === 'active' ? 'status-active' : 'status-suspended'}">
-                <i class="fas fa-circle"></i> ${data.status}
-              </span>
-              <div style="margin-top: 10px;">
-                ${data.status === 'active' ? 
-                  `<button class="btn btn-warning btn-sm" onclick="suspendSharedAdmin('${id}')">
-                    <i class="fas fa-ban"></i> Suspend
-                  </button>` :
-                  `<button class="btn btn-success btn-sm" onclick="activateSharedAdmin('${id}')">
-                    <i class="fas fa-check"></i> Activate
-                  </button>`
-                }
-                <button class="btn btn-danger btn-sm" onclick="deleteSharedAdmin('${id}')">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `).join('') || '<p style="text-align: center; color: var(--secondary);">No shared admins yet</p>';
-      
+      var modal = document.getElementById('manageSharedAdminsModal');
+      var listDiv = document.getElementById('sharedAdminsList');
+      listDiv.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:20px"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
       modal.classList.add('active');
+
+      try {
+        var snapshot = await database.ref('sharedAdmins').once('value');
+        var sharedAdmins = snapshot.val() || {};
+        var entries = Object.entries(sharedAdmins);
+
+        if (!entries.length) {
+          listDiv.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:30px;">No shared admins yet. Click Share Access to add one.</p>';
+          return;
+        }
+
+        listDiv.innerHTML = entries.map(function(entry) {
+          var id = entry[0], data = entry[1];
+          var email = data.email || data.recipientEmail || data.grantedTo || 'Email not saved';
+          var firstName = email !== 'Email not saved' ? email.split('@')[0] : '?';
+          var isActive = data.status === 'active';
+          var created = data.createdAt ? new Date(data.createdAt).toLocaleDateString('en-IN') : 'N/A';
+          var lastSeen = data.lastAccessed ? new Date(data.lastAccessed).toLocaleDateString('en-IN') : 'Never accessed';
+          var perms = data.permissions || [];
+
+          return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;">'
+            + '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">'
+            + '<div style="flex:1;min-width:200px;">'
+            + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+            + '<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0;">' + firstName.charAt(0).toUpperCase() + '</div>'
+            + '<div>'
+            + '<div style="font-weight:800;font-size:14px;color:#0f172a;">' + email + '</div>'
+            + '<div style="font-size:11px;color:#64748b;">Created: ' + created + ' &bull; ' + lastSeen + '</div>'
+            + '</div></div>'
+            + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">'
+            + perms.map(function(p){ return '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;">' + p + '</span>'; }).join('')
+            + '</div>'
+            + '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;' + (isActive ? 'background:#dcfce7;color:#15803d' : 'background:#fee2e2;color:#dc2626') + '">'
+            + '<i class="fas fa-circle" style="font-size:6px;"></i> ' + (isActive ? 'ACTIVE' : 'SUSPENDED')
+            + '</span></div>'
+            + '<div style="display:flex;flex-direction:column;gap:6px;">'
+            + '<button onclick="viewSharedAdminActivity(\'' + id + '\',\'' + email.replace(/\'/g, '') + '\',\'\')" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;">📊 Activity</button>'
+            + (isActive
+              ? '<button onclick="suspendSharedAdmin(' + JSON.stringify(id) + ')" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;">🚫 Suspend</button>'
+              : '<button onclick="activateSharedAdmin(' + JSON.stringify(id) + ')" style="background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;">✅ Activate</button>')
+            + '<button onclick="deleteSharedAdmin(' + JSON.stringify(id) + ')" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;">🗑️ Delete</button>'
+            + '</div></div></div>';
+        }).join('');
+      } catch(e) {
+        listDiv.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px;">Error loading: ' + e.message + '</p>';
+      }
     }
 
     async function suspendSharedAdmin(shareId) {
@@ -7411,6 +7451,173 @@
         showAdminToast('Settings reset to default!', 'success');
         if (typeof loadSettings === 'function') loadSettings();
       }).catch(function(e) { alert('Error: ' + e.message); });
+    }
+
+
+
+    // ══════════════════════════════════════════════
+    //  BRAND MANAGEMENT SYSTEM
+    // ══════════════════════════════════════════════
+    var _brandsCache = [];
+
+    function loadBrandsPanel() {
+      var list = document.getElementById('brandsPanelList');
+      if (!list) return;
+      list.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:30px"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
+
+      // Load brands from products (auto-generate) + manual brands node
+      Promise.all([
+        database.ref('products').once('value'),
+        database.ref('brands').once('value')
+      ]).then(function(results) {
+        var prodSnap = results[0], brandSnap = results[1];
+        var brandMap = {}; // brandId -> { name, products, totalSales, avgRating, verified, blueTickAdmin }
+
+        // Manual brands
+        if (brandSnap.exists()) {
+          brandSnap.forEach(function(child) {
+            var b = child.val();
+            if (b && b.name) {
+              var bid = child.key;
+              brandMap[bid] = { id: bid, name: b.name, verified: b.verified || false, blueTickAdmin: b.blueTickAdmin || false, manuallyAdded: true, products: [], totalSales: 0, avgRating: 0, followers: b.followers || 0 };
+            }
+          });
+        }
+
+        // Extract brands from products
+        if (prodSnap.exists()) {
+          prodSnap.forEach(function(child) {
+            var p = child.val();
+            if (!p || !p.brand) return;
+            var bid = p.brandId || p.brand.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            if (!brandMap[bid]) {
+              brandMap[bid] = { id: bid, name: p.brand, verified: false, blueTickAdmin: false, products: [], totalSales: 0, avgRating: 0, ratings: [], followers: 0 };
+            }
+            brandMap[bid].products.push({ id: child.key, name: p.name || p.title, price: p.price, image: p.image || (p.images && p.images[0]) || '' });
+            if (p.sales) brandMap[bid].totalSales += (p.sales || 0);
+            if (p.rating) { if (!brandMap[bid].ratings) brandMap[bid].ratings = []; brandMap[bid].ratings.push(p.rating); }
+          });
+        }
+
+        // Calc avg rating
+        Object.values(brandMap).forEach(function(b) {
+          if (b.ratings && b.ratings.length) {
+            b.avgRating = b.ratings.reduce(function(s,r){return s+r;},0) / b.ratings.length;
+          }
+          // Auto-popular: >5 products + avg rating > 4.0
+          if (!b.blueTickAdmin && b.products.length >= 5 && b.avgRating >= 4.0) {
+            b.autoPopular = true;
+          }
+        });
+
+        _brandsCache = Object.values(brandMap).sort(function(a,b) { return b.products.length - a.products.length; });
+        renderBrandsPanel(_brandsCache);
+
+        document.getElementById('brandTotalCount').textContent = _brandsCache.length;
+        document.getElementById('brandVerifiedCount').textContent = _brandsCache.filter(function(b){return b.blueTickAdmin;}).length;
+      }).catch(function(e) {
+        list.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px;">Error: ' + e.message + '</p>';
+      });
+    }
+
+    function filterBrandsPanel() {
+      var q = (document.getElementById('brandSearchAdmin').value || '').toLowerCase();
+      var filtered = q ? _brandsCache.filter(function(b){ return b.name.toLowerCase().includes(q); }) : _brandsCache;
+      renderBrandsPanel(filtered);
+    }
+
+    function renderBrandsPanel(brands) {
+      var list = document.getElementById('brandsPanelList');
+      if (!brands.length) { list.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:30px">No brands found</p>'; return; }
+
+      // Popular first, then others
+      var popular = brands.filter(function(b){ return b.blueTickAdmin || b.autoPopular; });
+      var others  = brands.filter(function(b){ return !b.blueTickAdmin && !b.autoPopular; });
+
+      var html = '';
+      if (popular.length) {
+        html += '<div style="font-weight:800;font-size:13px;color:#d97706;margin-bottom:10px;display:flex;align-items:center;gap:6px;"><span>⭐ Popular Brands</span></div>';
+        html += popular.map(function(b){ return renderBrandCard(b); }).join('');
+      }
+      if (others.length) {
+        html += '<div style="font-weight:800;font-size:13px;color:#64748b;margin:16px 0 10px;display:flex;align-items:center;gap:6px;"><span>📦 Other Brands</span></div>';
+        html += others.map(function(b){ return renderBrandCard(b); }).join('');
+      }
+      list.innerHTML = html;
+    }
+
+    function renderBrandCard(b) {
+      var initials = b.name.slice(0,2).toUpperCase();
+      var colors = ['#f97316','#2563eb','#7c3aed','#16a34a','#dc2626','#0369a1'];
+      var color = colors[b.name.charCodeAt(0) % colors.length];
+      var isPopular = b.blueTickAdmin || b.autoPopular;
+      return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:10px;' + (isPopular ? 'border-left:3px solid #f97316;' : '') + '">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">'
+        + '<div style="display:flex;align-items:center;gap:12px;">'
+        + '<div style="width:44px;height:44px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex-shrink:0;">' + initials + '</div>'
+        + '<div>'
+        + '<div style="font-weight:800;font-size:15px;display:flex;align-items:center;gap:6px;">' + b.name
+        + (b.blueTickAdmin ? ' <span title="Blue Tick" style="color:#2563eb;font-size:14px;">✓</span>' : '')
+        + (b.autoPopular && !b.blueTickAdmin ? ' <span style="background:#fef3c7;color:#d97706;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:600;">AUTO</span>' : '')
+        + '</div>'
+        + '<div style="font-size:12px;color:#64748b;">' + b.products.length + ' products &bull; ' + b.followers + ' followers &bull; ' + (b.avgRating ? b.avgRating.toFixed(1) + '★' : 'No rating') + '</div>'
+        + '</div></div>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+        + (b.blueTickAdmin
+          ? '<button onclick="removeBlueTick(' + JSON.stringify(b.id) + ')" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:700;">✕ Remove Blue Tick</button>'
+          : '<button onclick="grantBlueTick(' + JSON.stringify(b.id) + ',' + JSON.stringify(b.name) + ')" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:700;">✓ Grant Blue Tick</button>')
+        + '<button onclick="viewBrandProducts(' + JSON.stringify(b.id) + ',' + JSON.stringify(b.name) + ')" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;">📦 Products</button>'
+        + '</div></div></div>';
+    }
+
+    function grantBlueTick(brandId, brandName) {
+      if (!confirm('Grant Blue Tick ✓ to ' + brandName + '?')) return;
+      database.ref('brands/' + brandId).update({ name: brandName, verified: true, blueTickAdmin: true, blueTickAt: Date.now() })
+        .then(function() { showAdminToast('Blue Tick granted to ' + brandName + '!', 'success'); loadBrandsPanel(); })
+        .catch(function(e) { alert('Error: ' + e.message); });
+    }
+
+    function removeBlueTick(brandId) {
+      if (!confirm('Remove Blue Tick from this brand?')) return;
+      database.ref('brands/' + brandId).update({ verified: false, blueTickAdmin: false })
+        .then(function() { showAdminToast('Blue Tick removed', 'info'); loadBrandsPanel(); })
+        .catch(function(e) { alert('Error: ' + e.message); });
+    }
+
+    function viewBrandProducts(brandId, brandName) {
+      var brand = _brandsCache.find(function(b){ return b.id === brandId; });
+      if (!brand) return;
+      var existing = document.getElementById('_brandProdModal');
+      if (existing) existing.remove();
+      var el = document.createElement('div');
+      el.id = '_brandProdModal';
+      el.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;';
+      var prods = brand.products.slice(0, 20);
+      var prodsHtml = prods.length ? prods.map(function(p) {
+        var pid = JSON.stringify(p.id);
+        return '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:8px;">'
+          + '<img src="' + (p.image || 'https://placehold.co/44') + '" style="width:44px;height:44px;border-radius:8px;object-fit:cover;">'
+          + '<div style="flex:1;"><div style="font-weight:600;font-size:13px;">' + (p.name || 'Product') + '</div>'
+          + '<div style="font-size:11px;color:#64748b;">Rs.' + (p.price || 0) + ' | ID: ' + p.id + '</div></div>'
+          + '<button onclick="deleteUserListing(' + pid + ')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;font-weight:600;">Delete</button>'
+          + '</div>';
+      }).join('') : '<p style="color:#94a3b8;text-align:center;padding:20px;">No products yet</p>';
+
+      var box = document.createElement('div');
+      box.style.cssText = 'background:#fff;border-radius:14px;padding:20px;max-width:540px;width:100%;max-height:88vh;overflow-y:auto;';
+      var header = document.createElement('div');
+      header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;';
+      header.innerHTML = '<h3 style="margin:0;font-weight:800;">' + brandName + ' (' + brand.products.length + ' products)</h3>';
+      var closeBtn = document.createElement('button');
+      closeBtn.textContent = 'x';
+      closeBtn.style.cssText = 'background:none;border:none;font-size:1.4rem;cursor:pointer;';
+      closeBtn.onclick = function() { el.remove(); };
+      header.appendChild(closeBtn);
+      box.appendChild(header);
+      box.innerHTML += prodsHtml;
+      el.appendChild(box);
+      el.addEventListener('click', function(e) { if (e.target === el) el.remove(); });
+      document.body.appendChild(el);
     }
 
   </script>
