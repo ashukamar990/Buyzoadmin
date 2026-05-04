@@ -2337,8 +2337,8 @@
           <div class="card">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
               <h2><i class="fas fa-desktop" style="color:var(--primary);margin-right:8px"></i>Live Preview</h2>
-              <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn btn-outline" onclick="resetHeroSection()" style="color:#ef4444;border-color:#ef4444;"><i class="fas fa-undo"></i> Reset to Default</button>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+              <button class="btn btn-outline" onclick="resetHeroSection()" style="color:#ef4444;border-color:#ef4444;font-weight:700;"><i class="fas fa-undo"></i> Reset to Default</button>
               <button class="btn btn-primary" onclick="saveHeroSectionSettings()"><i class="fas fa-save"></i> Save All Changes</button>
             </div>
             </div>
@@ -2525,7 +2525,7 @@
                 </div>
 
                 <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <button type="button" class="btn btn-outline" onclick="resetSiteSettings()" style="color:#ef4444;border-color:#ef4444;"><i class="fas fa-undo"></i> Reset to Default</button>
+                <button type="button" class="btn btn-outline" onclick="resetSiteSettings()" style="color:#ef4444;border-color:#ef4444;font-weight:700;"><i class="fas fa-undo"></i> Reset to Default</button>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Settings</button>
               </div>
               </form>
@@ -3585,7 +3585,7 @@
     }
 
     function generateShareLink() {
-      const recipientEmail = (document.getElementById('shareAdminEmail') || document.getElementById('shareRecipientEmail') || {value:''}).value.trim();
+      const recipientEmail = document.getElementById('shareRecipientEmail') ? document.getElementById('shareRecipientEmail').value.trim() : '';
       
       const permissions = [];
       document.querySelectorAll('[id^="perm"]:checked').forEach(cb => {
@@ -3626,7 +3626,6 @@
         const subject = 'Admin Panel Access — Buyzo Cart';
         const body = `Namaste,\n\nAapko Buyzo Cart Admin Panel ka limited access diya gaya hai.\n\n🔗 Access Link:\n${shareLink}\n\n✅ Aapki Permissions:\n${permNames}\n\n📌 Note: Yeh link sirf aapke liye hai. Kisi aur ke saath share mat karein.\n\n— Buyzo Cart Admin Team`;
         const toEmail = recipientEmail || '';
-        // Use mailto: — opens Gmail app on mobile
         const mailtoUrl = 'mailto:' + encodeURIComponent(toEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
         setTimeout(function() { window.location.href = mailtoUrl; }, 500);
 
@@ -3644,7 +3643,7 @@
             const toEmail = recipientEmail || '';
             const subject = 'Admin Panel Access — Buyzo Cart';
             const body = `Access Link: ${shareLink}`;
-            window.location.href = 'mailto:' + encodeURIComponent(toEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+            window.location.href = 'mailto:' + encodeURIComponent(toEmail || '') + '?subject=' + encodeURIComponent(subject || '') + '&body=' + encodeURIComponent(body || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
           } else {
             showToast('Firebase permission error — Database Rules check karein', 'error');
             if (btn) { btn.innerHTML = '<i class="fas fa-paper-plane"></i> Generate Link & Send Email'; btn.disabled = false; }
@@ -3668,7 +3667,7 @@
       const link = document.getElementById('generatedShareLink').value;
       const subject = 'Admin Panel Access — Buyzo Cart';
       const body = `Access Link: ${link}`;
-      window.location.href = 'mailto:' + encodeURIComponent(toEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      window.location.href = 'mailto:' + encodeURIComponent(toEmail || '') + '?subject=' + encodeURIComponent(subject || '') + '&body=' + encodeURIComponent(body || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
     }
 
     function sendShareEmailAgain() {
@@ -3677,7 +3676,7 @@
       if (!link) return;
       const subject = 'Admin Panel Access — Buyzo Cart';
       const body = `Namaste,\n\nAapko Buyzo Cart Admin Panel ka limited access diya gaya hai.\n\n🔗 Access Link:\n${link}\n\n— Buyzo Cart Admin Team`;
-      window.location.href = 'mailto:' + encodeURIComponent(toEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      window.location.href = 'mailto:' + encodeURIComponent(toEmail || '') + '?subject=' + encodeURIComponent(subject || '') + '&body=' + encodeURIComponent(body || '')}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
     }
 
     async function checkSharedAccess() {
@@ -6782,22 +6781,38 @@
     }
 
     function saveHeroSectionSettings() {
+      var headingVal  = document.getElementById('heroHeadingControl') ? document.getElementById('heroHeadingControl').value : '';
+      var subVal      = document.getElementById('heroSubheadingControl') ? document.getElementById('heroSubheadingControl').value : '';
+      var ctaVal      = document.getElementById('heroCtaControl') ? document.getElementById('heroCtaControl').value : 'Shop Now';
+      var ratingVal   = document.getElementById('heroRatingControl') ? document.getElementById('heroRatingControl').value : '';
+      var highlightV  = document.getElementById('heroHighlightControl') ? document.getElementById('heroHighlightControl').value : '';
+      var bgVal       = document.getElementById('heroBgControl') ? document.getElementById('heroBgControl').value.trim() : '';
+
+      // Save exact values — do NOT apply defaults here — empty = clear on site
       const updates = {
-        heroHeading:    document.getElementById('heroHeadingControl')?.value    || '',
-        heroSubheading: document.getElementById('heroSubheadingControl')?.value || '',
-        heroCtaText:    document.getElementById('heroCtaControl')?.value        || 'Shop Now',
-        heroRating:     document.getElementById('heroRatingControl')?.value     || '',
-        highlightText:  document.getElementById('heroHighlightControl')?.value  || '',
-        heroBgImage:    document.getElementById('heroBgControl')?.value.trim()  || '',
-        heroMessages:   heroMsgList,
-        heroUpdatedAt:  Date.now(),
+        heroHeading:     headingVal,
+        heroSubheading:  subVal,
+        heroCtaText:     ctaVal,
+        heroRating:      ratingVal,
+        highlightText:   highlightV,
+        heroBgImage:     bgVal,
+        heroMessages:    heroMsgList,
+        heroMessagesText: heroMsgList.join('\n'),
+        heroUpdatedAt:   Date.now(),
       };
-      // Also save heroMessages as newline string for settings tab compatibility
-      updates.heroMessagesText = heroMsgList.join('\n');
+
+      var btn = document.querySelector('[onclick="saveHeroSectionSettings()"]');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; }
 
       database.ref('adminSettings').update(updates)
-        .then(() => showAdminToast('✅ Hero section saved! Changes are live on the website.', 'success'))
-        .catch(err => alert('Error: ' + err.message));
+        .then(function() {
+          showAdminToast('Hero section saved! Live on website now.', 'success');
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save All Changes'; }
+        })
+        .catch(function(err) {
+          alert('Error saving: ' + err.message);
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save All Changes'; }
+        });
     }
 
     function setProductRatingOverride() {
@@ -7345,44 +7360,47 @@
     }
 
 
-    // ═══════════ RESET HERO SECTION ════════════
+    // ═══ RESET HERO SECTION ═══
     function resetHeroSection() {
-      if (!confirm('Reset Hero Section to defaults? All your changes will be removed.')) return;
+      if (!confirm('Reset Hero Section to factory defaults? All changes will be removed from the website.')) return;
+
       var defaults = {
-        heroHeading: 'Welcome to <span style="color:var(--accent)">Buyzo Cart</span>',
-        heroSubheading: 'Clean, fast checkout. Hand-picked products. Fully responsive UI.',
-        heroCtaText: 'Shop Now',
-        heroRating: '',
-        highlightText: '',
-        heroBgImage: '',
-        heroMessages: ['Big Sale Today', 'Free Shipping over Rs.999', 'New Arrivals Just Dropped'],
-        heroMessagesText: 'Big Sale Today
-Free Shipping over Rs.999
-New Arrivals Just Dropped',
-        heroUpdatedAt: Date.now()
+        heroHeading:     'Welcome to <span style="color:var(--accent)">Buyzo Cart</span>',
+        heroSubheading:  'Clean, fast checkout. Hand-picked products. Fully responsive UI.',
+        heroCtaText:     'Shop Now',
+        heroRating:      '',
+        highlightText:   '',
+        heroBgImage:     '',
+        heroMessages:    ['Big Sale Today', 'Free Shipping over Rs.999', 'New Arrivals Just Dropped'],
+        heroMessagesText: 'Big Sale Today\nFree Shipping over Rs.999\nNew Arrivals Just Dropped',
+        heroUpdatedAt:   Date.now()
       };
-      database.ref('adminSettings').update(defaults).then(function() {
-        showAdminToast('Hero section reset to default!', 'success');
-        var setVal = function(id, val) { var el = document.getElementById(id); if (el) el.value = val; };
-        setVal('heroHeadingControl', defaults.heroHeading);
-        setVal('heroSubheadingControl', defaults.heroSubheading);
-        setVal('heroCtaControl', defaults.heroCtaText);
-        setVal('heroRatingControl', '');
-        setVal('heroHighlightControl', '');
-        setVal('heroBgControl', '');
-        heroMsgList = defaults.heroMessages.slice();
-        if (typeof renderHeroMsgList === 'function') renderHeroMsgList();
-        if (typeof updateHeroLivePreview === 'function') updateHeroLivePreview();
-      }).catch(function(e) { alert('Error: ' + e.message); });
+
+      database.ref('adminSettings').update(defaults)
+        .then(function() {
+          showAdminToast('Hero section reset! Website is back to default.', 'success');
+          // Update form fields immediately
+          var setV = function(id, val) { var el = document.getElementById(id); if (el) el.value = val; };
+          setV('heroHeadingControl',    defaults.heroHeading);
+          setV('heroSubheadingControl', defaults.heroSubheading);
+          setV('heroCtaControl',        defaults.heroCtaText);
+          setV('heroRatingControl',     '');
+          setV('heroHighlightControl',  '');
+          setV('heroBgControl',         '');
+          // Reset ticker list
+          heroMsgList = defaults.heroMessages.slice();
+          if (typeof renderHeroMsgList === 'function') renderHeroMsgList();
+          if (typeof updateHeroLivePreview === 'function') updateHeroLivePreview();
+        })
+        .catch(function(e) { alert('Error: ' + e.message); });
     }
 
-    // ═══════════ RESET SITE SETTINGS ════════════
+    // ═══ RESET SITE SETTINGS ═══
     function resetSiteSettings() {
-      if (!confirm('Reset all Settings to default values?')) return;
+      if (!confirm('Reset Settings to default? Store name/email/etc will be cleared.')) return;
       var defaults = {
-        storeName: 'Buyzo Cart',
-        storeEmail: '', storePhone: '', storeAddress: '',
-        deliveryCharge: 50, freeShippingOver: 999,
+        storeName: 'Buyzo Cart', storeEmail: '', storePhone: '',
+        storeAddress: '', deliveryCharge: 50, freeShippingOver: 999,
         gatewayChargePercent: 2, maxItemsPerOrder: 6,
         currency: 'INR', updatedAt: Date.now()
       };
