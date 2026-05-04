@@ -1478,6 +1478,7 @@
         <li><a href="#" class="menu-item" data-tab="seller-requests"><i class="fas fa-user-check"></i><span>Seller Requests</span></a></li>
         <li><a href="#" class="menu-item" data-tab="hero"><i class="fas fa-star"></i><span>Hero Section</span></a></li>
         <li><a href="#" class="menu-item" data-tab="user-listings"><i class="fas fa-store"></i><span>User Listings</span></a></li>
+            <li><a href="#" class="menu-item" data-tab="delivery-sessions"><i class="fas fa-motorcycle"></i><span>Delivery Sessions</span></a></li>
         <li><a href="#" class="menu-item" data-tab="analytics"><i class="fas fa-chart-bar"></i><span>Analytics</span></a></li>
         <li><a href="#" class="menu-item" data-tab="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
         <li><a href="#" class="menu-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
@@ -2337,7 +2338,10 @@
           <div class="card">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
               <h2><i class="fas fa-desktop" style="color:var(--primary);margin-right:8px"></i>Live Preview</h2>
+              <div style="display:flex;gap:10px;">
+              <button class="btn btn-outline" onclick="resetHeroSection()" style="color:#ef4444;border-color:#ef4444;"><i class="fas fa-undo"></i> Reset to Default</button>
               <button class="btn btn-primary" onclick="saveHeroSectionSettings()"><i class="fas fa-save"></i> Save All Changes</button>
+            </div>
             </div>
             <div class="card-body">
               <div id="heroLivePreviewAdmin" style="background:linear-gradient(135deg,#1e293b,#2563eb);border-radius:12px;padding:48px 24px;text-align:center;color:white;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;background-size:cover;background-position:center;position:relative;overflow:hidden;">
@@ -2392,6 +2396,20 @@
                 </table>
               </div>
               <div id="userListingsPagination" style="display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delivery Sessions Tab -->
+        <div class="tab-content" id="delivery-sessions">
+          <div class="card">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+              <h2><i class="fas fa-motorcycle" style="color:var(--primary);margin-right:8px"></i>Delivery Sessions</h2>
+              <button class="btn btn-sm btn-outline" onclick="loadDeliverySessions()"><i class="fas fa-sync"></i> Refresh</button>
+            </div>
+            <div class="card-body">
+              <p style="font-size:13px;color:#64748b;margin-bottom:16px">All delivery sessions created by sellers or admin. See assigned orders, delivery boy number and status.</p>
+              <div id="deliverySessionsList"><p style="color:#94a3b8;text-align:center;padding:30px">Loading...</p></div>
             </div>
           </div>
         </div>
@@ -3612,6 +3630,7 @@
         document.getElementById('generatedShareLink').value = shareLink;
         document.getElementById('shareLinkResult').style.display = 'block';
         if (btn) { btn.innerHTML = '<i class="fas fa-check-circle"></i> Link Generated!'; btn.disabled = false; }
+        loadSharedAdmins();
         showToast('Share link generated!', 'success');
 
         // Auto open Gmail
@@ -3679,17 +3698,15 @@
       
       if (!shareId) return;
 
-      // Fetch share data — try SDK first, then REST API
+      // Fetch share data via REST (no auth needed for reading)
       let shareData = null;
       try {
-        const snap = await database.ref('sharedAdmins/' + shareId).once('value');
-        shareData = snap.val();
+        const res = await fetch(`https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`);
+        shareData = await res.json();
       } catch (e) {
-        // SDK failed (auth required), try REST API
         try {
-          const res = await fetch(`https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`);
-          const json = await res.json();
-          if (json && typeof json === 'object' && json.status) shareData = json;
+          const snap = await database.ref('sharedAdmins/' + shareId).once('value');
+          shareData = snap.val();
         } catch(e2) { shareData = null; }
       }
 
@@ -3857,49 +3874,97 @@
       }
     }
 
+    async function loadSharedAdmins() {
+      const listDiv = document.getElementById('sharedAdminsList');
+      if (!listDiv) return;
+      try {
+        const snapshot = await database.ref('sharedAdmins').once('value');
+        const sharedAdmins = snapshot.val() || {};
+        const entries = Object.entries(sharedAdmins);
+        if (!entries.length) { listDiv.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:20px;">No shared admins yet</p>'; return; }
+        listDiv.innerHTML = entries.map(([id, data]) => `
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+              <div style="flex:1;min-width:200px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                  <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;">${(data.email||'?').charAt(0).toUpperCase()}</div>
+                  <div>
+                    <div style="font-weight:700;font-size:14px;color:#0f172a;">${data.email || 'No email set'}</div>
+                    <div style="font-size:11px;color:#64748b;">Created: ${new Date(data.createdAt||Date.now()).toLocaleDateString('en-IN')} ${data.lastAccessed ? '• Last seen: ' + new Date(data.lastAccessed).toLocaleDateString('en-IN') : '• Never accessed'}</div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+                  ${(data.permissions||[]).map(p => `<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;">${p}</span>`).join('')}
+                </div>
+                <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;${data.status==='active'?'background:#dcfce7;color:#15803d':'background:#fee2e2;color:#dc2626'}">
+                  <i class="fas fa-circle" style="font-size:6px;"></i> ${(data.status||'active').toUpperCase()}
+                </span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <button onclick="viewSharedAdminActivity('${id}','${(data.email||'').replace(/'/g,'')}','${(data.createdBy||'').replace(/'/g,'')}')" style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">📊 View Activity</button>
+                ${data.status==='active'
+                  ? `<button onclick="suspendSharedAdmin('${id}')" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;">🚫 Suspend</button>`
+                  : `<button onclick="activateSharedAdmin('${id}')" style="background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;">✅ Activate</button>`
+                }
+                <button onclick="deleteSharedAdmin('${id}')" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;">🗑️ Delete</button>
+              </div>
+            </div>
+          </div>`).join('');
+      } catch(e) { listDiv.innerHTML = '<p style="color:#ef4444;text-align:center;">Error loading shared admins</p>'; }
+    }
+
     async function showManageSharedAdmins() {
       const modal = document.getElementById('manageSharedAdminsModal');
-      const listDiv = document.getElementById('sharedAdminsList');
-      
-      const snapshot = await database.ref('sharedAdmins').once('value');
-      const sharedAdmins = snapshot.val() || {};
-      
-      listDiv.innerHTML = Object.entries(sharedAdmins).map(([id, data]) => `
-        <div class="shared-admin-card">
-          <div style="display: flex; justify-content: space-between; align-items: start;">
-            <div>
-              <strong>${data.email}</strong>
-              <div style="margin-top: 8px;">
-                ${data.permissions.map(p => `<span class="permission-badge" style="background: #dbeafe; color: #1d4ed8;">${p}</span>`).join('')}
-              </div>
-              <div style="margin-top: 8px; font-size: 12px; color: var(--secondary);">
-                Created: ${new Date(data.createdAt).toLocaleDateString()}
-                ${data.lastAccessed ? ` • Last access: ${new Date(data.lastAccessed).toLocaleDateString()}` : ''}
-              </div>
-            </div>
-            <div>
-              <span class="${data.status === 'active' ? 'status-active' : 'status-suspended'}">
-                <i class="fas fa-circle"></i> ${data.status}
-              </span>
-              <div style="margin-top: 10px;">
-                ${data.status === 'active' ? 
-                  `<button class="btn btn-warning btn-sm" onclick="suspendSharedAdmin('${id}')">
-                    <i class="fas fa-ban"></i> Suspend
-                  </button>` :
-                  `<button class="btn btn-success btn-sm" onclick="activateSharedAdmin('${id}')">
-                    <i class="fas fa-check"></i> Activate
-                  </button>`
-                }
-                <button class="btn btn-danger btn-sm" onclick="deleteSharedAdmin('${id}')">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `).join('') || '<p style="text-align: center; color: var(--secondary);">No shared admins yet</p>';
-      
+      await loadSharedAdmins();
       modal.classList.add('active');
+    }
+
+    function viewSharedAdminActivity(shareId, email, createdBy) {
+      var modal = document.getElementById('_activityModal');
+      if (modal) modal.remove();
+      var m = document.createElement('div');
+      m.id = '_activityModal';
+      m.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;';
+      m.innerHTML = `<div style="background:#fff;border-radius:14px;padding:24px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div>
+            <h3 style="margin:0;font-size:1.05rem;font-weight:800;">📊 Admin Activity</h3>
+            <p style="margin:4px 0 0;font-size:13px;color:#64748b;">${email}</p>
+          </div>
+          <button onclick="document.getElementById('_activityModal').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#64748b;">×</button>
+        </div>
+        <div id="_activityContent" style="text-align:center;padding:30px;color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Loading activity...</div>
+      </div>`;
+      m.addEventListener('click', function(e) { if(e.target===m) m.remove(); });
+      document.body.appendChild(m);
+      // Load activity
+      Promise.all([
+        database.ref('sharedAdmins/' + shareId).once('value'),
+        database.ref('products').orderByChild('createdBy').equalTo(email).once('value'),
+        database.ref('orders').once('value')
+      ]).then(function(results) {
+        var adminData = results[0].val() || {};
+        var prodSnap  = results[1];
+        var ordSnap   = results[2];
+        var products  = [];
+        if (prodSnap.exists()) prodSnap.forEach(c => products.push({id:c.key,...c.val()}));
+        var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;">'
+          + `<div style="background:#eff6ff;border-radius:10px;padding:12px;text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#2563eb;">${products.length}</div><div style="font-size:11px;color:#64748b;">Products Added</div></div>`
+          + `<div style="background:#f0fdf4;border-radius:10px;padding:12px;text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#16a34a;">${adminData.lastAccessed ? '✓' : '—'}</div><div style="font-size:11px;color:#64748b;">Last Accessed</div></div>`
+          + `<div style="background:#fff7ed;border-radius:10px;padding:12px;text-align:center;"><div style="font-size:1.4rem;font-weight:800;color:#ea580c;">${(adminData.permissions||[]).length}</div><div style="font-size:11px;color:#64748b;">Permissions</div></div>`
+          + '</div>';
+        if (products.length) {
+          html += '<div style="font-weight:700;margin-bottom:8px;font-size:13px;">Products Added by this Admin:</div>';
+          html += products.slice(0,10).map(p => `<div style="display:flex;align-items:center;gap:10px;padding:8px;background:#f8fafc;border-radius:8px;margin-bottom:6px;"><img src="${(p.images&&p.images[0])||p.image||'https://placehold.co/40'}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;" onerror="this.src='https://placehold.co/40'"><div><div style="font-weight:600;font-size:13px;">${p.name||p.title||'Product'}</div><div style="font-size:11px;color:#64748b;">₹${p.price||0} • ID: ${p.id}</div></div></div>`).join('');
+        } else {
+          html += '<p style="color:#94a3b8;text-align:center;padding:20px;">No products added by this admin</p>';
+        }
+        var el = document.getElementById('_activityContent');
+        if (el) el.innerHTML = html;
+      }).catch(function(e) {
+        var el = document.getElementById('_activityContent');
+        if (el) el.innerHTML = '<p style="color:#ef4444;">Error loading activity: ' + e.message + '</p>';
+      });
     }
 
     async function suspendSharedAdmin(shareId) {
@@ -5546,8 +5611,6 @@
       const heroMsgsRaw       = document.getElementById('heroMessages')?.value   || '';
       const heroMsgsArr       = heroMsgsRaw.split('\n').map(m => m.trim()).filter(Boolean);
 
-      const popRaw  = document.getElementById('popularSearchesField')?.value || '';
-      const tagsRaw = document.getElementById('searchTagsField')?.value || '';
       const p1 = database.ref('settings').set(settings);
       const p2 = database.ref('adminSettings').update({
         heroHeading:    heroHeadingVal,
@@ -5556,14 +5619,8 @@
         heroMessages:   heroMsgsArr,
         deliveryCharge: parseFloat(settings.shippingCost) || 50,
         freeShippingOver: parseFloat(settings.freeShippingThreshold) || 999,
-        gatewayChargePercent: parseFloat(settings.paymentGatewayCharge) || 2,
         updatedAt: Date.now()
       });
-      // Also save popularSearches & searchTags if filled in settings tab
-      const popTerms = popRaw.split(',').map(s => s.trim()).filter(Boolean);
-      const tagTerms = tagsRaw.split(',').map(s => s.trim()).filter(Boolean);
-      const popPromises = popTerms.map(term => database.ref('popularSearches/ps_' + Date.now() + '_' + Math.random().toString(36).substr(2,4)).set({ term, count: 10, active: true, createdAt: Date.now() }));
-      const tagPromises = tagTerms.map(name => database.ref('searchTags/st_' + Date.now() + '_' + Math.random().toString(36).substr(2,4)).set({ name, type: 'general', active: true, createdAt: Date.now() }));
 
       Promise.all([p1, p2])
         .then(() => showAdminToast('✅ Settings saved successfully!', 'success'))
@@ -6541,89 +6598,14 @@
     }
 
     function showAddOfferModal() {
-      // Remove old modal if exists
-      var old = document.getElementById('_offerModal');
-      if (old) old.remove();
-
-      var modal = document.createElement('div');
-      modal.id = '_offerModal';
-      modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;';
-      modal.innerHTML = `
-        <div style="background:#fff;border-radius:14px;padding:24px;max-width:460px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-            <h3 style="margin:0;font-size:1.1rem;font-weight:700;">🎁 Add New Offer</h3>
-            <button onclick="document.getElementById('_offerModal').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#64748b;line-height:1;">×</button>
-          </div>
-
-          <div style="margin-bottom:14px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:5px;">Offer Title *</label>
-            <input type="text" id="_offerTitle" placeholder="e.g. Flat 20% OFF on Electronics" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;" autofocus>
-          </div>
-
-          <div style="margin-bottom:14px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:5px;">Description</label>
-            <textarea id="_offerDesc" placeholder="Offer details..." rows="2" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;"></textarea>
-          </div>
-
-          <div style="margin-bottom:14px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:5px;">Coupon Code <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
-            <input type="text" id="_offerCode" placeholder="e.g. SAVE20" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;text-transform:uppercase;">
-          </div>
-
-          <div style="margin-bottom:14px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:5px;">Discount % <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
-            <input type="number" id="_offerDiscount" placeholder="e.g. 20" min="1" max="100" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;">
-          </div>
-
-          <div style="margin-bottom:20px;">
-            <label style="display:block;font-size:13px;font-weight:600;color:#64748b;margin-bottom:5px;">Expiry Date <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
-            <input type="date" id="_offerExpiry" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;">
-          </div>
-
-          <div id="_offerError" style="color:#ef4444;font-size:13px;margin-bottom:10px;display:none;"></div>
-
-          <div style="display:flex;gap:10px;">
-            <button onclick="document.getElementById('_offerModal').remove()" style="flex:1;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;background:transparent;color:#0f172a;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;">Cancel</button>
-            <button id="_offerSaveBtn" onclick="saveOfferFromModal()" style="flex:1;padding:11px;background:#2563eb;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit;">Add Offer</button>
-          </div>
-        </div>`;
-
-      modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
-      document.body.appendChild(modal);
-      setTimeout(() => { var el = document.getElementById('_offerTitle'); if (el) el.focus(); }, 50);
-    }
-
-    function saveOfferFromModal() {
-      var title    = (document.getElementById('_offerTitle')?.value || '').trim();
-      var desc     = (document.getElementById('_offerDesc')?.value || '').trim();
-      var code     = (document.getElementById('_offerCode')?.value || '').trim().toUpperCase();
-      var discount = document.getElementById('_offerDiscount')?.value || '';
-      var expiry   = document.getElementById('_offerExpiry')?.value || '';
-      var errEl    = document.getElementById('_offerError');
-
-      if (!title) {
-        if (errEl) { errEl.textContent = 'Offer title is required.'; errEl.style.display = 'block'; }
-        document.getElementById('_offerTitle')?.focus();
-        return;
-      }
-      if (errEl) errEl.style.display = 'none';
-
-      var btn = document.getElementById('_offerSaveBtn');
-      if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
-
-      var offerId = 'offer_' + Date.now();
-      var offerData = { title, description: desc, code, discount: discount ? parseFloat(discount) : null, expiry, active: true, createdAt: Date.now() };
-
-      database.ref('offers/' + offerId).set(offerData)
-        .then(() => {
-          document.getElementById('_offerModal')?.remove();
-          showAdminToast('✅ Offer added successfully!', 'success');
-          loadOffers();
-        })
-        .catch(function(e) {
-          if (errEl) { errEl.textContent = 'Error: ' + e.message; errEl.style.display = 'block'; }
-          if (btn) { btn.disabled = false; btn.textContent = 'Add Offer'; }
-        });
+      const title = prompt('Offer Title:');
+      if (!title) return;
+      const description = prompt('Description:') || '';
+      const code = prompt('Coupon Code (optional):') || '';
+      const offerId = 'offer_' + Date.now();
+      database.ref('offers/' + offerId).set({ title, description, code, createdAt: Date.now() })
+        .then(() => alert('Offer added!'))
+        .catch(e => alert('Error: ' + e.message));
     }
 
     function deleteOffer(id) {
@@ -6924,31 +6906,115 @@
       const tbody = document.getElementById('userListingsBody');
       if (!tbody) return;
       if (!listings.length) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">No user listings found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">No listings found</td></tr>';
         return;
       }
-      tbody.innerHTML = listings.map(l => {
-        const img = (l.images && l.images[0]) || l.image || 'https://via.placeholder.com/50';
-        const date = l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-IN') : '—';
-        const status = l.status || 'active';
-        const statusColor = { active:'badge-success', inactive:'badge-warning', pending:'badge-warning' };
+      tbody.innerHTML = listings.map(listing => {
+        const img = (listing.images && listing.images[0]) || listing.image || listing.img || 'https://placehold.co/60';
+        const sellerEmail = listing.sellerEmail || listing.userEmail || listing.createdBy || '—';
+        const sellerName  = listing.sellerName  || listing.userName  || sellerEmail.split('@')[0] || '—';
+        const date = listing.createdAt ? new Date(listing.createdAt).toLocaleDateString('en-IN') : '—';
+        const status = listing.status || 'pending';
+        const badgeStyle = status === 'active' ? 'background:#dcfce7;color:#15803d' : status === 'inactive' ? 'background:#fee2e2;color:#dc2626' : 'background:#fef3c7;color:#d97706';
         return `<tr>
-          <td><img src="${img}" class="product-image" onerror="this.src='https://via.placeholder.com/50'"></td>
-          <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${l.name||l.title||''}">${l.name||l.title||'—'}</td>
-          <td>${l.sellerName||'Unknown'}<br><small style="color:#64748b">${l.sellerEmail||''}</small></td>
-          <td>${l.category||'—'}</td>
-          <td style="font-weight:600;">₹${(l.price||0).toLocaleString()}</td>
-          <td><span class="badge ${statusColor[status]||'badge-success'}">${status.charAt(0).toUpperCase()+status.slice(1)}</span></td>
-          <td>${date}</td>
+          <td><img src="${img}" onerror="this.src='https://placehold.co/60'" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0"></td>
+          <td><div style="font-weight:600;max-width:140px;word-break:break-word;">${listing.name || listing.title || 'Untitled'}</div><div style="font-size:11px;color:#94a3b8;font-family:monospace">ID: ${listing.id}</div></td>
           <td>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              <button class="btn btn-success btn-sm" onclick="approveUserListing('${l.id}')" title="Approve & make visible"><i class="fas fa-check"></i></button>
-              <button class="btn btn-warning btn-sm" onclick="editProduct('${l.id}')" title="Edit"><i class="fas fa-edit"></i></button>
-              <button class="btn btn-danger btn-sm" onclick="removeUserListing('${l.id}')" title="Remove"><i class="fas fa-ban"></i></button>
+            <div style="font-weight:600;font-size:13px;">${sellerName}</div>
+            <div style="font-size:11px;color:#2563eb;cursor:pointer;" onclick="viewSellerDashboard('${listing.sellerId||''}','${sellerEmail.replace(/'/g,'')}')">📊 ${sellerEmail}</div>
+          </td>
+          <td>${listing.category || '—'}</td>
+          <td style="font-weight:700;">₹${parseFloat(listing.price||0).toLocaleString('en-IN')}</td>
+          <td><span style="${badgeStyle};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">${status.toUpperCase()}</span></td>
+          <td style="font-size:12px;">${date}</td>
+          <td>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              ${status !== 'active' ? `<button onclick="approveUserListing('${listing.id}')" style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;font-weight:600;">✅ Approve</button>` : `<button onclick="deactivateUserListing('${listing.id}')" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;font-weight:600;">⏸ Deactivate</button>`}
+              <button onclick="deleteUserListing('${listing.id}')" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;font-weight:600;">🗑️ Delete</button>
+              <button onclick="suspendSeller('${listing.sellerId||''}','${sellerEmail.replace(/'/g,'')}')" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;font-weight:600;">🚫 Suspend Seller</button>
             </div>
           </td>
         </tr>`;
       }).join('');
+    }
+
+    function approveUserListing(id) {
+      database.ref('products/' + id).update({ status: 'active' })
+        .then(() => { showAdminToast('Product approved!', 'success'); loadUserListings(); })
+        .catch(e => alert('Error: ' + e.message));
+    }
+
+    function deactivateUserListing(id) {
+      database.ref('products/' + id).update({ status: 'inactive' })
+        .then(() => { showAdminToast('Product deactivated', 'info'); loadUserListings(); })
+        .catch(e => alert('Error: ' + e.message));
+    }
+
+    function deleteUserListing(id) {
+      if (!confirm('Delete this product permanently?')) return;
+      database.ref('products/' + id).remove()
+        .then(() => { showAdminToast('Product deleted', 'success'); loadUserListings(); })
+        .catch(e => alert('Error: ' + e.message));
+    }
+
+    function suspendSeller(sellerId, email) {
+      if (!sellerId && !email) { alert('Seller info not found'); return; }
+      if (!confirm('Suspend seller ' + email + '? They will lose dashboard access.')) return;
+      var updates = { status: 'suspended', suspendedAt: Date.now() };
+      var p = sellerId ? database.ref('sellerRequests/' + sellerId).update(updates) : Promise.resolve();
+      p.then(() => { showAdminToast('Seller suspended: ' + email, 'success'); loadUserListings(); })
+       .catch(e => alert('Error: ' + e.message));
+    }
+
+    function viewSellerDashboard(sellerId, email) {
+      var modal = document.getElementById('_sellerDashModal');
+      if (modal) modal.remove();
+      var m = document.createElement('div');
+      m.id = '_sellerDashModal';
+      m.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;';
+      m.innerHTML = `<div style="background:#fff;border-radius:14px;padding:24px;max-width:600px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div><h3 style="margin:0;font-size:1.05rem;font-weight:800;">Seller Dashboard</h3><p style="margin:4px 0 0;font-size:13px;color:#2563eb;">${email}</p></div>
+          <button onclick="document.getElementById('_sellerDashModal').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#64748b;">×</button>
+        </div>
+        <div id="_sellerDashContent" style="text-align:center;padding:30px;color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+      </div>`;
+      m.addEventListener('click', function(e) { if(e.target===m) m.remove(); });
+      document.body.appendChild(m);
+
+      Promise.all([
+        sellerId ? database.ref('sellerRequests/' + sellerId).once('value') : Promise.resolve(null),
+        database.ref('orders').orderByChild('sellerId').equalTo(sellerId||'__none__').once('value'),
+        database.ref('products').once('value')
+      ]).then(function(res) {
+        var sellerInfo = res[0] ? (res[0].val()||{}) : {};
+        var orders = []; if (res[1].exists()) res[1].forEach(c => orders.push(c.val()));
+        var products = []; res[2].forEach(c => { var v = c.val(); if ((v.sellerEmail||v.createdBy||v.sellerId) === (email||sellerId)) products.push({id:c.key,...v}); });
+        var delivered = orders.filter(o => o.status === 'delivered');
+        var earnings  = delivered.reduce((s,o) => s + (parseFloat(o.totalAmount)||0), 0);
+        var pending   = orders.filter(o => ['placed','confirmed'].includes(o.status||'')).length;
+
+        var html = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;">'
+          + `<div style="background:#eff6ff;border-radius:10px;padding:14px;text-align:center;"><div style="font-size:1.5rem;font-weight:800;color:#2563eb;">${products.length}</div><div style="font-size:12px;color:#64748b;">Products Listed</div></div>`
+          + `<div style="background:#f0fdf4;border-radius:10px;padding:14px;text-align:center;"><div style="font-size:1.5rem;font-weight:800;color:#16a34a;">${orders.length}</div><div style="font-size:12px;color:#64748b;">Total Orders</div></div>`
+          + `<div style="background:#fef9f0;border-radius:10px;padding:14px;text-align:center;"><div style="font-size:1.3rem;font-weight:800;color:#d97706;">₹${earnings.toLocaleString('en-IN')}</div><div style="font-size:12px;color:#64748b;">Total Earnings</div></div>`
+          + `<div style="background:#fdf4ff;border-radius:10px;padding:14px;text-align:center;"><div style="font-size:1.5rem;font-weight:800;color:#7c3aed;">${pending}</div><div style="font-size:12px;color:#64748b;">Pending Orders</div></div>`
+          + '</div>';
+        if (sellerInfo.businessName) html += `<div style="background:#f8fafc;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;"><strong>Business:</strong> ${sellerInfo.businessName} | <strong>Phone:</strong> ${sellerInfo.phone||'—'}</div>`;
+        if (products.length) {
+          html += '<div style="font-weight:700;margin-bottom:8px;font-size:13px;">Their Products:</div>';
+          html += products.slice(0,8).map(p => `<div style="display:flex;align-items:center;gap:10px;padding:8px;background:#f8fafc;border-radius:8px;margin-bottom:6px;">
+            <img src="${(p.images&&p.images[0])||p.image||'https://placehold.co/40'}" style="width:38px;height:38px;border-radius:6px;object-fit:cover;" onerror="this.src='https://placehold.co/40'">
+            <div style="flex:1;"><div style="font-weight:600;font-size:13px;">${p.name||p.title||'Product'}</div><div style="font-size:11px;color:#64748b;">₹${p.price||0} • ${p.status||'active'}</div></div>
+            <button onclick="deleteUserListing('${p.id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;">Delete</button>
+          </div>`).join('');
+        }
+        var el = document.getElementById('_sellerDashContent');
+        if (el) el.innerHTML = html;
+      }).catch(function(e) {
+        var el = document.getElementById('_sellerDashContent');
+        if (el) el.innerHTML = '<p style="color:#ef4444;">Error: ' + e.message + '</p>';
+      });
     }
 
     function approveUserListing(id) {
