@@ -2475,36 +2475,29 @@
         <div class="tab-content" id="admin-sharing">
           <div class="stats-container" style="margin-bottom:20px;">
             <div class="stat-card" style="cursor:pointer;" onclick="showAdminSharing()">
-              <div class="stat-icon" style="background:var(--primary);">
-                <i class="fas fa-share-alt"></i>
-              </div>
+              <div class="stat-icon" style="background:var(--primary);"><i class="fas fa-share-alt"></i></div>
               <div class="stat-info">
-                <h3 style="font-size:1.2rem;">Share Access</h3>
+                <h3 style="font-size:1.1rem;">Share Access</h3>
                 <p>Grant limited admin access</p>
               </div>
             </div>
             <div class="stat-card" style="cursor:pointer;" onclick="showManageSharedAdmins()">
-              <div class="stat-icon" style="background:var(--success);">
-                <i class="fas fa-users"></i>
-              </div>
+              <div class="stat-icon" style="background:var(--success);"><i class="fas fa-users"></i></div>
               <div class="stat-info">
-                <h3 style="font-size:1.2rem;">Manage Admins</h3>
-                <p>View and manage shared access</p>
+                <h3 style="font-size:1.1rem;">Manage Admins</h3>
+                <p>View &amp; manage shared access</p>
               </div>
             </div>
           </div>
           <div class="card">
-            <div class="card-header">
-              <h2>Admin Sharing Guide</h2>
-            </div>
+            <div class="card-header"><h2>Admin Sharing Guide</h2></div>
             <div class="card-body">
-              <p>You can share limited admin access with team members. They will only see features you grant permission for.</p>
-              <ul style="margin-top:15px;margin-left:20px;line-height:2;">
-                <li>Click <strong>"Share Access"</strong> to create a new shared admin link</li>
-                <li>Select specific permissions for each user</li>
-                <li>Send the generated link via email</li>
-                <li>Monitor and manage access from <strong>"Manage Admins"</strong></li>
-                <li>Suspend or delete access anytime if needed</li>
+              <p>Team members ko limited panel access dein. Woh sirf wahi sections dekhenge jo aap allow karein.</p>
+              <ul style="margin-top:15px;margin-left:20px;line-height:2.2;">
+                <li><strong>Share Access</strong> — Naya shared admin link banayein</li>
+                <li>Specific permissions select karein</li>
+                <li>Generated link email se bhejein</li>
+                <li><strong>Manage Admins</strong> — Activity dekhein, suspend/delete karein</li>
               </ul>
             </div>
           </div>
@@ -3216,11 +3209,6 @@
             <label class="perm-item" for="permPopularSearches"><input type="checkbox" id="permPopularSearches" value="popularSearches"><i class="fas fa-chart-line"></i>Popular Searches</label>
             <label class="perm-item" for="permCustomers"><input type="checkbox" id="permCustomers" value="customers"><i class="fas fa-users"></i>Customers</label>
             <label class="perm-item" for="permPolicies"><input type="checkbox" id="permPolicies" value="policies"><i class="fas fa-file-alt"></i>Policies</label>
-            <label class="perm-item" for="permSellerRequests"><input type="checkbox" id="permSellerRequests" value="sellerRequests"><i class="fas fa-user-check"></i>Seller Requests</label>
-            <label class="perm-item" for="permHero"><input type="checkbox" id="permHero" value="hero"><i class="fas fa-star"></i>Hero Section</label>
-            <label class="perm-item" for="permUserListings"><input type="checkbox" id="permUserListings" value="userListings"><i class="fas fa-store"></i>User Listing</label>
-            <label class="perm-item" for="permBrands"><input type="checkbox" id="permBrands" value="brands"><i class="fas fa-award"></i>Brands</label>
-            <label class="perm-item" for="permAnalytics"><input type="checkbox" id="permAnalytics" value="analytics"><i class="fas fa-chart-bar"></i>Analytics</label>
           </div>
         </div>
 
@@ -3274,39 +3262,6 @@
       <div class="modal-body">
         <div id="sharedAdminsList">
           <!-- Shared admins will be loaded here -->
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Shared Admin Activity Modal -->
-  <div class="modal" id="sharedAdminActivityModal">
-    <div class="modal-content" style="max-width:700px;border-radius:14px;overflow:hidden;">
-      <div class="modal-header" style="background:linear-gradient(135deg,#0f172a,#1e293b);padding:20px 24px;border:none;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <i class="fas fa-chart-line" style="color:#60a5fa;font-size:18px;"></i>
-          <div>
-            <h3 style="color:white;margin:0;font-size:16px;font-weight:700;" id="activityModalTitle">Admin Activity</h3>
-            <p style="color:#94a3b8;margin:0;font-size:11px;" id="activityModalEmail">—</p>
-          </div>
-        </div>
-        <button class="close" onclick="closeModal('sharedAdminActivityModal')" style="color:#94a3b8;font-size:20px;">&times;</button>
-      </div>
-      <div class="modal-body" style="padding:20px;max-height:70vh;overflow-y:auto;">
-        <div id="activityShareLinkBox" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:16px;">
-          <div style="font-size:11px;color:#1d4ed8;font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">🔗 Generated Share Link</div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="text" id="activityShareLinkInput" readonly style="flex:1;border:none;background:transparent;font-size:12px;color:#1d4ed8;outline:none;font-family:monospace;" onclick="this.select()">
-            <button onclick="copyActivityLink()" style="background:#2563eb;color:white;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;"><i class="fas fa-copy"></i> Copy</button>
-          </div>
-        </div>
-        <div id="activityPermissionsBox" style="margin-bottom:16px;">
-          <div style="font-size:12px;color:#64748b;font-weight:700;margin-bottom:6px;">Shared Permissions:</div>
-          <div id="activityPermsList" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
-        </div>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i class="fas fa-history" style="color:#6366f1;"></i> Activity Log</div>
-          <div id="activityLogList"><p style="color:#94a3b8;text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading...</p></div>
         </div>
       </div>
     </div>
@@ -3730,7 +3685,7 @@
         showToast('Share link generated!', 'success');
 
         // Auto open Gmail
-        const permissionLabels = { products:'Products', categories:'Categories', orders:'Orders', offers:'Offers', banners:'Banners', trending:'Trending', similar:'Similar Products', reviews:'Reviews', notifications:'Notifications', searchTags:'Search Tags', popularSearches:'Popular Searches', customers:'Customers', policies:'Policies', sellerRequests:'Seller Requests', hero:'Hero Section', userListings:'User Listing', brands:'Brands', analytics:'Analytics' };
+        const permissionLabels = { products:'Products', categories:'Categories', orders:'Orders', offers:'Offers', banners:'Banners', trending:'Trending', similar:'Similar Products', reviews:'Reviews', notifications:'Notifications', searchTags:'Search Tags', popularSearches:'Popular Searches', customers:'Customers', policies:'Policies' };
         const permNames = permissions.map(p => '• ' + (permissionLabels[p] || p)).join('\n');
         const subject = 'Admin Panel Access — Buyzo Cart';
         const body = `Namaste,\n\nAapko Buyzo Cart Admin Panel ka limited access diya gaya hai.\n\n🔗 Access Link:\n${shareLink}\n\n✅ Aapki Permissions:\n${permNames}\n\n📌 Note: Yeh link sirf aapke liye hai. Kisi aur ke saath share mat karein.\n\n— Buyzo Cart Admin Team`;
@@ -3776,7 +3731,7 @@
       const link = document.getElementById('generatedShareLink').value;
       const subject = 'Admin Panel Access — Buyzo Cart';
       const body = `Access Link: ${link}`;
-      window.location.href = 'mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      window.location.href = 'mailto:' + encodeURIComponent(toEmail || '') + '?subject=' + encodeURIComponent(subject || '') + '&body=' + encodeURIComponent(body || '');
     }
 
     function sendShareEmailAgain() {
@@ -3785,7 +3740,7 @@
       if (!link) return;
       const subject = 'Admin Panel Access — Buyzo Cart';
       const body = `Namaste,\n\nAapko Buyzo Cart Admin Panel ka limited access diya gaya hai.\n\n🔗 Access Link:\n${link}\n\n— Buyzo Cart Admin Team`;
-      window.location.href = 'mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      window.location.href = 'mailto:' + encodeURIComponent(toEmail || '') + '?subject=' + encodeURIComponent(subject || '') + '&body=' + encodeURIComponent(body || '');
     }
 
     async function checkSharedAccess() {
@@ -3794,16 +3749,12 @@
       
       if (!shareId) return;
 
+      // Fetch share data via REST (no auth needed for reading)
       let shareData = null;
       try {
         const res = await fetch(`https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`);
-        const json = await res.json();
-        // Firebase returns {error:"Permission denied"} if rules block read — ignore that
-        if (json && !json.error) shareData = json;
-      } catch (e) { /* will fallback below */ }
-
-      // SDK fallback (works if user already signed in)
-      if (!shareData) {
+        shareData = await res.json();
+      } catch (e) {
         try {
           const snap = await database.ref('sharedAdmins/' + shareId).once('value');
           shareData = snap.val();
@@ -3811,15 +3762,15 @@
       }
 
       if (!shareData) {
-        showSharedErrorPage('🔐', 'Access Check Failed', 'Link verify nahi ho paya. Firebase rules mein sharedAdmins ka read: true karo, ya main admin se contact karein.');
+        showSharedErrorPage('❌', 'Invalid Link', 'This access link is invalid or has expired.');
         return;
       }
       if (shareData.status === 'suspended') {
-        showSharedErrorPage('🚫', 'Access Suspended', 'Aapka admin access suspend kar diya gaya hai. Main admin se contact karein.');
+        showSharedErrorPage('🚫', 'Access Suspended', 'Your admin access has been suspended. Please contact the main administrator.');
         return;
       }
       if (shareData.status !== 'active') {
-        showSharedErrorPage('❌', 'Link Inactive', 'Yeh access link active nahi hai. Main admin se reactivate karne ko bolein.');
+        showSharedErrorPage('❌', 'Link Inactive', 'This access link is no longer active.');
         return;
       }
 
@@ -3888,12 +3839,6 @@
         method: 'PUT', body: JSON.stringify(Date.now())
       }).catch(() => {});
 
-      // Log login activity
-      const logEntry = { type: 'login', description: 'Panel Access - Login', detail: 'Shared admin ne panel access kiya', timestamp: Date.now() };
-      fetch('https://buyzocart-default-rtdb.firebaseio.com/sharedAdminLogs/' + shareId + '.json', {
-        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(logEntry)
-      }).catch(() => {});
-
       document.getElementById('adminLoginPage').style.display = 'none';
       document.getElementById('adminPanel').style.display = 'flex';
 
@@ -3908,11 +3853,6 @@
       if (shareData.permissions.includes('banners')) loadBanners();
       if (shareData.permissions.includes('offers')) loadOffers();
       if (shareData.permissions.includes('notifications')) loadNotifHistory();
-      if (shareData.permissions.includes('sellerRequests')) loadSellerRequests();
-      if (shareData.permissions.includes('hero')) loadHeroSectionSettings();
-      if (shareData.permissions.includes('userListings')) loadUserListings();
-      if (shareData.permissions.includes('brands')) loadBrandsPanel();
-      if (shareData.permissions.includes('analytics')) loadAnalytics();
       setupOnlineUsersTracking();
 
       const displayEmail = user ? user.email : shareData.email || 'Shared Admin';
@@ -3963,12 +3903,7 @@
         'orders': 'orders',
         'offers': 'offers',
         'customers': 'customers',
-        'policies': 'policies',
-        'sellerRequests': 'seller-requests',
-        'hero': 'hero',
-        'userListings': 'user-listings',
-        'brands': 'brands',
-        'analytics': 'analytics'
+        'policies': 'policies'
       };
       
       permissions.forEach(perm => {
@@ -4031,7 +3966,7 @@
             + '<i class="fas fa-circle" style="font-size:6px;"></i> ' + (isActive ? 'ACTIVE' : 'SUSPENDED')
             + '</span></div>'
             + '<div style="display:flex;flex-direction:column;gap:6px;">'
-            + '<button onclick="viewSharedAdminActivity(\'' + id + '\',\'' + email.replace(/'/g, '') + '\')" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;">📊 Activity</button>'
+            + '<button onclick="viewSharedAdminActivity(\'' + id + '\',\'' + email.replace(/\'/g, '') + '\',\'\')" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;">📊 Activity</button>'
             + (isActive
               ? '<button onclick="suspendSharedAdmin(' + JSON.stringify(id) + ')" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;">🚫 Suspend</button>'
               : '<button onclick="activateSharedAdmin(' + JSON.stringify(id) + ')" style="background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;">✅ Activate</button>')
@@ -4047,10 +3982,10 @@
       if (!confirm('Suspend this admin? They will lose access immediately.')) return;
       try {
         await database.ref('sharedAdmins/' + shareId).update({ status: 'suspended' });
-        showAdminToast('Admin suspended successfully!', 'success');
+        alert('✅ Admin suspended successfully!');
         showManageSharedAdmins();
       } catch(e) {
-        showAdminToast('Error: ' + e.message, 'error');
+        alert('❌ Error suspending admin: ' + e.message + '\n\nHint: Firebase rules mein dono admin emails ko write permission do.');
       }
     }
 
@@ -4058,10 +3993,10 @@
       if (!confirm('Activate this admin?')) return;
       try {
         await database.ref('sharedAdmins/' + shareId).update({ status: 'active' });
-        showAdminToast('Admin activated successfully!', 'success');
+        alert('✅ Admin activated successfully!');
         showManageSharedAdmins();
       } catch(e) {
-        showAdminToast('Error: ' + e.message, 'error');
+        alert('❌ Error activating admin: ' + e.message);
       }
     }
 
@@ -4069,92 +4004,16 @@
       if (!confirm('Permanently delete this shared admin? This cannot be undone.')) return;
       try {
         await database.ref('sharedAdmins/' + shareId).remove();
-        // Also clean up their activity logs
-        await database.ref('sharedAdminLogs/' + shareId).remove().catch(()=>{});
-        showAdminToast('Admin deleted successfully!', 'success');
+        alert('✅ Admin deleted successfully!');
         showManageSharedAdmins();
       } catch(e) {
-        showAdminToast('Error deleting: ' + e.message, 'error');
+        alert('❌ Error deleting admin: ' + e.message + '\n\nHint: Firebase rules mein dono admin emails ko write permission do.');
       }
     }
+
     function showAdminSharingOptions() {
-      // Do nothing extra — admin-sharing tab-content div already has the layout
-    }
-
-    // ===== SHARED ADMIN ACTIVITY =====
-    async function viewSharedAdminActivity(shareId, email) {
-      document.getElementById('activityModalTitle').textContent = 'Activity — ' + (email || 'Shared Admin');
-      document.getElementById('activityModalEmail').textContent = email || '';
-      document.getElementById('activityLogList').innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
-      document.getElementById('activityPermsList').innerHTML = '';
-      const shareLink = window.location.origin + window.location.pathname + '?share=' + shareId;
-      document.getElementById('activityShareLinkInput').value = shareLink;
-      window._currentActivityLink = shareLink;
-      document.getElementById('sharedAdminActivityModal').classList.add('active');
-      try {
-        const snap = await database.ref('sharedAdmins/' + shareId).once('value');
-        const shareData = snap.val() || {};
-        const perms = shareData.permissions || [];
-        const permLabels = { products:'Products', categories:'Categories', orders:'Orders', offers:'Offers', banners:'Banners', trending:'Trending', similar:'Similar Products', reviews:'Reviews', notifications:'Notifications', searchTags:'Search Tags', popularSearches:'Popular Searches', customers:'Customers', policies:'Policies', sellerRequests:'Seller Requests', hero:'Hero Section', userListings:'User Listing', brands:'Brands', analytics:'Analytics' };
-        document.getElementById('activityPermsList').innerHTML = perms.length
-          ? perms.map(p => '<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">' + (permLabels[p] || p) + '</span>').join('')
-          : '<span style="color:#94a3b8;font-size:12px;">No permissions assigned</span>';
-
-        const logSnap = await database.ref('sharedAdminLogs/' + shareId).orderByChild('timestamp').limitToLast(100).once('value');
-        const logs = [];
-        logSnap.forEach(child => logs.unshift(child.val()));
-
-        if (!logs.length) {
-          document.getElementById('activityLogList').innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8;"><i class="fas fa-inbox" style="font-size:32px;margin-bottom:12px;display:block;"></i>Abhi tak koi activity nahi hui.<br><span style="font-size:12px;">Jab shared admin panel use karega, activities yahan dikhenge.</span></div>';
-          return;
-        }
-        const iconMap = { product_add:'📦', product_delete:'🗑️', product_edit:'✏️', category_add:'🏷️', order_update:'📋', banner_add:'🖼️', offer_add:'🎁', review_action:'⭐', notification_send:'🔔', seller_approve:'✅', seller_reject:'❌', hero_update:'🏠', brand_blueTick:'🏆', login:'🔑' };
-        document.getElementById('activityLogList').innerHTML = logs.map(log => {
-          const t = new Date(log.timestamp);
-          const timeStr = t.toLocaleDateString('en-IN') + ' ' + t.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
-          const icon = iconMap[log.type] || '📌';
-          return '<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f1f5f9;">'
-            + '<div style="width:32px;height:32px;background:#f1f5f9;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">' + icon + '</div>'
-            + '<div style="flex:1;">'
-            + '<div style="font-weight:600;font-size:13px;color:#0f172a;">' + (log.description || log.type) + '</div>'
-            + (log.detail ? '<div style="font-size:11px;color:#64748b;margin-top:2px;">' + log.detail + '</div>' : '')
-            + '<div style="font-size:10px;color:#94a3b8;margin-top:3px;"><i class="fas fa-clock" style="margin-right:3px;"></i>' + timeStr + '</div>'
-            + '</div>'
-            + (log.productId ? '<button onclick="deleteProductFromActivity(\'' + log.productId + '\',this)" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:10px;font-weight:600;flex-shrink:0;">Delete</button>' : '')
-            + '</div>';
-        }).join('');
-      } catch(e) {
-        document.getElementById('activityLogList').innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px;">Error: ' + e.message + '</p>';
-      }
-    }
-
-    function copyActivityLink() {
-      const link = window._currentActivityLink || '';
-      if (!link) return;
-      navigator.clipboard ? navigator.clipboard.writeText(link).then(() => showAdminToast('Link copied!', 'success'))
-        : (document.getElementById('activityShareLinkInput').select(), document.execCommand('copy'), showAdminToast('Link copied!', 'success'));
-    }
-
-    async function deleteProductFromActivity(productId, btn) {
-      if (!confirm('Delete this product from the main panel?')) return;
-      btn.disabled = true;
-      try {
-        await database.ref('products/' + productId).remove();
-        showAdminToast('Product deleted!', 'success');
-        btn.parentElement.style.opacity = '0.5';
-        btn.textContent = 'Deleted';
-      } catch(e) {
-        showAdminToast('Error: ' + e.message, 'error');
-        btn.disabled = false;
-      }
-    }
-
-    function logSharedAdminActivity(type, description, detail, productId) {
-      const shareId = sessionStorage.getItem('sharedAdminId');
-      if (!shareId) return;
-      const log = { type, description, detail: detail || '', timestamp: Date.now() };
-      if (productId) log.productId = productId;
-      database.ref('sharedAdminLogs/' + shareId).push(log).catch(() => {});
+      // FIX: Do NOT replace .content innerHTML — destroys all tab-content divs
+      // Content is already in #admin-sharing tab div in HTML
     }
 
     // ===== SEARCH TAG PRODUCT MANAGEMENT =====
@@ -4462,9 +4321,7 @@
           'trending': 'trending', 'similar-products': 'similar', 'reviews': 'reviews',
           'notifications': 'notifications', 'search-tags': 'searchTags',
           'popular-searches': 'popularSearches', 'orders': 'orders',
-          'offers': 'offers', 'customers': 'customers', 'policies': 'policies',
-          'seller-requests': 'sellerRequests', 'hero': 'hero',
-          'user-listings': 'userListings', 'brands': 'brands', 'analytics': 'analytics'
+          'offers': 'offers', 'customers': 'customers', 'policies': 'policies'
         };
         const requiredPerm = tabMapping[tabName];
         if (requiredPerm && !sharedPerms.includes(requiredPerm)) {
@@ -4481,16 +4338,19 @@
       if (tabName === 'admin-sharing') {
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.menu-item').forEach(nav => nav.classList.remove('active'));
-        document.getElementById('dashboard').classList.add('active');
-        document.querySelector('.menu-item[data-tab="admin-sharing"]').classList.add('active');
+        const sharingDiv = document.getElementById('admin-sharing');
+        if (sharingDiv) sharingDiv.classList.add('active');
+        const navItem = document.querySelector('.menu-item[data-tab="admin-sharing"]');
+        if (navItem) navItem.classList.add('active');
         document.getElementById('adminPageTitle').textContent = 'Admin Sharing';
-        showAdminSharingOptions();
         return;
       }
       
       document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
       document.querySelectorAll('.menu-item').forEach(nav => nav.classList.remove('active'));
-      document.getElementById(tabName).classList.add('active');
+      const tabEl = document.getElementById(tabName);
+      if (!tabEl) { console.warn('Tab not found:', tabName); return; }
+      tabEl.classList.add('active');
       const navItem = document.querySelector(`.menu-item[data-tab="${tabName}"]`);
       if (navItem) navItem.classList.add('active');
       
