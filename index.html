@@ -370,6 +370,42 @@
       font-size: 14px;
     }
 
+    .inline-perm-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .inline-perm-item:hover {
+      border-color: #2563eb;
+      background: #eff6ff;
+      color: #2563eb;
+    }
+    .inline-perm-item input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: #2563eb;
+      flex-shrink: 0;
+    }
+    .inline-perm-item i {
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    /* Transfer Admin Modal */
+    #transferAdminModal .modal-content {
+      max-width: 480px;
+    }
+
     .earnings-section {
       margin-bottom: 24px;
     }
@@ -2512,39 +2548,130 @@
 
         <!-- Admin Sharing Tab -->
         <div class="tab-content" id="admin-sharing">
-          <div class="stats-container" style="margin-bottom:20px;">
-            <div class="stat-card" style="cursor:pointer;" onclick="showAdminSharing()">
-              <div class="stat-icon" style="background:var(--primary);">
-                <i class="fas fa-share-alt"></i>
+          <!-- Admin Sharing Landing Page -->
+          <div id="adminSharingLanding" style="min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;">
+            <div style="text-align:center;margin-bottom:40px;">
+              <div style="width:72px;height:72px;background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;color:white;margin:0 auto 18px;box-shadow:0 8px 24px rgba(37,99,235,0.3);">
+                <i class="fas fa-users-cog"></i>
               </div>
-              <div class="stat-info">
-                <h3 style="font-size:1.2rem;">Share Access</h3>
-                <p>Grant limited admin access</p>
+              <h2 style="font-size:2rem;font-weight:800;color:#0f172a;margin-bottom:8px;">Admin Access Control</h2>
+              <p style="color:#64748b;font-size:15px;max-width:420px;margin:0 auto;">Grant limited panel access to team members or manage existing shared admins</p>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;width:100%;max-width:640px;">
+              <!-- Admin Sharing Card -->
+              <div onclick="openAdminSharingPage()" style="background:white;border-radius:20px;padding:32px 28px;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.08);border:2px solid transparent;transition:all 0.25s ease;position:relative;overflow:hidden;" onmouseover="this.style.borderColor='#2563eb';this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(37,99,235,0.18)';" onmouseout="this.style.borderColor='transparent';this.style.transform='translateY(0)';this.style.boxShadow='0 4px 20px rgba(0,0,0,0.08)';">
+                <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:linear-gradient(135deg,rgba(37,99,235,0.08),rgba(124,58,237,0.08));border-radius:50%;"></div>
+                <div style="width:56px;height:56px;background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;color:white;margin-bottom:18px;box-shadow:0 6px 16px rgba(37,99,235,0.3);">
+                  <i class="fas fa-user-plus"></i>
+                </div>
+                <h3 style="font-size:1.25rem;font-weight:800;color:#0f172a;margin-bottom:8px;">Admin Sharing</h3>
+                <p style="color:#64748b;font-size:13.5px;line-height:1.6;">Add a new team member via Gmail, set their permissions, and send them a secure access link.</p>
+                <div style="margin-top:18px;display:flex;align-items:center;gap:6px;color:#2563eb;font-weight:700;font-size:13px;">
+                  Share Access <i class="fas fa-arrow-right"></i>
+                </div>
+              </div>
+              <!-- Manage Admins Card -->
+              <div onclick="openManageAdminsPage()" style="background:white;border-radius:20px;padding:32px 28px;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.08);border:2px solid transparent;transition:all 0.25s ease;position:relative;overflow:hidden;" onmouseover="this.style.borderColor='#22c55e';this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(34,197,94,0.18)';" onmouseout="this.style.borderColor='transparent';this.style.transform='translateY(0)';this.style.boxShadow='0 4px 20px rgba(0,0,0,0.08)';">
+                <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:linear-gradient(135deg,rgba(34,197,94,0.08),rgba(6,182,212,0.08));border-radius:50%;"></div>
+                <div style="width:56px;height:56px;background:linear-gradient(135deg,#22c55e,#06b6d4);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;color:white;margin-bottom:18px;box-shadow:0 6px 16px rgba(34,197,94,0.3);">
+                  <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 style="font-size:1.25rem;font-weight:800;color:#0f172a;margin-bottom:8px;">Manage Admins</h3>
+                <p style="color:#64748b;font-size:13.5px;line-height:1.6;">View all shared admins, check their activity, suspend, delete, or transfer admin access.</p>
+                <div style="margin-top:18px;display:flex;align-items:center;gap:6px;color:#22c55e;font-weight:700;font-size:13px;">
+                  Manage Access <i class="fas fa-arrow-right"></i>
+                </div>
               </div>
             </div>
-            <div class="stat-card" style="cursor:pointer;" onclick="showManageSharedAdmins()">
-              <div class="stat-icon" style="background:var(--success);">
-                <i class="fas fa-users"></i>
-              </div>
-              <div class="stat-info">
-                <h3 style="font-size:1.2rem;">Manage Admins</h3>
-                <p>View and manage shared access</p>
+            <!-- Info strip -->
+            <div style="margin-top:36px;background:#f8fafc;border-radius:14px;padding:18px 24px;max-width:640px;width:100%;border:1px solid #e2e8f0;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;text-align:center;">
+                <div><div style="font-size:22px;margin-bottom:4px;">🔐</div><div style="font-size:12px;color:#64748b;font-weight:600;">Secure Links</div></div>
+                <div><div style="font-size:22px;margin-bottom:4px;">⚙️</div><div style="font-size:12px;color:#64748b;font-weight:600;">Custom Permissions</div></div>
+                <div><div style="font-size:22px;margin-bottom:4px;">📊</div><div style="font-size:12px;color:#64748b;font-weight:600;">Activity Tracking</div></div>
+                <div><div style="font-size:22px;margin-bottom:4px;">🚫</div><div style="font-size:12px;color:#64748b;font-weight:600;">Instant Revoke</div></div>
               </div>
             </div>
           </div>
-          <div class="card">
-            <div class="card-header">
-              <h2>Admin Sharing Guide</h2>
+
+          <!-- Admin Sharing Sub-Page -->
+          <div id="adminSharingSubPage" style="display:none;padding:0;">
+            <div style="background:linear-gradient(135deg,#2563eb,#7c3aed);padding:24px 30px;border-radius:0 0 20px 20px;margin-bottom:24px;">
+              <div style="display:flex;align-items:center;gap:14px;">
+                <button onclick="backToAdminSharingLanding()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-arrow-left"></i></button>
+                <div>
+                  <h2 style="color:white;font-weight:800;font-size:1.4rem;margin:0;">Admin Sharing</h2>
+                  <p style="color:rgba(255,255,255,0.75);margin:0;font-size:13px;">Grant limited panel access via Gmail</p>
+                </div>
+              </div>
             </div>
-            <div class="card-body">
-              <p>You can share limited admin access with team members. They will only see features you grant permission for.</p>
-              <ul style="margin-top:15px;margin-left:20px;line-height:2;">
-                <li>Click <strong>"Share Access"</strong> to create a new shared admin link</li>
-                <li>Select specific permissions for each user</li>
-                <li>Send the generated link via email</li>
-                <li>Monitor and manage access from <strong>"Manage Admins"</strong></li>
-                <li>Suspend or delete access anytime if needed</li>
-              </ul>
+            <div style="padding:0 30px 30px;">
+              <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 4px 16px rgba(0,0,0,0.07);max-width:700px;">
+                <div style="margin-bottom:22px;">
+                  <label style="font-weight:700;font-size:14px;color:#0f172a;margin-bottom:8px;display:block;"><i class="fas fa-envelope" style="color:#2563eb;margin-right:6px;"></i>Recipient Gmail Address *</label>
+                  <input type="email" id="inlineShareEmail" class="form-control" placeholder="team@gmail.com" style="border-radius:10px;padding:12px 16px;font-size:14px;border:2px solid #e2e8f0;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+                  <p style="font-size:12px;color:#94a3b8;margin-top:5px;"><i class="fas fa-info-circle"></i> A secure access link will be sent to this Gmail address</p>
+                </div>
+
+                <div style="margin-bottom:22px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <label style="font-weight:700;font-size:14px;color:#0f172a;margin:0;"><i class="fas fa-key" style="color:#2563eb;margin-right:6px;"></i>Permissions</label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#2563eb;font-weight:700;background:#eff6ff;padding:6px 12px;border-radius:8px;" onclick="inlineToggleAll()">
+                      <input type="checkbox" id="inlinePermAll" onchange="inlineToggleAll()" style="width:15px;height:15px;accent-color:#2563eb;"> Select All
+                    </label>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;">
+                    <label class="inline-perm-item" for="ip_products"><input type="checkbox" id="ip_products" value="products"><i class="fas fa-box"></i> Products</label>
+                    <label class="inline-perm-item" for="ip_categories"><input type="checkbox" id="ip_categories" value="categories"><i class="fas fa-th-large"></i> Categories</label>
+                    <label class="inline-perm-item" for="ip_orders"><input type="checkbox" id="ip_orders" value="orders"><i class="fas fa-shopping-bag"></i> Orders</label>
+                    <label class="inline-perm-item" for="ip_offers"><input type="checkbox" id="ip_offers" value="offers"><i class="fas fa-tag"></i> Offers</label>
+                    <label class="inline-perm-item" for="ip_banners"><input type="checkbox" id="ip_banners" value="banners"><i class="fas fa-images"></i> Banners</label>
+                    <label class="inline-perm-item" for="ip_trending"><input type="checkbox" id="ip_trending" value="trending"><i class="fas fa-fire"></i> Trending</label>
+                    <label class="inline-perm-item" for="ip_reviews"><input type="checkbox" id="ip_reviews" value="reviews"><i class="fas fa-star"></i> Reviews</label>
+                    <label class="inline-perm-item" for="ip_notifications"><input type="checkbox" id="ip_notifications" value="notifications"><i class="fas fa-bell"></i> Notifications</label>
+                    <label class="inline-perm-item" for="ip_customers"><input type="checkbox" id="ip_customers" value="customers"><i class="fas fa-users"></i> Customers</label>
+                    <label class="inline-perm-item" for="ip_policies"><input type="checkbox" id="ip_policies" value="policies"><i class="fas fa-file-alt"></i> Policies</label>
+                    <label class="inline-perm-item" for="ip_sellerRequests"><input type="checkbox" id="ip_sellerRequests" value="sellerRequests"><i class="fas fa-store"></i> Seller Req.</label>
+                    <label class="inline-perm-item" for="ip_hero"><input type="checkbox" id="ip_hero" value="hero"><i class="fas fa-home"></i> Hero Section</label>
+                    <label class="inline-perm-item" for="ip_userListings"><input type="checkbox" id="ip_userListings" value="userListings"><i class="fas fa-list"></i> User Listings</label>
+                    <label class="inline-perm-item" for="ip_brands"><input type="checkbox" id="ip_brands" value="brands"><i class="fas fa-trademark"></i> Brands</label>
+                    <label class="inline-perm-item" for="ip_analytics"><input type="checkbox" id="ip_analytics" value="analytics"><i class="fas fa-chart-bar"></i> Analytics</label>
+                    <label class="inline-perm-item" for="ip_searchTags"><input type="checkbox" id="ip_searchTags" value="searchTags"><i class="fas fa-search"></i> Search Tags</label>
+                  </div>
+                </div>
+
+                <div id="inlineShareLinkResult" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:16px;margin-bottom:18px;">
+                  <label style="font-weight:700;font-size:13px;color:#15803d;margin-bottom:8px;display:block;"><i class="fas fa-check-circle"></i> Access Link Generated!</label>
+                  <div style="display:flex;gap:8px;">
+                    <input type="text" id="inlineGeneratedLink" readonly style="flex:1;border-radius:8px;border:1px solid #86efac;padding:10px;font-size:12px;background:white;color:#0f172a;">
+                    <button onclick="copyInlineShareLink()" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:700;font-size:13px;white-space:nowrap;"><i class="fas fa-copy"></i> Copy</button>
+                  </div>
+                  <button onclick="resendShareEmail()" style="margin-top:10px;background:none;border:1px solid #16a34a;color:#16a34a;border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:12px;"><i class="fas fa-envelope"></i> Resend Email</button>
+                </div>
+
+                <button id="inlineGenerateBtn" onclick="inlineGenerateShareLink()" style="width:100%;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(37,99,235,0.3);">
+                  <i class="fas fa-paper-plane"></i> Generate Link & Send Email
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Manage Admins Sub-Page -->
+          <div id="manageAdminsSubPage" style="display:none;padding:0;">
+            <div style="background:linear-gradient(135deg,#22c55e,#06b6d4);padding:24px 30px;border-radius:0 0 20px 20px;margin-bottom:24px;">
+              <div style="display:flex;align-items:center;gap:14px;">
+                <button onclick="backToAdminSharingLanding()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-arrow-left"></i></button>
+                <div style="flex:1;">
+                  <h2 style="color:white;font-weight:800;font-size:1.4rem;margin:0;">Manage Admins</h2>
+                  <p style="color:rgba(255,255,255,0.8);margin:0;font-size:13px;">Suspend, delete, view activity or transfer admin access</p>
+                </div>
+                <button onclick="loadManageAdminsInline()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;"><i class="fas fa-sync-alt"></i> Refresh</button>
+              </div>
+            </div>
+            <div style="padding:0 30px 30px;">
+              <div id="inlineAdminsList" style="max-width:760px;">
+                <p style="text-align:center;color:#94a3b8;padding:40px;"><i class="fas fa-spinner fa-spin"></i> Loading...</p>
+              </div>
             </div>
           </div>
         </div>
@@ -2625,14 +2752,7 @@
                   <label for="heroMessages">Ticker Messages (one per line)</label>
                   <textarea id="heroMessages" class="form-control" rows="3" placeholder="🔥 Big Sale Today&#10;🚚 Free Shipping over ₹999&#10;✨ New Arrivals Just Dropped"></textarea>
                 </div>
-                <div class="form-group">
-                  <label for="popularSearchesField">Popular Searches (comma-separated)</label>
-                  <input type="text" id="popularSearchesField" class="form-control" placeholder="T-Shirt, Jeans, Sneakers, Watch">
-                </div>
-                <div class="form-group">
-                  <label for="searchTagsField">Search Tags (comma-separated)</label>
-                  <input type="text" id="searchTagsField" class="form-control" placeholder="Summer Collection, New Arrivals, Best Sellers">
-                </div>
+                <!-- Search Tags & Popular Searches are managed via their dedicated tabs in the sidebar, not here -->
 
                 <div style="display:flex;gap:10px;flex-wrap:wrap;">
                 <button type="button" class="btn btn-outline" onclick="resetSiteSettings()" style="color:#ef4444;border-color:#ef4444;font-weight:700;"><i class="fas fa-undo"></i> Reset to Default</button>
@@ -3346,6 +3466,38 @@
         <div>
           <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:10px;display:flex;align-items:center;gap:6px;"><i class="fas fa-history" style="color:#6366f1;"></i> Activity Log</div>
           <div id="activityLogList"><p style="color:#94a3b8;text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading...</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transfer Admin Modal -->
+  <div class="modal" id="transferAdminModal">
+    <div class="modal-content" style="max-width:480px;border-radius:16px;overflow:hidden;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#f59e0b,#ef4444);padding:20px 24px;border:none;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:40px;height:40px;background:rgba(255,255,255,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-exchange-alt" style="color:white;font-size:18px;"></i>
+          </div>
+          <div>
+            <h3 style="color:white;margin:0;font-size:16px;font-weight:700;">Transfer Admin Access</h3>
+            <p style="color:rgba(255,255,255,0.8);margin:0;font-size:11px;" id="transferFromEmail">Transferring from —</p>
+          </div>
+        </div>
+        <button class="close" onclick="closeModal('transferAdminModal')" style="color:rgba(255,255,255,0.8);font-size:22px;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:24px;">
+        <input type="hidden" id="transferShareId">
+        <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:13px;color:#92400e;">
+          <strong>⚠️ Important:</strong> The current admin's access will be transferred to the new Gmail. Their products will remain. The old admin will lose access.
+        </div>
+        <div class="form-group" style="margin-bottom:18px;">
+          <label style="font-weight:700;font-size:14px;color:#0f172a;margin-bottom:8px;display:block;"><i class="fas fa-envelope" style="color:#f59e0b;margin-right:6px;"></i>New Admin Gmail *</label>
+          <input type="email" id="transferToEmail" class="form-control" placeholder="newadmin@gmail.com" style="border-radius:10px;border:2px solid #e2e8f0;padding:12px;" onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button onclick="closeModal('transferAdminModal')" style="flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;padding:12px;cursor:pointer;font-weight:600;">Cancel</button>
+          <button onclick="executeAdminTransfer()" style="flex:2;background:linear-gradient(135deg,#f59e0b,#ef4444);color:white;border:none;border-radius:10px;padding:12px;cursor:pointer;font-weight:700;font-size:14px;"><i class="fas fa-exchange-alt"></i> Transfer Access</button>
         </div>
       </div>
     </div>
@@ -4088,11 +4240,15 @@
     }
 
     async function suspendSharedAdmin(shareId) {
-      if (!confirm('Suspend this admin? They will lose access immediately.')) return;
+      if (!confirm('Suspend this admin? They will lose access immediately. Their products will remain.')) return;
       try {
         await database.ref('sharedAdmins/' + shareId).update({ status: 'suspended' });
-        showAdminToast('Admin suspended successfully!', 'success');
-        showManageSharedAdmins();
+        showAdminToast('Admin suspended! Products remain intact.', 'success');
+        if (document.getElementById('manageAdminsSubPage').style.display !== 'none') {
+          loadManageAdminsInline();
+        } else {
+          showManageSharedAdmins();
+        }
       } catch(e) {
         showAdminToast('Error: ' + e.message, 'error');
       }
@@ -4103,7 +4259,11 @@
       try {
         await database.ref('sharedAdmins/' + shareId).update({ status: 'active' });
         showAdminToast('Admin activated successfully!', 'success');
-        showManageSharedAdmins();
+        if (document.getElementById('manageAdminsSubPage').style.display !== 'none') {
+          loadManageAdminsInline();
+        } else {
+          showManageSharedAdmins();
+        }
       } catch(e) {
         showAdminToast('Error: ' + e.message, 'error');
       }
@@ -4123,6 +4283,221 @@
     }
     function showAdminSharingOptions() {
       // Do nothing extra — admin-sharing tab-content div already has the layout
+    }
+
+    // ===== NEW ADMIN SHARING PAGE FUNCTIONS =====
+    function openAdminSharingPage() {
+      document.getElementById('adminSharingLanding').style.display = 'none';
+      document.getElementById('adminSharingSubPage').style.display = 'block';
+      document.getElementById('manageAdminsSubPage').style.display = 'none';
+      // Reset form
+      document.getElementById('inlineShareEmail').value = '';
+      document.getElementById('inlineShareLinkResult').style.display = 'none';
+      document.querySelectorAll('[id^="ip_"]').forEach(cb => cb.checked = false);
+      document.getElementById('inlinePermAll').checked = false;
+      document.getElementById('inlineGenerateBtn').innerHTML = '<i class="fas fa-paper-plane"></i> Generate Link & Send Email';
+      document.getElementById('inlineGenerateBtn').disabled = false;
+    }
+
+    function openManageAdminsPage() {
+      document.getElementById('adminSharingLanding').style.display = 'none';
+      document.getElementById('adminSharingSubPage').style.display = 'none';
+      document.getElementById('manageAdminsSubPage').style.display = 'block';
+      loadManageAdminsInline();
+    }
+
+    function backToAdminSharingLanding() {
+      document.getElementById('adminSharingLanding').style.display = 'flex';
+      document.getElementById('adminSharingSubPage').style.display = 'none';
+      document.getElementById('manageAdminsSubPage').style.display = 'none';
+    }
+
+    function inlineToggleAll() {
+      const checkAll = document.getElementById('inlinePermAll').checked;
+      document.querySelectorAll('[id^="ip_"]').forEach(cb => { cb.checked = checkAll; });
+    }
+
+    function inlineGenerateShareLink() {
+      const recipientEmail = document.getElementById('inlineShareEmail').value.trim();
+      const permissions = [];
+      document.querySelectorAll('[id^="ip_"]:checked').forEach(cb => permissions.push(cb.value));
+      if (permissions.length === 0) { showAdminToast('Please select at least one permission', 'error'); return; }
+
+      const btn = document.getElementById('inlineGenerateBtn');
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+      btn.disabled = true;
+
+      const shareId = 'share_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      const creatorEmail = (auth.currentUser && auth.currentUser.email) ? auth.currentUser.email : 'super-admin';
+      const shareData = {
+        email: recipientEmail || '',
+        permissions,
+        status: 'active',
+        createdBy: creatorEmail,
+        createdAt: Date.now(),
+        lastAccessed: null
+      };
+
+      database.ref('sharedAdmins/' + shareId).set(shareData).then(() => {
+        const shareLink = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
+        document.getElementById('inlineGeneratedLink').value = shareLink;
+        document.getElementById('inlineShareLinkResult').style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Link Generated!';
+        btn.disabled = false;
+        showAdminToast('✅ Admin access link generated!', 'success');
+        // Auto-open Gmail
+        const permLabels = { products:'Products', categories:'Categories', orders:'Orders', offers:'Offers', banners:'Banners', trending:'Trending', similar:'Similar Products', reviews:'Reviews', notifications:'Notifications', searchTags:'Search Tags', popularSearches:'Popular Searches', customers:'Customers', policies:'Policies', sellerRequests:'Seller Requests', hero:'Hero Section', userListings:'User Listing', brands:'Brands', analytics:'Analytics' };
+        const permNames = permissions.map(p => '• ' + (permLabels[p] || p)).join('\n');
+        const subject = 'Admin Panel Access — Buyzo Cart';
+        const body = `Namaste,\n\nAapko Buyzo Cart Admin Panel ka limited access diya gaya hai.\n\n🔗 Access Link:\n${shareLink}\n\n✅ Aapki Permissions:\n${permNames}\n\n📌 Note: Yeh link sirf aapke liye hai. Kisi aur ke saath share mat karein.\n\n— Buyzo Cart Admin Team`;
+        setTimeout(() => { window.location.href = 'mailto:' + encodeURIComponent(recipientEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body); }, 600);
+      }).catch(err => {
+        showAdminToast('Error: ' + err.message, 'error');
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Generate Link & Send Email';
+        btn.disabled = false;
+      });
+    }
+
+    function copyInlineShareLink() {
+      const input = document.getElementById('inlineGeneratedLink');
+      if (!input || !input.value) return;
+      navigator.clipboard ? navigator.clipboard.writeText(input.value).then(() => showAdminToast('Link copied!', 'success'))
+        : (input.select(), document.execCommand('copy'), showAdminToast('Link copied!', 'success'));
+    }
+
+    function resendShareEmail() {
+      const email = document.getElementById('inlineShareEmail').value.trim();
+      const link = document.getElementById('inlineGeneratedLink').value;
+      if (!link) return;
+      const subject = 'Admin Panel Access — Buyzo Cart';
+      const body = `Namaste,\n\nAapko Buyzo Cart Admin Panel ka limited access diya gaya hai.\n\n🔗 Access Link:\n${link}\n\n— Buyzo Cart Admin Team`;
+      window.location.href = 'mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    }
+
+    async function loadManageAdminsInline() {
+      const listDiv = document.getElementById('inlineAdminsList');
+      listDiv.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:40px;"><i class="fas fa-spinner fa-spin"></i> Loading admins...</p>';
+      try {
+        const snapshot = await database.ref('sharedAdmins').once('value');
+        const sharedAdmins = snapshot.val() || {};
+        const entries = Object.entries(sharedAdmins);
+        if (!entries.length) {
+          listDiv.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#94a3b8;"><i class="fas fa-users-slash" style="font-size:48px;margin-bottom:16px;display:block;"></i><h3 style="margin-bottom:8px;color:#64748b;">No Shared Admins Yet</h3><p style="font-size:14px;">Click "Admin Sharing" to add team members.</p></div>';
+          return;
+        }
+        const permLabels = { products:'Products', categories:'Categories', orders:'Orders', offers:'Offers', banners:'Banners', trending:'Trending', similar:'Similar Products', reviews:'Reviews', notifications:'Notifications', searchTags:'Search Tags', popularSearches:'Popular Searches', customers:'Customers', policies:'Policies', sellerRequests:'Seller Requests', hero:'Hero Section', userListings:'User Listing', brands:'Brands', analytics:'Analytics' };
+
+        listDiv.innerHTML = entries.map(([id, data]) => {
+          const email = data.email || data.recipientEmail || 'Email not saved';
+          const firstName = email.includes('@') ? email.split('@')[0] : '?';
+          const isActive = data.status === 'active';
+          const isSuspended = data.status === 'suspended';
+          const created = data.createdAt ? new Date(data.createdAt).toLocaleDateString('en-IN') : 'N/A';
+          const lastSeen = data.lastAccessed ? new Date(data.lastAccessed).toLocaleString('en-IN') : 'Never accessed';
+          const perms = (data.permissions || []).map(p => permLabels[p] || p);
+          const avatarColor = isActive ? 'linear-gradient(135deg,#2563eb,#7c3aed)' : 'linear-gradient(135deg,#94a3b8,#64748b)';
+
+          return `<div style="background:white;border:1.5px solid ${isActive ? '#e2e8f0' : '#fca5a5'};border-radius:16px;padding:20px;margin-bottom:16px;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:200px;">
+                <div style="width:48px;height:48px;border-radius:14px;background:${avatarColor};display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:18px;flex-shrink:0;">${firstName.charAt(0).toUpperCase()}</div>
+                <div>
+                  <div style="font-weight:800;font-size:15px;color:#0f172a;">${email}</div>
+                  <div style="font-size:11px;color:#64748b;margin-top:2px;">Created: ${created} · Last: ${lastSeen}</div>
+                  <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">
+                    ${perms.slice(0,4).map(p => `<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">${p}</span>`).join('')}
+                    ${perms.length > 4 ? `<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">+${perms.length - 4} more</span>` : ''}
+                  </div>
+                </div>
+              </div>
+              <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;${isActive ? 'background:#dcfce7;color:#15803d' : 'background:#fee2e2;color:#dc2626'}">
+                <i class="fas fa-circle" style="font-size:6px;"></i> ${isActive ? 'ACTIVE' : 'SUSPENDED'}
+              </span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;">
+              <button onclick="viewSharedAdminActivity('${id}','${email.replace(/'/g,'')}')" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;"><i class="fas fa-chart-line"></i> Activity</button>
+              ${isActive
+                ? `<button onclick="suspendSharedAdmin('${id}')" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;"><i class="fas fa-ban"></i> Suspend</button>`
+                : `<button onclick="activateSharedAdmin('${id}')" style="background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;"><i class="fas fa-check-circle"></i> Activate</button>`
+              }
+              ${isSuspended
+                ? `<button onclick="openTransferAdminModal('${id}','${email.replace(/'/g,'')}')" style="background:#fef9c3;color:#ca8a04;border:1px solid #fde047;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;"><i class="fas fa-exchange-alt"></i> Transfer</button>`
+                : ''
+              }
+              <button onclick="deleteSharedAdminWithProducts('${id}','${email.replace(/'/g,'')}',event)" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;"><i class="fas fa-trash-alt"></i> Delete</button>
+            </div>
+          </div>`;
+        }).join('');
+      } catch(e) {
+        listDiv.innerHTML = `<p style="color:#ef4444;text-align:center;padding:20px;">Error loading: ${e.message}</p>`;
+      }
+    }
+
+    function openTransferAdminModal(shareId, email) {
+      document.getElementById('transferShareId').value = shareId;
+      document.getElementById('transferFromEmail').textContent = 'Transferring from: ' + email;
+      document.getElementById('transferToEmail').value = '';
+      document.getElementById('transferAdminModal').classList.add('active');
+    }
+
+    async function executeAdminTransfer() {
+      const shareId = document.getElementById('transferShareId').value;
+      const newEmail = document.getElementById('transferToEmail').value.trim();
+      if (!newEmail || !newEmail.includes('@')) { showAdminToast('Please enter a valid Gmail address', 'error'); return; }
+      if (!confirm(`Transfer admin access to "${newEmail}"? The old admin will lose access. Products will remain.`)) return;
+      try {
+        // Get existing data
+        const snap = await database.ref('sharedAdmins/' + shareId).once('value');
+        const existingData = snap.val() || {};
+        const newShareId = 'share_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        // Create new admin entry with same permissions
+        await database.ref('sharedAdmins/' + newShareId).set({
+          ...existingData,
+          email: newEmail,
+          status: 'active',
+          transferredFrom: existingData.email || '',
+          transferredAt: Date.now(),
+          createdAt: Date.now(),
+          lastAccessed: null
+        });
+        // Revoke old admin (delete but keep their products — log stays)
+        await database.ref('sharedAdmins/' + shareId).remove();
+        closeModal('transferAdminModal');
+        showAdminToast(`✅ Admin access transferred to ${newEmail}!`, 'success');
+        // Send email to new admin
+        const shareLink = `${window.location.origin}${window.location.pathname}?share=${newShareId}`;
+        const subject = 'Admin Panel Access Transferred — Buyzo Cart';
+        const body = `Namaste,\n\nBuyzo Cart Admin Panel access aapko transfer kiya gaya hai.\n\n🔗 Access Link:\n${shareLink}\n\n— Buyzo Cart Admin Team`;
+        setTimeout(() => { window.location.href = 'mailto:' + encodeURIComponent(newEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body); }, 500);
+        loadManageAdminsInline();
+      } catch(e) {
+        showAdminToast('Error: ' + e.message, 'error');
+      }
+    }
+
+    async function deleteSharedAdminWithProducts(shareId, email, ev) {
+      const btn = ev ? ev.currentTarget : null;
+      const choice = confirm(`Delete admin "${email}"?\n\nClick OK to DELETE all their added products too.\nClick Cancel to abort.`);
+      if (!choice) return;
+      const deleteProducts = confirm(`Also DELETE all products added by "${email}"?\n\nOK = Yes, delete their products\nCancel = No, keep their products`);
+      try {
+        if (deleteProducts) {
+          // Find and delete products added by this shared admin via activity logs
+          const logSnap = await database.ref('sharedAdminLogs/' + shareId).once('value');
+          const logs = logSnap.val() || {};
+          const productIds = new Set();
+          Object.values(logs).forEach(log => { if (log.productId) productIds.add(log.productId); });
+          for (const pid of productIds) {
+            await database.ref('products/' + pid).remove().catch(() => {});
+          }
+        }
+        await database.ref('sharedAdmins/' + shareId).remove();
+        await database.ref('sharedAdminLogs/' + shareId).remove().catch(() => {});
+        showAdminToast(`Admin deleted${deleteProducts ? ' + their products removed' : ''}!`, 'success');
+        loadManageAdminsInline();
+      } catch(e) {
+        showAdminToast('Error: ' + e.message, 'error');
+      }
     }
 
     // ===== SHARED ADMIN ACTIVITY =====
