@@ -2184,13 +2184,53 @@
         
         <!-- Offers Tab -->
         <div class="tab-content" id="offers">
-          <div class="card">
-            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-              <h2>Manage Offers</h2>
-              <button class="btn btn-primary btn-sm" onclick="showAddOfferModal()"><i class="fas fa-plus"></i> Add Offer</button>
+          <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:20px;align-items:start;" id="offersLayout">
+            <!-- Add Offer Form -->
+            <div class="card" style="position:sticky;top:20px;">
+              <div class="card-header" style="background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:12px 12px 0 0;">
+                <h2 style="color:white;margin:0;font-size:1rem;"><i class="fas fa-plus-circle"></i> Create New Offer</h2>
+              </div>
+              <div class="card-body" style="padding:20px;">
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label style="font-weight:700;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Offer Title *</label>
+                  <input type="text" id="newOfferTitle" class="form-control" placeholder="e.g. Flat 50% OFF on Fashion" style="border-radius:8px;">
+                </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label style="font-weight:700;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Description</label>
+                  <textarea id="newOfferDesc" class="form-control" rows="2" placeholder="Describe the offer..." style="border-radius:8px;resize:vertical;"></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label style="font-weight:700;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Coupon Code</label>
+                  <input type="text" id="newOfferCode" class="form-control" placeholder="e.g. SAVE50" style="border-radius:8px;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+                </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label style="font-weight:700;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Discount Value</label>
+                  <div style="display:flex;gap:8px;">
+                    <input type="number" id="newOfferDiscount" class="form-control" placeholder="50" style="border-radius:8px;flex:1;">
+                    <select id="newOfferDiscountType" class="form-control" style="border-radius:8px;width:80px;">
+                      <option value="%">%</option>
+                      <option value="₹">₹</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom:16px;">
+                  <label style="font-weight:700;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Valid Until</label>
+                  <input type="date" id="newOfferExpiry" class="form-control" style="border-radius:8px;">
+                </div>
+                <button onclick="addNewOffer()" id="addOfferBtn" style="width:100%;background:linear-gradient(135deg,#f59e0b,#ef4444);color:white;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                  <i class="fas fa-paper-plane"></i> Publish Offer
+                </button>
+              </div>
             </div>
-            <div class="card-body">
-              <div id="offersList" style="display:grid;gap:16px;"></div>
+            <!-- Offers List -->
+            <div class="card">
+              <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                <h2 style="margin:0;font-size:1rem;"><i class="fas fa-tags" style="color:#f59e0b;margin-right:6px;"></i>Active Offers</h2>
+                <button class="btn btn-sm btn-outline" onclick="loadOffers()"><i class="fas fa-sync"></i></button>
+              </div>
+              <div class="card-body" style="padding:16px;">
+                <div id="offersList" style="display:flex;flex-direction:column;gap:14px;"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -2457,6 +2497,7 @@
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
               <h2><i class="fas fa-award" style="color:var(--primary);margin-right:8px"></i>Brand Management</h2>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm" onclick="showAddAdminBrandModal()"><i class="fas fa-plus"></i> Add Your Brand</button>
                 <button class="btn btn-sm btn-outline" onclick="loadBrandsPanel()"><i class="fas fa-sync"></i> Refresh</button>
               </div>
             </div>
@@ -2471,12 +2512,10 @@
                   <div style="font-size:12px;color:#64748b;">Blue Tick ✓ Brands</div>
                 </div>
               </div>
-
               <!-- Search -->
               <div style="position:relative;margin-bottom:16px;">
                 <input type="text" id="brandSearchAdmin" placeholder="🔍 Search brands..." oninput="filterBrandsPanel()" class="form-control">
               </div>
-
               <div id="brandsPanelList"><p style="color:#94a3b8;text-align:center;padding:30px">Loading brands...</p></div>
             </div>
           </div>
@@ -3465,6 +3504,45 @@
     </div>
   </div>
 
+  <!-- Add Admin Brand Modal -->
+  <div class="modal" id="addAdminBrandModal">
+    <div class="modal-content" style="max-width:480px;border-radius:16px;overflow:hidden;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#2563eb,#7c3aed);padding:20px 24px;border:none;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:38px;height:38px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-award" style="color:white;font-size:16px;"></i>
+          </div>
+          <h3 style="color:white;margin:0;font-size:16px;font-weight:700;">Add Your Brand</h3>
+        </div>
+        <button class="close" onclick="closeModal('addAdminBrandModal')" style="color:rgba(255,255,255,0.8);font-size:22px;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:24px;">
+        <div style="margin-bottom:16px;">
+          <label style="font-weight:700;font-size:13px;color:#0f172a;display:block;margin-bottom:7px;">Brand Name *</label>
+          <input type="text" id="adminBrandName" class="form-control" placeholder="e.g. Buyzo Official" style="border-radius:10px;border:2px solid #e2e8f0;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-weight:700;font-size:13px;color:#0f172a;display:block;margin-bottom:7px;">Brand Logo URL (optional)</label>
+          <input type="url" id="adminBrandLogo" class="form-control" placeholder="https://..." style="border-radius:10px;border:2px solid #e2e8f0;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-weight:700;font-size:13px;color:#0f172a;display:block;margin-bottom:7px;">Category / Niche</label>
+          <input type="text" id="adminBrandCategory" class="form-control" placeholder="e.g. Fashion, Electronics" style="border-radius:10px;border:2px solid #e2e8f0;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+        </div>
+        <div style="margin-bottom:20px;display:flex;align-items:center;gap:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;">
+          <input type="checkbox" id="adminBrandBlueTick" style="width:16px;height:16px;accent-color:#2563eb;cursor:pointer;">
+          <label for="adminBrandBlueTick" style="font-weight:700;font-size:13px;color:#1d4ed8;cursor:pointer;">
+            <i class="fas fa-check-circle" style="color:#2563eb;"></i> Add Blue Tick Verification ✓
+          </label>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button onclick="closeModal('addAdminBrandModal')" style="flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;padding:12px;cursor:pointer;font-weight:600;">Cancel</button>
+          <button onclick="saveAdminBrand()" style="flex:2;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;border-radius:10px;padding:12px;cursor:pointer;font-weight:700;font-size:14px;"><i class="fas fa-plus"></i> Add Brand</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Transfer Admin Modal -->
   <div class="modal" id="as-transfer-modal">
     <div class="modal-content" style="max-width:480px;border-radius:16px;overflow:hidden;">
@@ -4047,7 +4125,7 @@
       }
     }
 
-    function showShareFullPage(icon, color, title, message) {
+    function showShareFullPage(icon, color, title, message, showLoginBtn) {
       document.body.innerHTML = '';
       document.body.style.cssText = 'margin:0;padding:0;min-height:100vh;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-family:Segoe UI,sans-serif;padding:20px;box-sizing:border-box;';
       document.body.innerHTML = `
@@ -4055,7 +4133,6 @@
           <div style="font-size:54px;margin-bottom:16px;">${icon}</div>
           <h2 style="color:${color};font-size:1.5rem;margin-bottom:12px;font-weight:800;">${title}</h2>
           <p style="color:#64748b;font-size:14px;line-height:1.7;">${message}</p>
-          <a href="${window.location.pathname}" style="display:inline-block;margin-top:28px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:11px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;">Go to Login Page</a>
         </div>`;
     }
 
@@ -4948,6 +5025,7 @@
       else if (tabName === 'seller-requests') { loadSellerRequests(); }
       else if (tabName === 'brands') { loadBrandsPanel(); }
       else if (tabName === 'brand-requests') { loadBrandRequests(); }
+      else if (tabName === 'offers') { loadOffers(); }
     }
 
     function showPolicyTab(policy) {
@@ -7155,22 +7233,143 @@
       });
     }
 
-    function showAddOfferModal() {
-      const title = prompt('Offer Title:');
-      if (!title) return;
-      const description = prompt('Description:') || '';
-      const code = prompt('Coupon Code (optional):') || '';
+    function showAddOfferModal() { /* legacy - replaced by inline form */ }
+
+    function addNewOffer() {
+      const title = document.getElementById('newOfferTitle').value.trim();
+      const desc = document.getElementById('newOfferDesc').value.trim();
+      const code = document.getElementById('newOfferCode').value.trim();
+      const discount = document.getElementById('newOfferDiscount').value.trim();
+      const dtype = document.getElementById('newOfferDiscountType').value;
+      const expiry = document.getElementById('newOfferExpiry').value;
+      if (!title) { showAdminToast('Please enter an offer title', 'error'); return; }
+      const btn = document.getElementById('addOfferBtn');
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+      btn.disabled = true;
       const offerId = 'offer_' + Date.now();
-      database.ref('offers/' + offerId).set({ title, description, code, createdAt: Date.now() })
-        .then(() => alert('Offer added!'))
-        .catch(e => alert('Error: ' + e.message));
+      const data = { title, description: desc, code, discount: discount ? (discount + dtype) : '', expiry: expiry || '', createdAt: Date.now(), status: 'active' };
+      database.ref('offers/' + offerId).set(data)
+        .then(() => {
+          showAdminToast('✅ Offer published successfully!', 'success');
+          document.getElementById('newOfferTitle').value = '';
+          document.getElementById('newOfferDesc').value = '';
+          document.getElementById('newOfferCode').value = '';
+          document.getElementById('newOfferDiscount').value = '';
+          document.getElementById('newOfferExpiry').value = '';
+          btn.innerHTML = '<i class="fas fa-paper-plane"></i> Publish Offer';
+          btn.disabled = false;
+          loadOffers();
+        })
+        .catch(e => {
+          showAdminToast('Error: ' + e.message, 'error');
+          btn.innerHTML = '<i class="fas fa-paper-plane"></i> Publish Offer';
+          btn.disabled = false;
+        });
     }
 
     function deleteOffer(id) {
       if (!confirm('Delete this offer?')) return;
       database.ref('offers/' + id).remove()
-        .then(() => alert('Offer deleted.'))
-        .catch(e => alert('Error: ' + e.message));
+        .then(() => { showAdminToast('Offer deleted!', 'success'); loadOffers(); })
+        .catch(e => showAdminToast('Error: ' + e.message, 'error'));
+    }
+
+    function loadOffers() {
+      const list = document.getElementById('offersList');
+      if (!list) return;
+      list.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:20px;"><i class="fas fa-spinner fa-spin"></i></p>';
+      database.ref('offers').orderByChild('createdAt').once('value').then(snap => {
+        const data = snap.val() || {};
+        const entries = Object.entries(data).reverse();
+        if (!entries.length) {
+          list.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:30px;">No offers yet. Create your first offer!</p>';
+          return;
+        }
+        list.innerHTML = entries.map(([id, o]) => {
+          const expiry = o.expiry ? new Date(o.expiry).toLocaleDateString('en-IN') : null;
+          const expired = o.expiry && new Date(o.expiry) < new Date();
+          return `<div style="background:${expired ? '#fff7f7' : 'white'};border:1.5px solid ${expired ? '#fca5a5' : '#e2e8f0'};border-radius:14px;padding:16px;position:relative;overflow:hidden;">
+            <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${expired ? '#ef4444' : 'linear-gradient(#f59e0b,#ef4444)'};"></div>
+            <div style="padding-left:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+                <div style="flex:1;">
+                  <div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:4px;">${o.title}</div>
+                  ${o.description ? `<div style="font-size:12px;color:#64748b;margin-bottom:6px;">${o.description}</div>` : ''}
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                    ${o.code ? `<span style="background:#fef3c7;color:#d97706;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;font-family:monospace;">${o.code}</span>` : ''}
+                    ${o.discount ? `<span style="background:#dbeafe;color:#1d4ed8;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;">${o.discount} OFF</span>` : ''}
+                    ${expiry ? `<span style="background:${expired ? '#fee2e2' : '#f0fdf4'};color:${expired ? '#dc2626' : '#16a34a'};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;">${expired ? '⚠️ Expired' : '✓'} ${expiry}</span>` : ''}
+                  </div>
+                </div>
+                <button onclick="deleteOffer('${id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:700;flex-shrink:0;"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+      }).catch(() => {
+        list.innerHTML = '<p style="text-align:center;color:#ef4444;padding:20px;">Error loading offers</p>';
+      });
+    }
+
+    // ── ADMIN BRAND MANAGEMENT ────────────────────────────
+    function showAddAdminBrandModal() {
+      document.getElementById('adminBrandName').value = '';
+      document.getElementById('adminBrandLogo').value = '';
+      document.getElementById('adminBrandCategory').value = '';
+      document.getElementById('adminBrandBlueTick').checked = true;
+      document.getElementById('addAdminBrandModal').classList.add('active');
+    }
+
+    function saveAdminBrand() {
+      const name = document.getElementById('adminBrandName').value.trim();
+      if (!name) { showAdminToast('Brand name is required', 'error'); return; }
+      const logo = document.getElementById('adminBrandLogo').value.trim();
+      const category = document.getElementById('adminBrandCategory').value.trim();
+      const blueTick = document.getElementById('adminBrandBlueTick').checked;
+      const brandId = 'brand_admin_' + Date.now();
+      const data = {
+        name, logo: logo || '', category: category || '',
+        blueTickAdmin: blueTick, isAdminBrand: true,
+        status: 'active', createdAt: Date.now(),
+        createdBy: 'buyzocartshop@gmail.com'
+      };
+      database.ref('brands/' + brandId).set(data)
+        .then(() => {
+          closeModal('addAdminBrandModal');
+          showAdminToast('✅ Brand added' + (blueTick ? ' with Blue Tick ✓' : '') + '!', 'success');
+          loadBrandsPanel();
+        })
+        .catch(e => showAdminToast('Error: ' + e.message, 'error'));
+    }
+
+    function suspendBrand(brandId) {
+      if (!confirm('Suspend this brand? Their products will remain but they will not be listed.')) return;
+      database.ref('brands/' + brandId).update({ status: 'suspended' })
+        .then(() => { showAdminToast('Brand suspended!', 'success'); loadBrandsPanel(); })
+        .catch(e => showAdminToast('Error: ' + e.message, 'error'));
+    }
+
+    function activateBrand(brandId) {
+      database.ref('brands/' + brandId).update({ status: 'active' })
+        .then(() => { showAdminToast('Brand activated!', 'success'); loadBrandsPanel(); })
+        .catch(e => showAdminToast('Error: ' + e.message, 'error'));
+    }
+
+    function deleteBrand(brandId, isAdminBrand) {
+      const msg = isAdminBrand
+        ? 'Delete this admin brand permanently?'
+        : 'Delete this brand? Their brand page will be removed.';
+      if (!confirm(msg)) return;
+      database.ref('brands/' + brandId).remove()
+        .then(() => { showAdminToast('Brand deleted!', 'success'); loadBrandsPanel(); })
+        .catch(e => showAdminToast('Error: ' + e.message, 'error'));
+    }
+
+    function toggleBlueTick(brandId, current) {
+      const newVal = !current;
+      database.ref('brands/' + brandId).update({ blueTickAdmin: newVal })
+        .then(() => { showAdminToast(newVal ? '✅ Blue Tick added!' : 'Blue Tick removed', 'success'); loadBrandsPanel(); })
+        .catch(e => showAdminToast('Error: ' + e.message, 'error'));
     }
 
     // ── NOTIFICATIONS (Enhanced Real-Time) ──────────────────────────────
@@ -8197,20 +8396,32 @@
 
       var prodBtn = '<button data-bkey="' + safeKey + '" data-action="viewProds" class="brand-action-btn" style="background:#f8fafc;color:#475569;border:1px solid #e2e8f0;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:600;">📦 Products (' + b.products.length + ')</button>';
 
-      return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:10px;' + (isPopular ? 'border-left:3px solid #f97316;' : '') + '">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">'
-        + '<div style="display:flex;align-items:center;gap:12px;">'
+      var statusBadge = b.status === 'suspended'
+        ? '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">SUSPENDED</span>'
+        : (b.isAdminBrand ? '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">ADMIN BRAND</span>' : '');
+
+      var suspendBtn = b.status === 'suspended'
+        ? '<button data-bkey="' + safeKey + '" data-action="activateBrand" class="brand-action-btn" style="background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:700;">✓ Activate</button>'
+        : '<button data-bkey="' + safeKey + '" data-action="suspendBrand" class="brand-action-btn" style="background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:700;">⊘ Suspend</button>';
+
+      var deleteBtn = '<button data-bkey="' + safeKey + '" data-action="deleteBrand" class="brand-action-btn" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:700;">🗑 Delete</button>';
+
+      return '<div style="background:#fff;border:1px solid ' + (b.status === 'suspended' ? '#fca5a5' : '#e2e8f0') + ';border-radius:12px;padding:14px 16px;margin-bottom:10px;' + (isPopular ? 'border-left:3px solid #f97316;' : '') + '">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">'
+        + '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:180px;">'
         + logoHtml
         + '<div>'
-        + '<div style="font-weight:800;font-size:15px;display:flex;align-items:center;gap:6px;">' + b.name
+        + '<div style="font-weight:800;font-size:15px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' + b.name
         + (b.blueTickAdmin ? ' <span title="Blue Tick" style="color:#2563eb;font-size:14px;">✓</span>' : '')
         + (b.autoPopular && !b.blueTickAdmin ? ' <span style="background:#fef3c7;color:#d97706;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:600;">AUTO</span>' : '')
+        + ' ' + statusBadge
         + '</div>'
         + '<div style="font-size:12px;color:#64748b;">' + b.products.length + ' products &bull; ' + (b.followers || 0) + ' followers &bull; ' + (b.avgRating ? b.avgRating.toFixed(1) + '★' : 'No rating') + '</div>'
         + '</div></div>'
-        + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'
-        + tickBtn + prodBtn
-        + '</div></div></div>';
+        + '</div>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;">'
+        + tickBtn + prodBtn + suspendBtn + deleteBtn
+        + '</div></div>';
     }
 
     // Single delegated event listener for all brand card buttons
@@ -8221,9 +8432,12 @@
       var action = btn.getAttribute('data-action');
       var b      = _brandCardMap[key];
       if (!b) return;
-      if (action === 'grantTick')  grantBlueTick(b.id, b.name);
-      if (action === 'removeTick') removeBlueTick(b.id, b.name);
-      if (action === 'viewProds')  viewBrandProducts(b.id, b.name);
+      if (action === 'grantTick')    grantBlueTick(b.id, b.name);
+      if (action === 'removeTick')   removeBlueTick(b.id, b.name);
+      if (action === 'viewProds')    viewBrandProducts(b.id, b.name);
+      if (action === 'suspendBrand') suspendBrand(b.id);
+      if (action === 'activateBrand') activateBrand(b.id);
+      if (action === 'deleteBrand')  deleteBrand(b.id, b.isAdminBrand);
     });
 
     function grantBlueTick(brandId, brandName) {
