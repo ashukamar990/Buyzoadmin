@@ -2373,7 +2373,7 @@
         <div class="tab-content" id="user-listings">
           <div class="card">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-              <h2><i class="fas fa-store" style="color:var(--primary);margin-right:8px"></i>User-Listed Products</h2>
+              <h2><i class="fas fa-store" style="color:var(--primary);margin-right:8px"></i>User & Seller Listings</h2>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <select id="listingStatusFilter" class="form-control" style="width:auto" onchange="loadUserListings()">
                   <option value="all">All Status</option>
@@ -2381,11 +2381,16 @@
                   <option value="inactive">Inactive</option>
                   <option value="pending">Pending Review</option>
                 </select>
+                <select id="listingSourceFilter" class="form-control" style="width:auto" onchange="filterUserListings()">
+                  <option value="all">All Sources</option>
+                  <option value="seller">🏪 Sellers Only</option>
+                  <option value="user_listing">👤 Users Only</option>
+                </select>
                 <input type="text" id="listingSearch" class="form-control" placeholder="Search listings..." style="width:200px" oninput="filterUserListings()">
               </div>
             </div>
             <div class="card-body">
-              <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Products submitted by users via the "Sell Product" page. Approve, edit, or remove them here.</p>
+              <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Products added by <strong>approved sellers</strong> (🏪) and user-submitted listings (👤). Approve, edit, or remove them here. Seller products are managed by their seller accounts.</p>
               <div class="table-responsive">
                 <table>
                   <thead>
@@ -4805,10 +4810,10 @@
         let products = [];
         
         if (productsData) {
-          products = Object.entries(productsData).map(([key, value]) => ({
-            ...value,
-            id: value.id || key
-          }));
+          products = Object.entries(productsData)
+            .map(([key, value]) => ({ ...value, id: value.id || key }))
+            // Exclude seller-added products — they go in User Listings
+            .filter(p => p.source !== 'seller' && p.source !== 'user_listing');
         }
         
         const filteredProducts = filterProductsList(products);
@@ -7083,11 +7088,17 @@
       if (!tbody) return;
       tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">Loading...</td></tr>';
 
-      // Load all products with source='user_listing'
-      database.ref('products').orderByChild('source').equalTo('user_listing').once('value').then(snap => {
+      // Load ALL products then filter for seller + user_listing sources
+      database.ref('products').once('value').then(snap => {
         allUserListings = [];
         if (snap.exists()) {
-          snap.forEach(c => allUserListings.push({ id: c.key, ...c.val() }));
+          snap.forEach(c => {
+            const p = c.val();
+            // Include seller-added products AND user_listing products
+            if (p && (p.source === 'seller' || p.source === 'user_listing')) {
+              allUserListings.push({ id: c.key, ...p });
+            }
+          });
           allUserListings.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         }
         renderUserListings(allUserListings);
@@ -7097,12 +7108,14 @@
     }
 
     function filterUserListings() {
-      const term = (document.getElementById('listingSearch')?.value || '').toLowerCase();
+      const term   = (document.getElementById('listingSearch')?.value || '').toLowerCase();
       const status = document.getElementById('listingStatusFilter')?.value || 'all';
+      const source = document.getElementById('listingSourceFilter')?.value || 'all';
       const filtered = allUserListings.filter(l => {
-        const matchSearch = !term || (l.name||l.title||'').toLowerCase().includes(term) || (l.sellerName||'').toLowerCase().includes(term);
-        const matchStatus = status === 'all' || l.status === status;
-        return matchSearch && matchStatus;
+        const matchSearch  = !term   || (l.name||l.title||'').toLowerCase().includes(term) || (l.sellerName||'').toLowerCase().includes(term) || (l.sellerId||'').toLowerCase().includes(term);
+        const matchStatus  = status === 'all' || l.status === status;
+        const matchSource  = source === 'all' || l.source === source;
+        return matchSearch && matchStatus && matchSource;
       });
       renderUserListings(filtered);
     }
@@ -7111,18 +7124,28 @@
       const tbody = document.getElementById('userListingsBody');
       if (!tbody) return;
       if (!listings.length) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">No user listings found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">No listings found.</td></tr>';
         return;
       }
       tbody.innerHTML = listings.map(l => {
-        const img = (l.images && l.images[0]) || l.image || 'https://via.placeholder.com/50';
-        const date = l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-IN') : '—';
+        const img    = (l.images && l.images[0]) || l.image || 'https://via.placeholder.com/50';
+        const date   = l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-IN') : '—';
         const status = l.status || 'active';
         const statusColor = { active:'badge-success', inactive:'badge-warning', pending:'badge-warning' };
+        const isSeller = l.source === 'seller';
+        const sourceBadge = isSeller
+          ? '<span style="background:#eff6ff;color:#2563eb;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;display:inline-block;margin-top:2px;">🏪 Seller</span>'
+          : '<span style="background:#f0fdf4;color:#16a34a;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;display:inline-block;margin-top:2px;">👤 User</span>';
+        const sellerInfo = isSeller
+          ? `${l.sellerName||l.sellerEmail||'Unknown'}<br><small style="color:#64748b;font-family:monospace;">🆔 ${l.sellerId||'—'}</small>`
+          : `${l.sellerName||'Unknown'}<br><small style="color:#64748b">${l.sellerEmail||''}</small>`;
         return `<tr>
           <td><img src="${img}" class="product-image" onerror="this.src='https://via.placeholder.com/50'"></td>
-          <td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${l.name||l.title||''}">${l.name||l.title||'—'}</td>
-          <td>${l.sellerName||'Unknown'}<br><small style="color:#64748b">${l.sellerEmail||''}</small></td>
+          <td style="max-width:160px;">
+            <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${l.name||l.title||''}">${l.name||l.title||'—'}</div>
+            ${sourceBadge}
+          </td>
+          <td>${sellerInfo}</td>
           <td>${l.category||'—'}</td>
           <td style="font-weight:600;">₹${(l.price||0).toLocaleString()}</td>
           <td><span class="badge ${statusColor[status]||'badge-success'}">${status.charAt(0).toUpperCase()+status.slice(1)}</span></td>
@@ -7788,29 +7811,56 @@
       list.innerHTML = html;
     }
 
+    // Global map for brand card button actions (avoids onclick string escaping issues)
+    var _brandCardMap = {};
+
     function renderBrandCard(b) {
       var initials = b.name.slice(0,2).toUpperCase();
       var colors = ['#f97316','#2563eb','#7c3aed','#16a34a','#dc2626','#0369a1'];
       var color = colors[b.name.charCodeAt(0) % colors.length];
       var isPopular = b.blueTickAdmin || b.autoPopular;
+      // Safe key: strip all non-alphanumeric for data attribute
+      var safeKey = b.id.replace(/[^a-zA-Z0-9]/g, '_');
+      _brandCardMap[safeKey] = b;
+
+      var logoHtml = b.logo
+        ? '<img src="' + b.logo + '" style="width:44px;height:44px;border-radius:10px;object-fit:cover;" onerror="this.style.display=\'none\'">'
+        : '<div style="width:44px;height:44px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex-shrink:0;">' + initials + '</div>';
+
+      var tickBtn = b.blueTickAdmin
+        ? '<button data-bkey="' + safeKey + '" data-action="removeTick" class="brand-action-btn" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:700;">✕ Remove Blue Tick</button>'
+        : '<button data-bkey="' + safeKey + '" data-action="grantTick" class="brand-action-btn" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:700;">✓ Grant Blue Tick</button>';
+
+      var prodBtn = '<button data-bkey="' + safeKey + '" data-action="viewProds" class="brand-action-btn" style="background:#f8fafc;color:#475569;border:1px solid #e2e8f0;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:600;">📦 Products (' + b.products.length + ')</button>';
+
       return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;margin-bottom:10px;' + (isPopular ? 'border-left:3px solid #f97316;' : '') + '">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">'
         + '<div style="display:flex;align-items:center;gap:12px;">'
-        + '<div style="width:44px;height:44px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex-shrink:0;">' + initials + '</div>'
+        + logoHtml
         + '<div>'
         + '<div style="font-weight:800;font-size:15px;display:flex;align-items:center;gap:6px;">' + b.name
         + (b.blueTickAdmin ? ' <span title="Blue Tick" style="color:#2563eb;font-size:14px;">✓</span>' : '')
         + (b.autoPopular && !b.blueTickAdmin ? ' <span style="background:#fef3c7;color:#d97706;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:600;">AUTO</span>' : '')
         + '</div>'
-        + '<div style="font-size:12px;color:#64748b;">' + b.products.length + ' products &bull; ' + b.followers + ' followers &bull; ' + (b.avgRating ? b.avgRating.toFixed(1) + '★' : 'No rating') + '</div>'
+        + '<div style="font-size:12px;color:#64748b;">' + b.products.length + ' products &bull; ' + (b.followers || 0) + ' followers &bull; ' + (b.avgRating ? b.avgRating.toFixed(1) + '★' : 'No rating') + '</div>'
         + '</div></div>'
-        + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
-        + (b.blueTickAdmin
-          ? '<button onclick="removeBlueTick(' + JSON.stringify(b.id) + ')" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:700;">✕ Remove Blue Tick</button>'
-          : '<button onclick="grantBlueTick(' + JSON.stringify(b.id) + ',' + JSON.stringify(b.name) + ')" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:700;">✓ Grant Blue Tick</button>')
-        + '<button onclick="viewBrandProducts(' + JSON.stringify(b.id) + ',' + JSON.stringify(b.name) + ')" style="background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;">📦 Products</button>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'
+        + tickBtn + prodBtn
         + '</div></div></div>';
     }
+
+    // Single delegated event listener for all brand card buttons
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('.brand-action-btn');
+      if (!btn) return;
+      var key    = btn.getAttribute('data-bkey');
+      var action = btn.getAttribute('data-action');
+      var b      = _brandCardMap[key];
+      if (!b) return;
+      if (action === 'grantTick')  grantBlueTick(b.id, b.name);
+      if (action === 'removeTick') removeBlueTick(b.id, b.name);
+      if (action === 'viewProds')  viewBrandProducts(b.id, b.name);
+    });
 
     function grantBlueTick(brandId, brandName) {
       if (!confirm('Grant Blue Tick ✓ to "' + brandName + '"?')) return;
