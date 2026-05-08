@@ -3981,23 +3981,25 @@
       const shareId = urlParams.get('share');
       if (!shareId) return;
 
-      // Show loading while verifying
-      document.body.innerHTML = `
-        <div style="min-height:100vh;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;">
-          <div style="background:white;border-radius:20px;padding:40px 48px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-width:380px;width:90%;">
-            <div style="font-size:48px;margin-bottom:16px;">⏳</div>
-            <h2 style="color:#0f172a;margin-bottom:8px;font-size:1.4rem;">Verifying Access</h2>
-            <p style="color:#64748b;font-size:14px;">Please wait while we verify your access link...</p>
-            <div style="margin-top:20px;width:100%;height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden;">
-              <div style="height:100%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:2px;animation:progress 2s linear infinite;" id="loadBar"></div>
-            </div>
+      // Show a full-page loading overlay (don't destroy DOM)
+      const overlay = document.createElement('div');
+      overlay.id = 'shareLoadOverlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:Segoe UI,sans-serif;';
+      overlay.innerHTML = `
+        <div style="background:white;border-radius:20px;padding:40px 48px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.25);max-width:360px;width:90%;">
+          <div style="font-size:48px;margin-bottom:16px;">🔐</div>
+          <h2 style="color:#0f172a;margin-bottom:8px;font-size:1.4rem;">Verifying Access</h2>
+          <p style="color:#64748b;font-size:14px;">Please wait...</p>
+          <div style="margin-top:20px;height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:0%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:2px;transition:width 2s linear;" id="shareProgressBar"></div>
           </div>
-        </div>
-        <style>@keyframes progress{0%{width:0%}100%{width:100%}}</style>`;
+        </div>`;
+      document.body.appendChild(overlay);
+      setTimeout(() => { const b = document.getElementById('shareProgressBar'); if(b) b.style.width='90%'; }, 100);
 
       let shareData = null;
 
-      // Method 1: REST API (no auth needed since .read: true)
+      // Method 1: REST API fetch (works since sharedAdmins .read = true)
       try {
         const res = await fetch(
           `https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`,
@@ -4005,41 +4007,36 @@
         );
         if (res.ok) {
           const json = await res.json();
-          if (json && typeof json === 'object' && !json.error) {
-            shareData = json;
-          }
+          if (json && typeof json === 'object' && !json.error) shareData = json;
         }
-      } catch (e) { /* try SDK next */ }
+      } catch (e) { /* try SDK */ }
 
-      // Method 2: Firebase SDK fallback
+      // Method 2: SDK fallback
       if (!shareData) {
         try {
-          await new Promise(resolve => setTimeout(resolve, 800)); // wait for SDK init
           const snap = await database.ref('sharedAdmins/' + shareId).once('value');
           if (snap.exists()) shareData = snap.val();
         } catch (e2) { shareData = null; }
       }
 
-      // Restore original page HTML before showing result
-      location.reload(); // triggers fresh load with proper UI
+      // Remove overlay
+      overlay.remove();
 
+      // Handle result
       if (!shareData) {
-        document.open(); document.write(getShareErrorHTML(
-          '🔗', 'Link Not Found',
-          'This access link is invalid or has been removed. Please ask the admin for a new link.'
-        )); document.close(); return;
+        showShareFullPage('🔗', '#ef4444', 'Link Not Found',
+          'This access link is invalid or has been deleted. Please ask the admin for a new link.');
+        return;
       }
       if (shareData.status === 'suspended') {
-        document.open(); document.write(getShareErrorHTML(
-          '🚫', 'Access Suspended',
-          'Your admin access has been suspended. Please contact the main admin.'
-        )); document.close(); return;
+        showShareFullPage('🚫', '#f59e0b', 'Access Suspended',
+          'Your admin access has been suspended. Please contact the main admin to restore access.');
+        return;
       }
       if (shareData.status !== 'active') {
-        document.open(); document.write(getShareErrorHTML(
-          '❌', 'Link Inactive',
-          'This access link is no longer active. Ask the main admin to reactivate it.'
-        )); document.close(); return;
+        showShareFullPage('❌', '#ef4444', 'Link Inactive',
+          'This access link is no longer active. Ask the main admin to reactivate it.');
+        return;
       }
 
       const requiredEmail = (shareData.email || '').toLowerCase().trim();
@@ -4050,18 +4047,16 @@
       }
     }
 
-    function getShareErrorHTML(icon, title, message) {
-      return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-        <title>Access Error — Buyzo Admin</title>
-        <style>*{margin:0;padding:0;box-sizing:border-box;}body{min-height:100vh;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;padding:20px;}</style>
-      </head><body>
-        <div style="background:white;border-radius:20px;padding:40px 32px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-width:380px;width:100%;">
-          <div style="font-size:52px;margin-bottom:16px;">${icon}</div>
-          <h2 style="color:#ef4444;font-size:1.4rem;margin-bottom:12px;">${title}</h2>
-          <p style="color:#64748b;font-size:14px;line-height:1.6;">${message}</p>
-          <a href="${window.location.pathname}" style="display:inline-block;margin-top:24px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:10px 24px;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;">Go to Login</a>
-        </div>
-      </body></html>`;
+    function showShareFullPage(icon, color, title, message) {
+      document.body.innerHTML = '';
+      document.body.style.cssText = 'margin:0;padding:0;min-height:100vh;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-family:Segoe UI,sans-serif;padding:20px;box-sizing:border-box;';
+      document.body.innerHTML = `
+        <div style="background:white;border-radius:20px;padding:44px 36px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.25);max-width:380px;width:100%;">
+          <div style="font-size:54px;margin-bottom:16px;">${icon}</div>
+          <h2 style="color:${color};font-size:1.5rem;margin-bottom:12px;font-weight:800;">${title}</h2>
+          <p style="color:#64748b;font-size:14px;line-height:1.7;">${message}</p>
+          <a href="${window.location.pathname}" style="display:inline-block;margin-top:28px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:11px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;">Go to Login Page</a>
+        </div>`;
     }
 
     function showSharedGoogleLogin(shareId, shareData, requiredEmail) {
