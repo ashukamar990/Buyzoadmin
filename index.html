@@ -7680,46 +7680,73 @@
       if (!list) return;
       list.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:30px"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
 
-      // Load brands from products (auto-generate) + manual brands node
       Promise.all([
         database.ref('products').once('value'),
         database.ref('brands').once('value')
       ]).then(function(results) {
         var prodSnap = results[0], brandSnap = results[1];
-        var brandMap = {}; // brandId -> { name, products, totalSales, avgRating, verified, blueTickAdmin }
+        var brandMap  = {}; // key  -> brand object
+        var nameToKey = {}; // normalised name -> key  (for merging by name)
 
-        // Manual brands
+        // ── 1. Manual / approved brands node ───────────────────────────
         if (brandSnap.exists()) {
           brandSnap.forEach(function(child) {
             var b = child.val();
-            if (b && b.name) {
-              var bid = child.key;
-              brandMap[bid] = { id: bid, name: b.name, verified: b.verified || false, blueTickAdmin: b.blueTickAdmin || false, manuallyAdded: true, products: [], totalSales: 0, avgRating: 0, followers: b.followers || 0 };
-            }
+            if (!b || !b.name) return;
+            var bid  = child.key;
+            var norm = b.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            brandMap[bid] = {
+              id: bid, name: b.name,
+              verified: b.verified || false,
+              blueTickAdmin: b.blueTickAdmin || false,
+              manuallyAdded: true,
+              logo: b.logo || '',
+              products: [], totalSales: 0, avgRating: 0, followers: b.followers || 0
+            };
+            nameToKey[norm] = bid;  // remember name→key mapping
           });
         }
 
-        // Extract brands from products
+        // ── 2. Auto-generate from products; merge with brands/ by ID then by name ──
         if (prodSnap.exists()) {
           prodSnap.forEach(function(child) {
             var p = child.val();
             if (!p || !p.brand) return;
-            var bid = p.brandId || p.brand.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+            // Candidate bid from product field
+            var pidBid  = (p.brandId || '').toString().trim();
+            var nameBid = p.brand.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            var norm    = p.brand.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+            // Resolve to the actual key: prefer explicit brandId, then name-to-key lookup, then computed nameBid
+            var bid = (pidBid && brandMap[pidBid]) ? pidBid
+                    : (nameToKey[norm] ? nameToKey[norm]    // match by normalised name
+                    : (pidBid || nameBid));
+
             if (!brandMap[bid]) {
-              brandMap[bid] = { id: bid, name: p.brand, verified: false, blueTickAdmin: false, products: [], totalSales: 0, avgRating: 0, ratings: [], followers: 0 };
+              brandMap[bid] = {
+                id: bid, name: p.brand,
+                verified: false, blueTickAdmin: false,
+                manuallyAdded: false,
+                logo: '', products: [], totalSales: 0, avgRating: 0, ratings: [], followers: 0
+              };
             }
-            brandMap[bid].products.push({ id: child.key, name: p.name || p.title, price: p.price, image: p.image || (p.images && p.images[0]) || '' });
-            if (p.sales) brandMap[bid].totalSales += (p.sales || 0);
+            brandMap[bid].products.push({
+              id: child.key,
+              name: p.name || p.title,
+              price: p.price,
+              image: p.image || (p.images && p.images[0]) || ''
+            });
+            if (p.sales)  brandMap[bid].totalSales += (p.sales || 0);
             if (p.rating) { if (!brandMap[bid].ratings) brandMap[bid].ratings = []; brandMap[bid].ratings.push(p.rating); }
           });
         }
 
-        // Calc avg rating
+        // ── 3. Calc avg rating + auto-popular flag ─────────────────────
         Object.values(brandMap).forEach(function(b) {
           if (b.ratings && b.ratings.length) {
             b.avgRating = b.ratings.reduce(function(s,r){return s+r;},0) / b.ratings.length;
           }
-          // Auto-popular: >5 products + avg rating > 4.0
           if (!b.blueTickAdmin && b.products.length >= 5 && b.avgRating >= 4.0) {
             b.autoPopular = true;
           }
@@ -7728,7 +7755,7 @@
         _brandsCache = Object.values(brandMap).sort(function(a,b) { return b.products.length - a.products.length; });
         renderBrandsPanel(_brandsCache);
 
-        document.getElementById('brandTotalCount').textContent = _brandsCache.length;
+        document.getElementById('brandTotalCount').textContent    = _brandsCache.length;
         document.getElementById('brandVerifiedCount').textContent = _brandsCache.filter(function(b){return b.blueTickAdmin;}).length;
       }).catch(function(e) {
         list.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px;">Error: ' + e.message + '</p>';
@@ -7786,17 +7813,54 @@
     }
 
     function grantBlueTick(brandId, brandName) {
-      if (!confirm('Grant Blue Tick ✓ to ' + brandName + '?')) return;
-      database.ref('brands/' + brandId).update({ name: brandName, verified: true, blueTickAdmin: true, blueTickAt: Date.now() })
-        .then(function() { showAdminToast('Blue Tick granted to ' + brandName + '!', 'success'); loadBrandsPanel(); })
-        .catch(function(e) { alert('Error: ' + e.message); });
+      if (!confirm('Grant Blue Tick ✓ to "' + brandName + '"?')) return;
+      // Disable both buttons to prevent double-click
+      var allBtns = document.querySelectorAll('[onclick*="grantBlueTick"][onclick*="' + brandId.replace(/"/g,'') + '"]');
+      allBtns.forEach(function(b){ b.disabled = true; b.textContent = '⏳ Saving...'; });
+
+      // Use set with priority: first read existing data, then merge
+      database.ref('brands/' + brandId).once('value').then(function(snap) {
+        var existing = snap.exists() ? snap.val() : {};
+        return database.ref('brands/' + brandId).set(Object.assign({}, existing, {
+          name: brandName,
+          verified: true,
+          blueTickAdmin: true,
+          blueTickAt: Date.now()
+        }));
+      }).then(function() {
+        // Log the action
+        return database.ref('activityLog').push({
+          action: 'brand_blueTick',
+          brandId: brandId,
+          brandName: brandName,
+          timestamp: Date.now(),
+          adminNote: 'Blue tick granted'
+        });
+      }).then(function() {
+        showAdminToast('✅ Blue Tick granted to "' + brandName + '"!', 'success');
+        loadBrandsPanel();
+      }).catch(function(e) {
+        showAdminToast('❌ Error: ' + e.message, 'error');
+        loadBrandsPanel(); // Reload anyway to reset button state
+      });
     }
 
     function removeBlueTick(brandId) {
       if (!confirm('Remove Blue Tick from this brand?')) return;
-      database.ref('brands/' + brandId).update({ verified: false, blueTickAdmin: false })
-        .then(function() { showAdminToast('Blue Tick removed', 'info'); loadBrandsPanel(); })
-        .catch(function(e) { alert('Error: ' + e.message); });
+      database.ref('brands/' + brandId).once('value').then(function(snap) {
+        var existing = snap.exists() ? snap.val() : {};
+        return database.ref('brands/' + brandId).set(Object.assign({}, existing, {
+          verified: false,
+          blueTickAdmin: false,
+          blueTickRemovedAt: Date.now()
+        }));
+      }).then(function() {
+        showAdminToast('Blue Tick removed', 'info');
+        loadBrandsPanel();
+      }).catch(function(e) {
+        showAdminToast('❌ Error: ' + e.message, 'error');
+        loadBrandsPanel();
+      });
     }
 
     function viewBrandProducts(brandId, brandName) {
