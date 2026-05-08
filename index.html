@@ -4846,10 +4846,14 @@
       if (tabName === 'admin-sharing') {
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.menu-item').forEach(nav => nav.classList.remove('active'));
-        document.getElementById('dashboard').classList.add('active');
+        document.getElementById('admin-sharing').classList.add('active');
         document.querySelector('.menu-item[data-tab="admin-sharing"]').classList.add('active');
         document.getElementById('adminPageTitle').textContent = 'Admin Sharing';
-        showAdminSharingOptions();
+        // Reset to landing page every time tab is opened
+        document.getElementById('as-landing').style.display = 'flex';
+        document.getElementById('as-sharing-page').style.display = 'none';
+        document.getElementById('as-manage-page').style.display = 'none';
+        currentAdminTab = 'admin-sharing';
         return;
       }
       
