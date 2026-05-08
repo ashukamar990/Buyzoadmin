@@ -3979,66 +3979,110 @@
     async function checkSharedAccess() {
       const urlParams = new URLSearchParams(window.location.search);
       const shareId = urlParams.get('share');
-      
       if (!shareId) return;
 
-      let shareData = null;
-      try {
-        const res = await fetch(`https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`);
-        const json = await res.json();
-        // Firebase returns {error:"Permission denied"} if rules block read — ignore that
-        if (json && !json.error) shareData = json;
-      } catch (e) { /* will fallback below */ }
+      // Show loading while verifying
+      document.body.innerHTML = `
+        <div style="min-height:100vh;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;">
+          <div style="background:white;border-radius:20px;padding:40px 48px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-width:380px;width:90%;">
+            <div style="font-size:48px;margin-bottom:16px;">⏳</div>
+            <h2 style="color:#0f172a;margin-bottom:8px;font-size:1.4rem;">Verifying Access</h2>
+            <p style="color:#64748b;font-size:14px;">Please wait while we verify your access link...</p>
+            <div style="margin-top:20px;width:100%;height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden;">
+              <div style="height:100%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:2px;animation:progress 2s linear infinite;" id="loadBar"></div>
+            </div>
+          </div>
+        </div>
+        <style>@keyframes progress{0%{width:0%}100%{width:100%}}</style>`;
 
-      // SDK fallback (works if user already signed in)
+      let shareData = null;
+
+      // Method 1: REST API (no auth needed since .read: true)
+      try {
+        const res = await fetch(
+          `https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`,
+          { cache: 'no-store' }
+        );
+        if (res.ok) {
+          const json = await res.json();
+          if (json && typeof json === 'object' && !json.error) {
+            shareData = json;
+          }
+        }
+      } catch (e) { /* try SDK next */ }
+
+      // Method 2: Firebase SDK fallback
       if (!shareData) {
         try {
+          await new Promise(resolve => setTimeout(resolve, 800)); // wait for SDK init
           const snap = await database.ref('sharedAdmins/' + shareId).once('value');
-          shareData = snap.val();
-        } catch(e2) { shareData = null; }
+          if (snap.exists()) shareData = snap.val();
+        } catch (e2) { shareData = null; }
       }
+
+      // Restore original page HTML before showing result
+      location.reload(); // triggers fresh load with proper UI
 
       if (!shareData) {
-        showSharedErrorPage('🔐', 'Access Check Failed', 'Link verify nahi ho paya. Firebase rules mein sharedAdmins ka read: true karo, ya main admin se contact karein.');
-        return;
+        document.open(); document.write(getShareErrorHTML(
+          '🔗', 'Link Not Found',
+          'This access link is invalid or has been removed. Please ask the admin for a new link.'
+        )); document.close(); return;
       }
       if (shareData.status === 'suspended') {
-        showSharedErrorPage('🚫', 'Access Suspended', 'Aapka admin access suspend kar diya gaya hai. Main admin se contact karein.');
-        return;
+        document.open(); document.write(getShareErrorHTML(
+          '🚫', 'Access Suspended',
+          'Your admin access has been suspended. Please contact the main admin.'
+        )); document.close(); return;
       }
       if (shareData.status !== 'active') {
-        showSharedErrorPage('❌', 'Link Inactive', 'Yeh access link active nahi hai. Main admin se reactivate karne ko bolein.');
-        return;
+        document.open(); document.write(getShareErrorHTML(
+          '❌', 'Link Inactive',
+          'This access link is no longer active. Ask the main admin to reactivate it.'
+        )); document.close(); return;
       }
 
-      // ===== GMAIL VERIFICATION =====
-      // Agar shareData mein email hai toh Gmail se login karna zaroori hai
       const requiredEmail = (shareData.email || '').toLowerCase().trim();
-      
       if (requiredEmail) {
-        // Show a Gmail login page for shared access
-        document.getElementById('adminLoginPage').style.display = 'flex';
-        document.getElementById('adminPanel').style.display = 'none';
-        document.getElementById('adminLoginPage').innerHTML = `
-          <div class="login-card">
-            <div class="login-logo">
-              <div style="font-size:40px;margin-bottom:8px;">🛒</div>
-              <h1 class="login-title">Buyzo Cart</h1>
-              <p class="login-subtitle">Admin Panel — Shared Access</p>
-            </div>
-            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#1d4ed8;text-align:center;">
-              <i class="fas fa-info-circle"></i> Sirf <strong>${requiredEmail}</strong> se login kar sakte hain
-            </div>
-            <button onclick="sharedAdminGoogleLogin('${shareId}', '${requiredEmail}')" style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;background:#fff;color:#333;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
-              <img src="https://developers.google.com/identity/images/g-logo.png" width="22" height="22" alt="Google">
-              Sign in with Google
-            </button>
-            <div id="sharedLoginError" style="color:#ef4444;margin-top:14px;text-align:center;font-size:13px;min-height:20px;"></div>
-          </div>`;
+        showSharedGoogleLogin(shareId, shareData, requiredEmail);
       } else {
-        // No email restriction — direct access
         grantSharedAccess(shareId, shareData);
       }
+    }
+
+    function getShareErrorHTML(icon, title, message) {
+      return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Access Error — Buyzo Admin</title>
+        <style>*{margin:0;padding:0;box-sizing:border-box;}body{min-height:100vh;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;padding:20px;}</style>
+      </head><body>
+        <div style="background:white;border-radius:20px;padding:40px 32px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-width:380px;width:100%;">
+          <div style="font-size:52px;margin-bottom:16px;">${icon}</div>
+          <h2 style="color:#ef4444;font-size:1.4rem;margin-bottom:12px;">${title}</h2>
+          <p style="color:#64748b;font-size:14px;line-height:1.6;">${message}</p>
+          <a href="${window.location.pathname}" style="display:inline-block;margin-top:24px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:10px 24px;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;">Go to Login</a>
+        </div>
+      </body></html>`;
+    }
+
+    function showSharedGoogleLogin(shareId, shareData, requiredEmail) {
+      document.getElementById('adminLoginPage').style.display = 'flex';
+      document.getElementById('adminPanel').style.display = 'none';
+      document.getElementById('adminLoginPage').innerHTML = `
+        <div class="login-card">
+          <div class="login-logo">
+            <div style="font-size:40px;margin-bottom:8px;">🛒</div>
+            <h1 class="login-title">Buyzo Cart</h1>
+            <p class="login-subtitle">Admin Panel — Shared Access</p>
+          </div>
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#1d4ed8;text-align:center;">
+            <i class="fas fa-info-circle"></i> Only <strong>${requiredEmail}</strong> can sign in here
+          </div>
+          <button onclick="sharedAdminGoogleLogin('${shareId}', '${requiredEmail}')" style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;background:#fff;color:#333;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
+            <img src="https://developers.google.com/identity/images/g-logo.png" width="22" height="22" alt="Google">
+            Sign in with Google
+          </button>
+          <div id="sharedLoginError" style="color:#ef4444;margin-top:14px;text-align:center;font-size:13px;min-height:20px;"></div>
+        </div>`;
     }
 
     async function sharedAdminGoogleLogin(shareId, requiredEmail) {
