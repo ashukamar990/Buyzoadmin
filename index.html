@@ -8650,4 +8650,508 @@
 
   </script>
 </body>
+</html><!-- ============================================================
+     BUYZO ADMIN PATCH — Part 1
+     Paste this entire block before </body> in your index.html
+     ============================================================ -->
+<style>
+  .unread-dot { display:inline-block;width:9px;height:9px;background:#ef4444;border-radius:50%;margin-left:6px;vertical-align:middle;animation:pulse-dot 1.5s infinite; }
+  @keyframes pulse-dot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:.7} }
+  .mark-read-btn { display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:8px; }
+  .mark-read-btn:hover{background:#dcfce7;}
+  #sellerLookupModal .modal-content{max-width:620px;border-radius:16px;overflow:hidden;}
+  .toggle-switch{position:relative;display:inline-block;width:44px;height:24px;}
+  .toggle-switch input{opacity:0;width:0;height:0;}
+  .toggle-slider{position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:24px;transition:.3s;}
+  .toggle-slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;}
+  .toggle-switch input:checked+.toggle-slider{background:#2563eb;}
+  .toggle-switch input:checked+.toggle-slider:before{transform:translateX(20px);}
+  #adminBrandPage{display:none;}
+  .abp-avatar{width:72px;height:72px;border-radius:20px;border:3px solid white;display:flex;align-items:center;justify-content:center;color:white;font-size:28px;font-weight:800;background:linear-gradient(135deg,#2563eb,#7c3aed);}
+</style>
+
+<!-- Seller Lookup Modal -->
+<div class="modal" id="sellerLookupModal">
+  <div class="modal-content" style="max-width:640px;border-radius:16px;overflow:hidden;">
+    <div class="modal-header" style="background:linear-gradient(135deg,#0f172a,#334155);padding:20px 24px;border:none;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:38px;height:38px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-search" style="color:white;"></i></div>
+        <h3 style="color:white;margin:0;font-size:16px;font-weight:700;">Seller ID Lookup</h3>
+      </div>
+      <button class="close" onclick="closeModal('sellerLookupModal')" style="color:rgba(255,255,255,.8);font-size:22px;">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:24px;">
+      <div style="display:flex;gap:10px;margin-bottom:20px;">
+        <input type="text" id="sellerLookupInput" class="form-control" placeholder="Enter Seller ID..." style="border-radius:10px;border:2px solid #e2e8f0;flex:1;" onkeydown="if(event.key==='Enter') runSellerLookup()">
+        <button onclick="runSellerLookup()" style="background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;border-radius:10px;padding:10px 20px;cursor:pointer;font-weight:700;white-space:nowrap;"><i class="fas fa-search"></i> Lookup</button>
+      </div>
+      <div id="sellerLookupResult" style="min-height:80px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Admin Brand Modal -->
+<div class="modal" id="addAdminBrandModal">
+  <div class="modal-content" style="max-width:480px;border-radius:16px;overflow:hidden;">
+    <div class="modal-header" style="background:linear-gradient(135deg,#2563eb,#7c3aed);padding:20px 24px;border:none;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:38px;height:38px;background:rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-award" style="color:white;font-size:16px;"></i></div>
+        <h3 style="color:white;margin:0;font-size:16px;font-weight:700;">Add Your Brand</h3>
+      </div>
+      <button class="close" onclick="closeModal('addAdminBrandModal')" style="color:rgba(255,255,255,.8);font-size:22px;">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:24px;">
+      <div style="margin-bottom:16px;"><label style="font-weight:700;font-size:13px;color:#0f172a;display:block;margin-bottom:7px;">Brand Name *</label><input type="text" id="adminBrandName" class="form-control" placeholder="e.g. Buyzo Official" style="border-radius:10px;border:2px solid #e2e8f0;"></div>
+      <div style="margin-bottom:16px;"><label style="font-weight:700;font-size:13px;color:#0f172a;display:block;margin-bottom:7px;">Brand Logo URL (optional)</label><input type="url" id="adminBrandLogo" class="form-control" placeholder="https://..." style="border-radius:10px;border:2px solid #e2e8f0;"></div>
+      <div style="margin-bottom:16px;"><label style="font-weight:700;font-size:13px;color:#0f172a;display:block;margin-bottom:7px;">Category</label><input type="text" id="adminBrandCategory" class="form-control" placeholder="e.g. Fashion, Electronics" style="border-radius:10px;border:2px solid #e2e8f0;"></div>
+      <div style="margin-bottom:20px;display:flex;align-items:center;gap:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;">
+        <input type="checkbox" id="adminBrandBlueTick" style="width:16px;height:16px;accent-color:#2563eb;cursor:pointer;">
+        <label for="adminBrandBlueTick" style="font-weight:700;font-size:13px;color:#1d4ed8;cursor:pointer;"><i class="fas fa-check-circle" style="color:#2563eb;"></i> Add Blue Tick Verification ✓</label>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="closeModal('addAdminBrandModal')" style="flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;padding:12px;cursor:pointer;font-weight:600;">Cancel</button>
+        <button onclick="saveAdminBrand()" style="flex:2;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;border-radius:10px;padding:12px;cursor:pointer;font-weight:700;font-size:14px;"><i class="fas fa-plus"></i> Add Brand</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Brand Full Page -->
+<div id="adminBrandPage" style="position:fixed;inset:0;background:#f8fafc;z-index:9999;overflow-y:auto;display:none;">
+  <div style="max-width:680px;margin:0 auto;padding:20px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <button onclick="closeAdminBrandPage()" style="background:white;border:1.5px solid #e2e8f0;color:#374151;width:40px;height:40px;border-radius:12px;cursor:pointer;font-size:16px;"><i class="fas fa-arrow-left"></i></button>
+      <h2 style="margin:0;font-weight:800;color:#0f172a;" id="abpTitle">My Brand</h2>
+    </div>
+    <!-- Brand Header -->
+    <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:16px;overflow:hidden;margin-bottom:20px;">
+      <div style="height:120px;background:linear-gradient(135deg,#2563eb,#7c3aed);position:relative;" id="abpCover"></div>
+      <div style="padding:16px 20px 20px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:-36px;margin-bottom:14px;">
+          <div class="abp-avatar" id="abpAvatar">B</div>
+          <button onclick="editAdminBrand()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white;border-radius:10px;padding:8px 16px;cursor:pointer;font-weight:600;font-size:13px;"><i class="fas fa-edit"></i> Edit</button>
+        </div>
+        <div style="color:white;">
+          <div style="font-size:1.3rem;font-weight:800;" id="abpBrandName">Brand</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.65);margin-top:2px;" id="abpBrandCat"></div>
+          <div style="display:flex;gap:20px;margin-top:14px;">
+            <div style="text-align:center;cursor:pointer;" onclick="showBrandFollowers(window._currentAdminBrandId, document.getElementById('abpBrandName').textContent)">
+              <div style="font-size:1.2rem;font-weight:800;" id="abpFollowers">0</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6);">Followers</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.2rem;font-weight:800;" id="abpProdCount">0</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6);">Products</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:1.2rem;font-weight:800;" id="abpPostCount">0</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6);">Posts</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Toggles -->
+    <div style="background:white;border-radius:14px;padding:18px 20px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+      <div style="font-weight:700;font-size:14px;color:#0f172a;margin-bottom:14px;"><i class="fas fa-sliders-h" style="color:#2563eb;margin-right:6px;"></i>Content Settings</div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><div style="font-weight:700;font-size:14px;color:#0f172a;">📦 Show Products</div><div style="font-size:12px;color:#64748b;">Enable product listings</div></div>
+          <label class="toggle-switch"><input type="checkbox" id="abpProductToggle" onchange="saveAdminBrandToggles()"><span class="toggle-slider"></span></label>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><div style="font-weight:700;font-size:14px;color:#0f172a;">📝 Show Posts</div><div style="font-size:12px;color:#64748b;">Enable posts/updates</div></div>
+          <label class="toggle-switch"><input type="checkbox" id="abpPostToggle" onchange="saveAdminBrandToggles()"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
+    <!-- Action Buttons -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+      <button id="abpAddProductBtn" onclick="showAddAdminProductForm()" style="background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;border-radius:12px;padding:14px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="fas fa-plus"></i> Add Product</button>
+      <button id="abpAddPostBtn" onclick="showAddAdminPostForm()" style="background:linear-gradient(135deg,#16a34a,#06b6d4);color:white;border:none;border-radius:12px;padding:14px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="fas fa-edit"></i> Add Post</button>
+    </div>
+    <!-- Products -->
+    <div id="abpProductsSection">
+      <div style="font-weight:800;font-size:15px;color:#0f172a;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;"><span>📦 Products</span><span style="font-size:12px;color:#94a3b8;" id="abpProdCountLabel"></span></div>
+      <div id="abpProductsList" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
+    </div>
+    <!-- Posts -->
+    <div id="abpPostsSection" style="margin-top:20px;">
+      <div style="font-weight:800;font-size:15px;color:#0f172a;margin-bottom:12px;">📝 Posts</div>
+      <div id="abpPostsList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Mark Read storage
+var _readOrders    = JSON.parse(localStorage.getItem('bz_read_orders')||'{}');
+var _readBrandReq  = JSON.parse(localStorage.getItem('bz_read_brand_req')||'{}');
+var _readSellerReq = JSON.parse(localStorage.getItem('bz_read_seller_req')||'{}');
+
+function markOrderRead(id)     { _readOrders[id]=true;    localStorage.setItem('bz_read_orders',JSON.stringify(_readOrders));    var el=document.querySelector('[data-order-id="'+id+'"]');    if(el){var d=el.querySelector('.unread-dot');if(d)d.remove();var b=el.querySelector('.mark-read-btn');if(b)b.remove();el.style.background='';} }
+function markBrandReqRead(id)  { _readBrandReq[id]=true;  localStorage.setItem('bz_read_brand_req',JSON.stringify(_readBrandReq));  var el=document.querySelector('[data-brand-req-id="'+id+'"]');  if(el){var d=el.querySelector('.unread-dot');if(d)d.remove();var b=el.querySelector('.mark-read-btn');if(b)b.remove();} }
+function markSellerReqRead(id) { _readSellerReq[id]=true; localStorage.setItem('bz_read_seller_req',JSON.stringify(_readSellerReq)); var el=document.querySelector('[data-seller-req-id="'+id+'"]'); if(el){var d=el.querySelector('.unread-dot');if(d)d.remove();var b=el.querySelector('.mark-read-btn');if(b)b.remove();} }
+
+// Auto-mark unread on DOM changes
+new MutationObserver(function(){
+  document.querySelectorAll('[data-order-id]').forEach(function(r){
+    var id=r.getAttribute('data-order-id'); if(_readOrders[id]||r.querySelector('.unread-dot')) return;
+    r.style.background='#fef2f2';
+    var dot=document.createElement('span'); dot.className='unread-dot'; dot.title='New';
+    var fc=r.querySelector('td,div'); if(fc) fc.prepend(dot);
+    var btn=document.createElement('button'); btn.className='mark-read-btn'; btn.innerHTML='<i class="fas fa-check"></i> Mark Read'; btn.onclick=function(e){e.stopPropagation();markOrderRead(id);};
+    var cells=r.querySelectorAll('td'); var t=cells.length?cells[cells.length-1]:r; t.appendChild(btn);
+  });
+  document.querySelectorAll('[data-brand-req-id]').forEach(function(el){
+    var id=el.getAttribute('data-brand-req-id'); if(_readBrandReq[id]||el.querySelector('.unread-dot')) return;
+    var dot=document.createElement('span'); dot.className='unread-dot'; el.prepend(dot);
+    var btn=document.createElement('button'); btn.className='mark-read-btn'; btn.innerHTML='<i class="fas fa-check"></i> Mark Read'; btn.onclick=function(e){e.stopPropagation();markBrandReqRead(id);}; el.appendChild(btn);
+  });
+  document.querySelectorAll('[data-seller-req-id]').forEach(function(el){
+    var id=el.getAttribute('data-seller-req-id'); if(_readSellerReq[id]||el.querySelector('.unread-dot')) return;
+    var dot=document.createElement('span'); dot.className='unread-dot'; el.prepend(dot);
+    var btn=document.createElement('button'); btn.className='mark-read-btn'; btn.innerHTML='<i class="fas fa-check"></i> Mark Read'; btn.onclick=function(e){e.stopPropagation();markSellerReqRead(id);}; el.appendChild(btn);
+  });
+}).observe(document.body,{childList:true,subtree:true});
+
+// Seller Lookup
+function openSellerLookup(){
+  document.getElementById('sellerLookupInput').value='';
+  document.getElementById('sellerLookupResult').innerHTML='<p style="color:#94a3b8;text-align:center;padding:20px;">Enter a Seller ID and click Lookup</p>';
+  document.getElementById('sellerLookupModal').classList.add('active');
+}
+async function runSellerLookup(){
+  var sid=document.getElementById('sellerLookupInput').value.trim();
+  var res=document.getElementById('sellerLookupResult');
+  if(!sid){res.innerHTML='<p style="color:#ef4444;text-align:center;">Please enter a Seller ID</p>';return;}
+  res.innerHTML='<p style="text-align:center;color:#94a3b8;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Searching...</p>';
+  try{
+    var [uSnap,pSnap,bSnap,spSnap]=await Promise.all([
+      database.ref('users/'+sid).once('value').catch(()=>null),
+      database.ref('products').orderByChild('sellerId').equalTo(sid).once('value').catch(()=>null),
+      database.ref('brands').orderByChild('createdBy').equalTo(sid).once('value').catch(()=>null),
+      database.ref('sellerProducts/'+sid).once('value').catch(()=>null)
+    ]);
+    var u=uSnap&&uSnap.exists()?uSnap.val():null;
+    var prods=[]; if(pSnap&&pSnap.exists())pSnap.forEach(function(c){var d=c.val();d._id=c.key;prods.push(d);});
+    if(spSnap&&spSnap.exists())spSnap.forEach(function(c){var d=c.val();if(d){d._id=c.key;if(!prods.find(function(p){return p._id===c.key;}))prods.push(d);}});
+    var brands=[]; if(bSnap&&bSnap.exists())bSnap.forEach(function(c){brands.push(c.val());});
+    if(!u&&!prods.length){res.innerHTML='<div style="text-align:center;padding:30px;"><i class="fas fa-user-slash" style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:12px;"></i><p style="color:#64748b;">No seller found with ID: '+sid+'</p></div>';return;}
+    var totalSales=prods.reduce(function(s,p){return s+(parseInt(p.sales)||0);},0);
+    res.innerHTML='<div style="display:flex;flex-direction:column;gap:14px;">'
+      +'<div style="background:#f8fafc;border-radius:12px;padding:16px;border:1px solid #e2e8f0;">'
+      +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
+      +(u&&u.photoURL?'<img src="'+u.photoURL+'" style="width:48px;height:48px;border-radius:12px;object-fit:cover;">'
+        :'<div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:800;">'+(u&&u.displayName?u.displayName.charAt(0).toUpperCase():'S')+'</div>')
+      +'<div><div style="font-weight:800;font-size:15px;color:#0f172a;">'+(u&&(u.displayName||u.name)||'Unknown Seller')+'</div>'
+      +'<div style="font-size:12px;color:#64748b;">'+(u&&u.email||sid)+'</div></div></div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;">'
+      +'<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#2563eb;">'+prods.length+'</div><div style="font-size:10px;color:#64748b;">Products</div></div>'
+      +'<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#16a34a;">'+totalSales+'</div><div style="font-size:10px;color:#64748b;">Total Sales</div></div>'
+      +'<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#7c3aed;">'+brands.length+'</div><div style="font-size:10px;color:#64748b;">Brands</div></div>'
+      +'</div></div>'
+      +(brands.length?'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;"><div style="font-weight:700;font-size:13px;color:#1d4ed8;margin-bottom:8px;"><i class="fas fa-award"></i> Brand(s)</div>'+brands.map(function(b){return '<div style="font-size:14px;font-weight:600;color:#0f172a;">'+b.name+(b.blueTickAdmin?' <span style="color:#2563eb;">✓</span>':'')+'</div>';}).join('')+'</div>':'')
+      +(prods.length?'<div><div style="font-weight:700;font-size:13px;color:#374151;margin-bottom:8px;">📦 Products ('+prods.length+')</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+prods.slice(0,6).map(function(p){var img=p.image||(p.images&&p.images[0])||'';return '<div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:10px;display:flex;gap:8px;align-items:center;">'+(img?'<img src="'+img+'" style="width:36px;height:36px;border-radius:8px;object-fit:cover;">':'<div style="width:36px;height:36px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div>')+'<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#0f172a;">'+(p.name||p.title||'Product')+'</div><div style="font-size:11px;color:#2563eb;font-weight:700;">₹'+(p.price||0)+'</div></div></div>';}).join('')+'</div>'+(prods.length>6?'<p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:8px;">...and '+(prods.length-6)+' more</p>':'')+'</div>':'')
+      +'</div>';
+  }catch(e){res.innerHTML='<p style="color:#ef4444;text-align:center;">Error: '+e.message+'</p>';}
+}
+
+// Admin Brand Page
+var _currentAdminBrandId=null, _adminBrandData=null;
+function openAdminBrandPage(brandId,brandData){
+  _currentAdminBrandId=brandId; _adminBrandData=brandData;
+  document.getElementById('adminBrandPage').style.display='block';
+  document.body.style.overflow='hidden';
+  document.getElementById('abpTitle').textContent=brandData.name||'My Brand';
+  document.getElementById('abpBrandName').textContent=brandData.name||'Brand';
+  document.getElementById('abpBrandCat').textContent=brandData.category||'';
+  var av=document.getElementById('abpAvatar');
+  av.innerHTML=brandData.logo?'<img src="'+brandData.logo+'" style="width:100%;height:100%;border-radius:17px;object-fit:cover;">':(brandData.name||'B').charAt(0).toUpperCase();
+  document.getElementById('abpProductToggle').checked=brandData.showProducts!==false;
+  document.getElementById('abpPostToggle').checked=brandData.showPosts===true;
+  updateAbpVisibility(); loadAbpData();
+}
+function closeAdminBrandPage(){document.getElementById('adminBrandPage').style.display='none';document.body.style.overflow='';}
+function editAdminBrand(){showAdminToast&&showAdminToast('Edit brand coming soon','info');}
+function updateAbpVisibility(){
+  var sp=document.getElementById('abpProductToggle').checked;
+  var ss=document.getElementById('abpPostToggle').checked;
+  document.getElementById('abpProductsSection').style.display=sp?'block':'none';
+  document.getElementById('abpPostsSection').style.display=ss?'block':'none';
+  document.getElementById('abpAddProductBtn').style.display=sp?'flex':'none';
+  document.getElementById('abpAddPostBtn').style.display=ss?'flex':'none';
+}
+function saveAdminBrandToggles(){
+  updateAbpVisibility();
+  if(!_currentAdminBrandId) return;
+  database.ref('brands/'+_currentAdminBrandId).update({showProducts:document.getElementById('abpProductToggle').checked,showPosts:document.getElementById('abpPostToggle').checked});
+}
+async function loadAbpData(){
+  if(!_currentAdminBrandId) return;
+  try{
+    var [pSnap,postSnap,fSnap]=await Promise.all([
+      database.ref('products').orderByChild('brandId').equalTo(_currentAdminBrandId).once('value'),
+      database.ref('brandPosts/'+_currentAdminBrandId).once('value'),
+      database.ref('brandFollowers').orderByChild('brandId').equalTo(_currentAdminBrandId).once('value')
+    ]);
+    var prods=[]; if(pSnap.exists())pSnap.forEach(function(c){var p=c.val();p._id=c.key;prods.push(p);});
+    document.getElementById('abpProdCount').textContent=prods.length;
+    document.getElementById('abpProdCountLabel').textContent=prods.length+' products';
+    document.getElementById('abpProductsList').innerHTML=prods.length?prods.map(function(p){var img=p.image||(p.images&&p.images[0])||'';return '<div style="background:white;border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden;"><div style="height:100px;background:#f1f5f9;overflow:hidden;">'+(img?'<img src="'+img+'" style="width:100%;height:100%;object-fit:cover;">'+'':'<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:28px;">📦</div>')+'</div><div style="padding:10px;"><div style="font-weight:700;font-size:13px;color:#0f172a;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+(p.name||p.title||'Product')+'</div><div style="font-size:12px;color:#2563eb;font-weight:700;">₹'+(p.price||0)+'</div></div></div>';}).join(''):'<p style="color:#94a3b8;text-align:center;padding:20px;grid-column:span 2;">No products yet</p>';
+    var posts=[]; if(postSnap.exists())postSnap.forEach(function(c){var p=c.val();p._id=c.key;posts.unshift(p);});
+    document.getElementById('abpPostCount').textContent=posts.length;
+    document.getElementById('abpPostsList').innerHTML=posts.length?posts.map(function(p){return '<div style="background:white;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid #e2e8f0;"><div style="font-weight:700;font-size:15px;color:#0f172a;margin-bottom:6px;">'+(p.title||'Post')+'</div>'+(p.image?'<img src="'+p.image+'" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover;margin-bottom:8px;">':'')+'<p style="font-size:13px;color:#374151;line-height:1.6;margin:0;">'+(p.content||'')+'</p><div style="font-size:11px;color:#94a3b8;margin-top:8px;">'+new Date(p.createdAt).toLocaleString('en-IN')+'</div></div>';}).join(''):'<p style="color:#94a3b8;text-align:center;padding:20px;">No posts yet</p>';
+    var f=0; if(fSnap.exists())fSnap.forEach(function(){f++;});
+    document.getElementById('abpFollowers').textContent=f;
+  }catch(e){console.error(e);}
+}
+function showAddAdminProductForm(){closeAdminBrandPage();if(typeof showTab==='function')showTab('products');}
+
+// Brand Followers Modal
+async function showBrandFollowers(brandId,brandName){
+  var m=document.createElement('div'); m.className='modal active'; m.style.zIndex='10001';
+  m.innerHTML='<div class="modal-content" style="max-width:460px;border-radius:16px;overflow:hidden;"><div class="modal-header" style="background:linear-gradient(135deg,#2563eb,#7c3aed);padding:18px 22px;border:none;"><h3 style="color:white;margin:0;font-size:15px;font-weight:700;"><i class="fas fa-users"></i> Followers — '+(brandName||'Brand')+'</h3><button onclick="this.closest(\'.modal\').remove()" style="background:none;border:none;color:white;font-size:22px;cursor:pointer;">&times;</button></div><div class="modal-body" style="padding:20px;max-height:380px;overflow-y:auto;" id="bFollowerList"><p style="text-align:center;color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i></p></div></div>';
+  document.body.appendChild(m);
+  try{
+    var snap=await database.ref('brandFollowers').orderByChild('brandId').equalTo(brandId).once('value');
+    var list=[]; if(snap.exists())snap.forEach(function(c){var d=c.val();if(d){d._k=c.key;list.push(d);}});
+    list.sort(function(a,b){return (b.followedAt||0)-(a.followedAt||0);});
+    var el=document.getElementById('bFollowerList');
+    el.innerHTML=list.length?list.map(function(f){var dt=f.followedAt?new Date(f.followedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'Unknown';return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9;"><div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;flex-shrink:0;">'+(f.userName||'U').charAt(0).toUpperCase()+'</div><div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0f172a;">'+(f.userName||f.userId||'User')+'</div><div style="font-size:11px;color:#94a3b8;">Followed on '+dt+'</div></div></div>';}).join(''):'<div style="text-align:center;padding:30px;"><i class="fas fa-user-slash" style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:12px;"></i><p style="color:#64748b;">No followers yet</p></div>';
+  }catch(e){document.getElementById('bFollowerList').innerHTML='<p style="color:#ef4444;">Error: '+e.message+'</p>';}
+}
+
+// Add Seller Lookup to sidebar
+(function(){function inj(){var m=document.querySelector('.admin-menu,.sidebar ul,nav ul,[class*="menu"]');if(!m){setTimeout(inj,800);return;}if(document.getElementById('bzSellerLookupItem'))return;var li=document.createElement('li');li.id='bzSellerLookupItem';li.innerHTML='<a href="#" class="menu-item" onclick="openSellerLookup();return false;"><i class="fas fa-id-card" style="color:#f59e0b;"></i><span>Seller Lookup</span></a>';m.appendChild(li);}inj();})();
+
+// Add Brand / Save Admin Brand
+function showAddAdminBrandModal(){
+  ['adminBrandName','adminBrandLogo','adminBrandCategory'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var bt=document.getElementById('adminBrandBlueTick'); if(bt) bt.checked=true;
+  document.getElementById('addAdminBrandModal').classList.add('active');
+}
+function saveAdminBrand(){
+  var name=document.getElementById('adminBrandName').value.trim();
+  if(!name){showAdminToast&&showAdminToast('Brand name required','error');return;}
+  var logo=document.getElementById('adminBrandLogo').value.trim();
+  var cat=document.getElementById('adminBrandCategory').value.trim();
+  var bt=document.getElementById('adminBrandBlueTick').checked;
+  var bid='brand_admin_'+Date.now();
+  database.ref('brands/'+bid).set({name,logo:logo||'',category:cat||'',blueTickAdmin:bt,isAdminBrand:true,status:'active',createdAt:Date.now(),createdBy:'admin',showProducts:true,showPosts:false})
+    .then(function(){closeModal('addAdminBrandModal');showAdminToast&&showAdminToast('Brand added'+(bt?' with Blue Tick ✓':'')+'!','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();})
+    .catch(function(e){showAdminToast&&showAdminToast('Error: '+e.message,'error');});
+}
+function suspendBrand(id){if(!confirm('Suspend this brand?'))return;database.ref('brands/'+id).update({status:'suspended'}).then(function(){showAdminToast&&showAdminToast('Brand suspended!','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();});}
+function activateBrand(id){database.ref('brands/'+id).update({status:'active'}).then(function(){showAdminToast&&showAdminToast('Brand activated!','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();});}
+function deleteBrand(id){if(!confirm('Delete this brand permanently?'))return;database.ref('brands/'+id).remove().then(function(){showAdminToast&&showAdminToast('Brand deleted!','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();});}
+function toggleBlueTick(id,cur){var nv=!cur;database.ref('brands/'+id).update({blueTickAdmin:nv}).then(function(){showAdminToast&&showAdminToast(nv?'✅ Blue Tick added!':'Blue Tick removed','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();});}
+</script>
+<!-- ============================================================ -->
+<!-- ============================================================
+     BUYZO ADMIN — DESIGN OVERRIDE PATCH (Part 2)
+     Paste this AFTER the Part 1 patch, still before </body>
+     ============================================================ -->
+<style>
+/* ── ROOT VARIABLES ─────────────────────────────── */
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --secondary: #7c3aed;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --sidebar-bg: #0f172a;
+  --card-radius: 16px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 20px rgba(0,0,0,.1);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.14);
+}
+
+/* ── SIDEBAR ────────────────────────────────────── */
+.admin-sidebar,.sidebar { background:var(--sidebar-bg)!important; box-shadow:4px 0 24px rgba(0,0,0,.18)!important; border-right:none!important; }
+.admin-logo,.logo-section { background:linear-gradient(135deg,#1e293b,#0f172a)!important; border-bottom:1px solid rgba(255,255,255,.06)!important; padding:20px 18px!important; }
+.admin-logo h2,.logo-section h2 { font-size:1.15rem!important; font-weight:800!important; color:white!important; }
+.menu-item,.nav-item,.sidebar a { display:flex!important; align-items:center!important; gap:10px!important; padding:11px 16px!important; margin:2px 8px!important; border-radius:10px!important; font-size:13.5px!important; font-weight:600!important; color:rgba(255,255,255,.65)!important; text-decoration:none!important; transition:all .18s!important; cursor:pointer!important; }
+.menu-item:hover,.sidebar a:hover { background:rgba(255,255,255,.08)!important; color:white!important; }
+.menu-item.active { background:linear-gradient(135deg,var(--primary),var(--secondary))!important; color:white!important; box-shadow:0 4px 12px rgba(37,99,235,.35)!important; }
+.menu-item i { width:18px; text-align:center; font-size:14px; }
+
+/* ── TOP HEADER ─────────────────────────────────── */
+.admin-header,#adminHeader { background:white!important; box-shadow:0 1px 0 #e2e8f0!important; border-bottom:none!important; padding:14px 24px!important; display:flex!important; align-items:center!important; justify-content:space-between!important; }
+#adminPageTitle,.admin-header h2 { font-size:1.2rem!important; font-weight:800!important; color:#0f172a!important; }
+
+/* ── CONTENT AREA ───────────────────────────────── */
+.admin-content,.main-content,#mainContent { background:#f1f5f9!important; padding:24px!important; }
+
+/* ── CARDS ──────────────────────────────────────── */
+.card { background:white!important; border-radius:var(--card-radius)!important; box-shadow:var(--shadow-sm)!important; border:1px solid #e2e8f0!important; margin-bottom:20px!important; overflow:hidden!important; }
+.card-header { padding:16px 20px!important; border-bottom:1px solid #f1f5f9!important; background:white!important; font-size:15px!important; font-weight:800!important; color:#0f172a!important; }
+.card-header h2 { font-size:15px!important; font-weight:800!important; color:#0f172a!important; margin:0; }
+.card-body { padding:20px!important; }
+
+/* ── STAT CARDS ─────────────────────────────────── */
+.stats-container,.stat-cards { display:grid!important; grid-template-columns:repeat(auto-fill,minmax(180px,1fr))!important; gap:16px!important; margin-bottom:24px!important; }
+.stat-card { background:white!important; border-radius:var(--card-radius)!important; padding:18px!important; box-shadow:var(--shadow-sm)!important; border:1px solid #e2e8f0!important; display:flex!important; align-items:center!important; gap:14px!important; transition:all .2s!important; cursor:pointer!important; }
+.stat-card:hover { transform:translateY(-3px)!important; box-shadow:var(--shadow-md)!important; }
+.stat-icon { width:48px!important; height:48px!important; border-radius:13px!important; display:flex!important; align-items:center!important; justify-content:center!important; font-size:20px!important; color:white!important; flex-shrink:0!important; }
+.stat-info h3 { font-size:1.5rem!important; font-weight:800!important; color:#0f172a!important; margin:0 0 2px!important; line-height:1!important; }
+.stat-info p { font-size:12px!important; color:#64748b!important; margin:0!important; font-weight:500!important; }
+
+/* ── BUTTONS ────────────────────────────────────── */
+.btn { border-radius:10px!important; font-weight:700!important; font-size:13.5px!important; padding:9px 18px!important; border:none!important; cursor:pointer!important; display:inline-flex!important; align-items:center!important; gap:7px!important; transition:all .15s!important; }
+.btn-primary { background:linear-gradient(135deg,var(--primary),var(--secondary))!important; color:white!important; box-shadow:0 4px 12px rgba(37,99,235,.3)!important; }
+.btn-primary:hover { opacity:.9!important; transform:translateY(-1px)!important; }
+.btn-success { background:linear-gradient(135deg,#16a34a,#06b6d4)!important; color:white!important; }
+.btn-danger { background:linear-gradient(135deg,#dc2626,#f97316)!important; color:white!important; }
+.btn-outline { background:white!important; color:#374151!important; border:1.5px solid #e2e8f0!important; }
+.btn-outline:hover { border-color:var(--primary)!important; color:var(--primary)!important; }
+.btn-sm { padding:7px 14px!important; font-size:12px!important; }
+
+/* ── FORMS ──────────────────────────────────────── */
+.form-control,input[type="text"],input[type="email"],input[type="number"],input[type="url"],input[type="date"],select,textarea { border:1.5px solid #e2e8f0!important; border-radius:10px!important; padding:10px 14px!important; font-size:13.5px!important; width:100%!important; color:#0f172a!important; background:#f8fafc!important; transition:border-color .15s!important; outline:none!important; }
+.form-control:focus,input:focus,select:focus,textarea:focus { border-color:var(--primary)!important; background:white!important; box-shadow:0 0 0 3px rgba(37,99,235,.08)!important; }
+.form-group { margin-bottom:16px!important; }
+.form-group label { font-size:13px!important; font-weight:700!important; color:#374151!important; display:block!important; margin-bottom:6px!important; }
+
+/* ── TABLES ─────────────────────────────────────── */
+table { width:100%!important; border-collapse:collapse!important; }
+thead th { background:#f8fafc!important; padding:11px 14px!important; font-size:12px!important; font-weight:700!important; color:#64748b!important; text-transform:uppercase!important; letter-spacing:.5px!important; border-bottom:1px solid #e2e8f0!important; }
+tbody td { padding:13px 14px!important; font-size:13.5px!important; color:#374151!important; border-bottom:1px solid #f1f5f9!important; }
+tbody tr:hover { background:#f8fafc!important; }
+tbody tr:last-child td { border-bottom:none!important; }
+
+/* ── MODALS ─────────────────────────────────────── */
+.modal { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6)!important; z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px)!important; }
+.modal.active { display:flex!important; }
+.modal-content { background:white!important; border-radius:var(--card-radius)!important; box-shadow:var(--shadow-lg)!important; width:90%!important; max-width:560px!important; max-height:90vh!important; overflow-y:auto!important; animation:modal-in .2s ease!important; }
+@keyframes modal-in { from{opacity:0;transform:translateY(20px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+.modal-header { padding:18px 22px!important; border-bottom:1px solid #f1f5f9!important; display:flex!important; align-items:center!important; justify-content:space-between!important; }
+.modal-body { padding:22px!important; }
+.close { background:none!important; border:none!important; font-size:22px!important; cursor:pointer!important; color:#94a3b8!important; }
+.close:hover { color:#0f172a!important; }
+
+/* ── SIDEBAR BADGE ──────────────────────────────── */
+.sidebar-badge { background:#ef4444; color:white; border-radius:999px; font-size:10px; font-weight:800; padding:1px 6px; min-width:18px; text-align:center; margin-left:auto; animation:pulse-dot 2s infinite; }
+
+/* ── SCROLLBAR ──────────────────────────────────── */
+#adminPanel ::-webkit-scrollbar { width:6px; height:6px; }
+#adminPanel ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:99px; }
+
+/* ── TOAST ──────────────────────────────────────── */
+.admin-toast { position:fixed!important; bottom:24px!important; right:24px!important; background:#0f172a!important; color:white!important; border-radius:12px!important; padding:12px 20px!important; font-size:14px!important; font-weight:600!important; box-shadow:0 8px 24px rgba(0,0,0,.2)!important; z-index:99999!important; display:flex!important; align-items:center!important; gap:10px!important; max-width:320px!important; }
+.admin-toast.success { background:linear-gradient(135deg,#16a34a,#06b6d4)!important; }
+.admin-toast.error { background:linear-gradient(135deg,#dc2626,#f97316)!important; }
+
+/* ── PRODUCT GRID ───────────────────────────────── */
+.products-grid,.product-grid { display:grid!important; grid-template-columns:repeat(auto-fill,minmax(180px,1fr))!important; gap:16px!important; }
+.product-card { background:white!important; border-radius:14px!important; border:1.5px solid #e2e8f0!important; overflow:hidden!important; transition:all .2s!important; }
+.product-card:hover { transform:translateY(-3px)!important; box-shadow:var(--shadow-md)!important; border-color:var(--primary)!important; }
+.product-card img { width:100%!important; height:140px!important; object-fit:cover!important; }
+.product-info { padding:12px!important; }
+
+/* ── MOBILE ─────────────────────────────────────── */
+@media (max-width:768px) {
+  .admin-sidebar,.sidebar { display:none; }
+  .admin-content,.main-content { padding:14px!important; }
+  .stats-container { grid-template-columns:1fr 1fr!important; }
+  #mobileMenuBtn { display:flex!important; }
+}
+</style>
+
+<script>
+// ── POST MODAL (replaces prompt) ───────────────────
+window.showAddAdminPostForm = function() {
+  if (!window._currentAdminBrandId) return;
+  var existing = document.getElementById('addPostModal');
+  if (existing) { existing.classList.add('active'); return; }
+  var m = document.createElement('div');
+  m.className='modal'; m.id='addPostModal';
+  m.innerHTML=`<div class="modal-content" style="max-width:500px;border-radius:16px;overflow:hidden;">
+    <div class="modal-header" style="background:linear-gradient(135deg,#16a34a,#06b6d4);padding:18px 22px;border:none;">
+      <h3 style="color:white;margin:0;font-size:15px;font-weight:700;"><i class="fas fa-edit"></i> Create Post</h3>
+      <button class="close" onclick="document.getElementById('addPostModal').classList.remove('active')" style="color:rgba(255,255,255,.8);">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:22px;">
+      <div class="form-group"><label>Post Title *</label><input type="text" id="postModalTitle" class="form-control" placeholder="e.g. New Collection Launch!"></div>
+      <div class="form-group"><label>Content</label><textarea id="postModalContent" class="form-control" rows="4" placeholder="Write your post..." style="resize:vertical;"></textarea></div>
+      <div class="form-group"><label>Image URL (optional)</label><input type="url" id="postModalImage" class="form-control" placeholder="https://..."></div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button onclick="document.getElementById('addPostModal').classList.remove('active')" style="flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;padding:12px;cursor:pointer;font-weight:600;">Cancel</button>
+        <button onclick="publishAdminPost()" style="flex:2;background:linear-gradient(135deg,#16a34a,#06b6d4);color:white;border:none;border-radius:10px;padding:12px;cursor:pointer;font-weight:700;"><i class="fas fa-paper-plane"></i> Publish</button>
+      </div>
+    </div></div>`;
+  document.body.appendChild(m);
+  m.classList.add('active');
+};
+
+window.publishAdminPost = async function() {
+  var title=document.getElementById('postModalTitle').value.trim();
+  var content=document.getElementById('postModalContent').value.trim();
+  var image=document.getElementById('postModalImage').value.trim();
+  if (!title){ showAdminToast && showAdminToast('Title required','error'); return; }
+  var pid='post_'+Date.now();
+  await database.ref('brandPosts/'+window._currentAdminBrandId+'/'+pid)
+    .set({title,content,image:image||'',createdAt:Date.now(),brandId:window._currentAdminBrandId});
+  document.getElementById('addPostModal').classList.remove('active');
+  ['postModalTitle','postModalContent','postModalImage'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  showAdminToast && showAdminToast('Post published!','success');
+  if(typeof loadAbpData==='function') loadAbpData();
+};
+
+// ── SIDEBAR LIVE BADGES ────────────────────────────
+(function sidebarBadges(){
+  function ready(){
+    if(typeof database==='undefined'){setTimeout(ready,700);return;}
+    function setBadge(tab,n){
+      var el=document.querySelector('.menu-item[data-tab="'+tab+'"]');
+      if(!el) return;
+      var b=el.querySelector('.sidebar-badge');
+      if(n<=0){if(b)b.remove();return;}
+      if(!b){b=document.createElement('span');b.className='sidebar-badge';el.appendChild(b);}
+      b.textContent=n>99?'99+':n;
+    }
+    database.ref('sellerRequests').on('value',function(s){
+      var c=0;if(s.exists())s.forEach(function(ch){var d=ch.val();if(d&&(d.status==='pending'||!d.status)&&!(_readSellerReq||{})[ch.key])c++;});
+      setBadge('seller-requests',c);
+    });
+    database.ref('brandRequests').orderByChild('status').equalTo('pending').on('value',function(s){
+      var c=0;if(s.exists())s.forEach(function(ch){if(!(_readBrandReq||{})[ch.key])c++;});
+      setBadge('brand-requests',c);
+    });
+    database.ref('orders').orderByChild('createdAt').limitToLast(30).on('value',function(s){
+      var c=0;if(s.exists())s.forEach(function(ch){var d=ch.val();if(d&&!(_readOrders||{})[ch.key]&&(Date.now()-(d.createdAt||0))<259200000)c++;});
+      setBadge('orders',c);
+    });
+    // Pending seller count fix
+    database.ref('sellerRequests').on('value',function(s){
+      var c=0;if(s.exists())s.forEach(function(ch){var d=ch.val();if(d&&(d.status==='pending'||!d.status))c++;});
+      ['pendingSellerCount','pendingSeller','sellerPendingCount'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=c;});
+    });
+  }
+  ready();
+})();
+
+// ── MOBILE MENU BUTTON ─────────────────────────────
+(function(){
+  function inject(){
+    var h=document.querySelector('.admin-header,#adminHeader');
+    if(!h){setTimeout(inject,600);return;}
+    if(document.getElementById('bzMobileBtn')) return;
+    var btn=document.createElement('button');
+    btn.id='bzMobileBtn';
+    btn.style.cssText='display:none;background:none;border:1.5px solid #e2e8f0;border-radius:10px;width:38px;height:38px;cursor:pointer;font-size:16px;align-items:center;justify-content:center;color:#374151;flex-shrink:0;';
+    btn.innerHTML='<i class="fas fa-bars"></i>';
+    btn.onclick=function(){var sb=document.querySelector('.admin-sidebar,.sidebar');if(!sb)return;sb.style.display=sb.style.display==='none'?'flex':'none';};
+    h.prepend(btn);
+    function check(){btn.style.display=window.innerWidth<768?'flex':'none';}
+    check(); window.addEventListener('resize',check);
+  }
+  inject();
+})();
+
+console.log('✅ Buyzo Admin Design Patch Part 2 loaded');
+</script>
+<!-- ============================================================ -->
+</body>
 </html>
