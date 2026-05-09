@@ -1510,13 +1510,14 @@
         <li><a href="#" class="menu-item" data-tab="popular-searches"><i class="fas fa-chart-line"></i><span>Popular Searches</span></a></li>
         <li><a href="#" class="menu-item" data-tab="customers"><i class="fas fa-users"></i><span>Customers</span></a></li>
         <li><a href="#" class="menu-item" data-tab="banners"><i class="fas fa-image"></i><span>Banners</span></a></li>
-        <li><a href="#" class="menu-item" data-tab="policies"><i class="fas fa-file-alt"></i><span>Policies</span></a></li>
         <li><a href="#" class="menu-item" data-tab="seller-requests"><i class="fas fa-user-check"></i><span>Seller Requests</span></a></li>
         <li><a href="#" class="menu-item" data-tab="hero"><i class="fas fa-star"></i><span>Hero Section</span></a></li>
         <li><a href="#" class="menu-item" data-tab="user-listings"><i class="fas fa-store"></i><span>User Listings</span></a></li>
-            <li><a href="#" class="menu-item" data-tab="brands"><i class="fas fa-award"></i><span>Brands</span></a></li>
-            <li><a href="#" class="menu-item" data-tab="brand-requests"><i class="fas fa-inbox"></i><span>Brand Requests</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="brands"><i class="fas fa-award"></i><span>Brands</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="brand-requests"><i class="fas fa-inbox"></i><span>Brand Requests</span></a></li>
         <li><a href="#" class="menu-item" data-tab="analytics"><i class="fas fa-chart-bar"></i><span>Analytics</span></a></li>
+        <li><a href="#" class="menu-item" data-tab="admin-sharing"><i class="fas fa-users-cog"></i><span>Admin Sharing</span></a></li>
+        <li><a href="#" class="menu-item" onclick="openSellerLookup();return false;"><i class="fas fa-id-card" style="color:#f59e0b;"></i><span>Seller Lookup</span></a></li>
         <li><a href="#" class="menu-item" data-tab="settings"><i class="fas fa-cog"></i><span>Settings</span></a></li>
         <li><a href="#" class="menu-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
       </ul>
@@ -5038,70 +5039,141 @@
     // ===== LOAD SEARCH TAGS =====
     function loadSearchTags() {
       const searchTagsRef = database.ref('searchTags');
-      searchTagsRef.off('value'); // Remove old listeners
+      searchTagsRef.off('value');
       searchTagsRef.on('value', snapshot => {
         const tagsData = snapshot.val();
         allSearchTags = [];
-        
+
         if (tagsData) {
           allSearchTags = Object.entries(tagsData).map(([key, value]) => ({
             id: key,
-            ...value
+            ...(typeof value === 'string' ? { name: value, type: 'general', active: true } : value)
           }));
         }
-        
-        updateDashboardSearchTags();
-        
-        const tagsList = document.getElementById('searchTagsList');
-        if (tagsList) {
-          if (allSearchTags.length === 0) {
-            tagsList.innerHTML = '<p style="color: var(--secondary);">No search tags added yet.</p>';
-          } else {
-            tagsList.innerHTML = allSearchTags.map(tag => `
-              <div class="tag-item" onclick="showTagProducts('${tag.id}', '${(tag.name||'').replace(/'/g,"\\'")}')">
-                <span>${tag.name || ''}</span>
-                <span class="badge badge-info" style="margin-left: 8px;">${tag.type || 'general'}</span>
-                <i class="fas fa-times remove-tag" onclick="event.stopPropagation(); deleteSearchTag('${tag.id}')"></i>
-              </div>
-            `).join('');
+
+        // Also read from adminSettings/searchTags (real site path)
+        database.ref('adminSettings/searchTags').once('value').then(aSnap => {
+          if (aSnap.exists()) {
+            const aData = aSnap.val();
+            const existingNames = new Set(allSearchTags.map(t => (t.name||'').toLowerCase()));
+            if (Array.isArray(aData)) {
+              aData.forEach((tag, i) => {
+                const name = typeof tag === 'string' ? tag : (tag.name || '');
+                if (name && !existingNames.has(name.toLowerCase())) {
+                  allSearchTags.push({ id: 'as_tag_' + i, name, type: 'general', active: true, _fromSettings: true });
+                }
+              });
+            } else if (typeof aData === 'string') {
+              aData.split(',').map(s => s.trim()).filter(Boolean).forEach((name, i) => {
+                if (!existingNames.has(name.toLowerCase())) {
+                  allSearchTags.push({ id: 'as_tag_' + i, name, type: 'general', active: true, _fromSettings: true });
+                }
+              });
+            }
           }
-        }
+
+          updateDashboardSearchTags();
+          const tagsList = document.getElementById('searchTagsList');
+          if (tagsList) {
+            if (allSearchTags.length === 0) {
+              tagsList.innerHTML = '<p style="color: var(--secondary);">No search tags added yet.</p>';
+            } else {
+              tagsList.innerHTML = allSearchTags.map(tag => `
+                <div class="tag-item" onclick="showTagProducts('${tag.id}', '${(tag.name||'').replace(/'/g,"\\'")}')">
+                  <span>${tag.name || ''}</span>
+                  <span class="badge badge-info" style="margin-left: 8px;">${tag.type || 'general'}</span>
+                  ${tag._fromSettings ? '<span class="badge" style="background:#fef9c3;color:#92400e;margin-left:4px;font-size:10px;">Settings</span>' : ''}
+                  <i class="fas fa-times remove-tag" onclick="event.stopPropagation(); deleteSearchTag('${tag.id}')"></i>
+                </div>
+              `).join('');
+            }
+          }
+        }).catch(() => {
+          updateDashboardSearchTags();
+          const tagsList = document.getElementById('searchTagsList');
+          if (tagsList) {
+            if (allSearchTags.length === 0) {
+              tagsList.innerHTML = '<p style="color: var(--secondary);">No search tags added yet.</p>';
+            } else {
+              tagsList.innerHTML = allSearchTags.map(tag => `
+                <div class="tag-item" onclick="showTagProducts('${tag.id}', '${(tag.name||'').replace(/'/g,"\\'")}')">
+                  <span>${tag.name || ''}</span>
+                  <span class="badge badge-info" style="margin-left: 8px;">${tag.type || 'general'}</span>
+                  <i class="fas fa-times remove-tag" onclick="event.stopPropagation(); deleteSearchTag('${tag.id}')"></i>
+                </div>
+              `).join('');
+            }
+          }
+        });
       });
     }
 
     // Load Popular Searches
     function loadPopularSearches() {
       const popularSearchesRef = database.ref('popularSearches');
-      popularSearchesRef.off('value'); // Remove old listeners
+      popularSearchesRef.off('value');
       popularSearchesRef.on('value', snapshot => {
         const searchesData = snapshot.val();
         allPopularSearches = [];
-        
+
         if (searchesData) {
           allPopularSearches = Object.entries(searchesData).map(([key, value]) => ({
             id: key,
-            ...value
+            ...(typeof value === 'string' ? { term: value, count: 1, active: true } : value)
           }));
           allPopularSearches.sort((a, b) => (b.count || 0) - (a.count || 0));
         }
-        
-        updateDashboardPopularSearches();
-        
-        const searchesList = document.getElementById('popularSearchesList');
-        if (searchesList) {
-          if (allPopularSearches.length === 0) {
-            searchesList.innerHTML = '<p style="color: var(--secondary);">No popular searches added yet.</p>';
-          } else {
-            searchesList.innerHTML = allPopularSearches.map(search => `
-              <div class="popular-search-item">
-                <span>${search.term || ''}</span>
-                <span class="badge badge-success" style="margin-left: 8px;">${search.count || 0} searches</span>
-                <i class="fas fa-times remove-tag" onclick="deletePopularSearch('${search.id}')"></i>
-              </div>
-            `).join('');
+
+        // Also read from adminSettings/popularSearches (real site path)
+        database.ref('adminSettings/popularSearches').once('value').then(aSnap => {
+          if (aSnap.exists()) {
+            const aData = aSnap.val();
+            const existingTerms = new Set(allPopularSearches.map(s => (s.term||'').toLowerCase()));
+            const addTerms = (items) => {
+              if (Array.isArray(items)) {
+                items.forEach((item, i) => {
+                  const term = typeof item === 'string' ? item : (item.term || item.name || '');
+                  const count = typeof item === 'object' ? (item.count || 1) : 1;
+                  if (term && !existingTerms.has(term.toLowerCase())) {
+                    allPopularSearches.push({ id: 'as_ps_' + i, term, count, active: true, _fromSettings: true });
+                  }
+                });
+              } else if (typeof items === 'string') {
+                items.split(',').map(s => s.trim()).filter(Boolean).forEach((term, i) => {
+                  if (!existingTerms.has(term.toLowerCase())) {
+                    allPopularSearches.push({ id: 'as_ps_' + i, term, count: 1, active: true, _fromSettings: true });
+                  }
+                });
+              }
+            };
+            addTerms(aData);
+            allPopularSearches.sort((a, b) => (b.count || 0) - (a.count || 0));
           }
-        }
+
+          updateDashboardPopularSearches();
+          renderPopularSearchesList();
+        }).catch(() => {
+          updateDashboardPopularSearches();
+          renderPopularSearchesList();
+        });
       });
+    }
+
+    function renderPopularSearchesList() {
+      const searchesList = document.getElementById('popularSearchesList');
+      if (!searchesList) return;
+      if (allPopularSearches.length === 0) {
+        searchesList.innerHTML = '<p style="color: var(--secondary);">No popular searches added yet.</p>';
+      } else {
+        searchesList.innerHTML = allPopularSearches.map(search => `
+          <div class="popular-search-item">
+            <span>${search.term || ''}</span>
+            <span class="badge badge-success" style="margin-left: 8px;">${search.count || 0} searches</span>
+            ${search._fromSettings ? '<span class="badge" style="background:#fef9c3;color:#92400e;margin-left:4px;font-size:10px;">Settings</span>' : ''}
+            <i class="fas fa-times remove-tag" onclick="deletePopularSearch('${search.id}')"></i>
+          </div>
+        `).join('');
+      }
     }
 
     function updateDashboardSearchTags() {
@@ -5192,10 +5264,24 @@
         database.ref('sellerRequests').once('value').then(srSnap => {
           let pendingSellers = 0;
           if (srSnap.exists()) {
-            srSnap.forEach(c => { if ((c.val().status || 'pending') === 'pending') pendingSellers++; });
+            srSnap.forEach(c => {
+              const d = c.val();
+              if (d && (d.status === 'pending' || !d.status)) pendingSellers++;
+            });
           }
           setEl('pendingSellerReqs', pendingSellers);
-        }).catch(() => setEl('pendingSellerReqs', '—'));
+        }).catch(() => {
+          // Retry once after short delay
+          setTimeout(() => {
+            database.ref('sellerRequests').once('value').then(srSnap => {
+              let pendingSellers = 0;
+              if (srSnap.exists()) {
+                srSnap.forEach(c => { const d = c.val(); if (d && (d.status === 'pending' || !d.status)) pendingSellers++; });
+              }
+              setEl('pendingSellerReqs', pendingSellers);
+            }).catch(() => setEl('pendingSellerReqs', 0));
+          }, 2000);
+        });
 
         // Earnings
         const totalEarnings = orders.reduce((sum, o) => sum + (parseFloat(o.totalAmount) || 0), 0);
@@ -6505,11 +6591,26 @@
       const name = document.getElementById('searchTagName').value.trim();
       const type = document.getElementById('searchTagType').value;
       const active = document.getElementById('searchTagActive').checked;
-      
       if (!name) { showToast('Please enter a tag name', 'error'); return; }
-      
       const tagId = 'tag_' + Date.now();
-      database.ref('searchTags/' + tagId).set({ name, type, active, createdAt: Date.now() })
+
+      // Write to main path
+      database.ref('searchTags/' + tagId).set({ name, type, active: true, createdAt: Date.now() })
+        .then(() => {
+          // Also sync to adminSettings so real site sees it
+          return database.ref('adminSettings/searchTags').once('value').then(snap => {
+            let existing = [];
+            if (snap.exists()) {
+              const d = snap.val();
+              if (Array.isArray(d)) existing = d.map(t => typeof t === 'string' ? t : (t.name || t));
+              else if (typeof d === 'string') existing = d.split(',').map(s => s.trim()).filter(Boolean);
+            }
+            if (!existing.includes(name)) {
+              existing.push(name);
+              return database.ref('adminSettings/searchTags').set(existing);
+            }
+          });
+        })
         .then(() => {
           closeModal('addSearchTagModal');
           showToast('Search tag added!', 'success');
@@ -6522,6 +6623,11 @@
         database.ref('searchTags/' + tagId).remove()
           .then(() => {
             database.ref('tagProducts/' + tagId).remove();
+            // Sync adminSettings
+            if (tagId.startsWith('as_tag_')) {
+              // From adminSettings, remove by index
+              loadSearchTags();
+            }
             showToast('Tag deleted', 'success');
           })
           .catch(error => showToast('Error: ' + error.message, 'error'));
@@ -6551,11 +6657,30 @@
     function savePopularSearch() {
       const term = document.getElementById('popularSearchTerm').value.trim();
       const count = parseInt(document.getElementById('popularSearchCount').value) || 1;
-      const active = document.getElementById('popularSearchActive').checked;
       if (!term) { showToast('Please enter a search term', 'error'); return; }
-      
-      database.ref('popularSearches/search_' + Date.now()).set({ term, count, active, createdAt: Date.now() })
-        .then(() => { closeModal('addPopularSearchModal'); showToast('Popular search added!', 'success'); })
+
+      // Write to main path
+      database.ref('popularSearches/search_' + Date.now()).set({ term, count, active: true, createdAt: Date.now() })
+        .then(() => {
+          // Also sync to adminSettings so real site sees it
+          return database.ref('adminSettings/popularSearches').once('value').then(snap => {
+            let existing = [];
+            if (snap.exists()) {
+              const d = snap.val();
+              if (Array.isArray(d)) existing = d.map(t => typeof t === 'string' ? t : (t.term || t.name || t));
+              else if (typeof d === 'string') existing = d.split(',').map(s => s.trim()).filter(Boolean);
+            }
+            const existingLower = existing.map(t => t.toLowerCase());
+            if (!existingLower.includes(term.toLowerCase())) {
+              existing.push(term);
+              return database.ref('adminSettings/popularSearches').set(existing);
+            }
+          });
+        })
+        .then(() => {
+          closeModal('addPopularSearchModal');
+          showToast('Popular search added!', 'success');
+        })
         .catch(error => showToast('Error: ' + error.message, 'error'));
     }
 
@@ -7790,7 +7915,7 @@
               <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:6px 10px;background:#eff6ff;border-radius:8px;">
                 🆔 <strong>Seller ID (UID):</strong>
                 <code style="background:#dbeafe;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;word-break:break-all;flex:1;">${r.uid || '—'}</code>
-                <button onclick="navigator.clipboard&&navigator.clipboard.writeText('${r.uid||''}').then(function(){showAdminToast('Seller ID copied!','success')})" style="background:none;border:1px solid #bfdbfe;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:#2563eb;" title="Copy Seller ID">📋</button>
+                <button onclick="bzCopySellerID('${r.uid||''}',this)" style="background:none;border:1px solid #bfdbfe;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:#2563eb;" title="Copy Seller ID">📋 Copy</button>
               </div>
             </div>
             ${r.description ? `<div style="background:var(--bg-secondary);padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:12px;">${r.description}</div>` : ''}
@@ -8824,37 +8949,183 @@ function openSellerLookup(){
 async function runSellerLookup(){
   var sid=document.getElementById('sellerLookupInput').value.trim();
   var res=document.getElementById('sellerLookupResult');
-  if(!sid){res.innerHTML='<p style="color:#ef4444;text-align:center;">Please enter a Seller ID</p>';return;}
+  if(!sid){res.innerHTML='<p style="color:#ef4444;text-align:center;">Please enter a Seller ID or Gmail</p>';return;}
   res.innerHTML='<p style="text-align:center;color:#94a3b8;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Searching...</p>';
   try{
-    var [uSnap,pSnap,bSnap,spSnap]=await Promise.all([
-      database.ref('users/'+sid).once('value').catch(()=>null),
-      database.ref('products').orderByChild('sellerId').equalTo(sid).once('value').catch(()=>null),
-      database.ref('brands').orderByChild('createdBy').equalTo(sid).once('value').catch(()=>null),
-      database.ref('sellerProducts/'+sid).once('value').catch(()=>null)
-    ]);
-    var u=uSnap&&uSnap.exists()?uSnap.val():null;
-    var prods=[]; if(pSnap&&pSnap.exists())pSnap.forEach(function(c){var d=c.val();d._id=c.key;prods.push(d);});
-    if(spSnap&&spSnap.exists())spSnap.forEach(function(c){var d=c.val();if(d){d._id=c.key;if(!prods.find(function(p){return p._id===c.key;}))prods.push(d);}});
-    var brands=[]; if(bSnap&&bSnap.exists())bSnap.forEach(function(c){brands.push(c.val());});
-    if(!u&&!prods.length){res.innerHTML='<div style="text-align:center;padding:30px;"><i class="fas fa-user-slash" style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:12px;"></i><p style="color:#64748b;">No seller found with ID: '+sid+'</p></div>';return;}
+    var u=null, uid=sid;
+
+    // Try direct UID lookup first
+    var directSnap = await database.ref('users/'+sid).once('value').catch(()=>null);
+    if(directSnap && directSnap.exists()) { u=directSnap.val(); uid=sid; }
+
+    // If not found, search by email
+    if(!u) {
+      var emailSnap = await database.ref('users').orderByChild('email').equalTo(sid).once('value').catch(()=>null);
+      if(emailSnap && emailSnap.exists()) {
+        emailSnap.forEach(function(c){ u=c.val(); uid=c.key; });
+      }
+    }
+    // Also try searching by uid field
+    if(!u) {
+      var uidSnap = await database.ref('users').orderByChild('uid').equalTo(sid).once('value').catch(()=>null);
+      if(uidSnap && uidSnap.exists()) {
+        uidSnap.forEach(function(c){ u=c.val(); uid=c.key; });
+      }
+    }
+
+    // Get products by sellerId (both the input AND found uid)
+    var searchIds = [sid];
+    if(uid && uid!==sid) searchIds.push(uid);
+
+    var prods=[], seen={};
+    for(var i=0;i<searchIds.length;i++){
+      var sid2=searchIds[i];
+      var [p1,p2]=await Promise.all([
+        database.ref('products').orderByChild('sellerId').equalTo(sid2).once('value').catch(()=>null),
+        database.ref('sellerProducts/'+sid2).once('value').catch(()=>null)
+      ]);
+      if(p1&&p1.exists()) p1.forEach(function(c){if(!seen[c.key]){var d=c.val();d._id=c.key;prods.push(d);seen[c.key]=1;}});
+      if(p2&&p2.exists()) p2.forEach(function(c){if(!seen[c.key]){var d=c.val();d._id=c.key;prods.push(d);seen[c.key]=1;}});
+    }
+
+    // Get brands - search by all possible owner fields
+    var brands=[], bseen={};
+    for(var j=0;j<searchIds.length;j++){
+      var bid=searchIds[j];
+      var bSnaps=await Promise.all([
+        database.ref('brands').orderByChild('createdBy').equalTo(bid).once('value').catch(()=>null),
+        database.ref('brands').orderByChild('uid').equalTo(bid).once('value').catch(()=>null),
+        database.ref('brands').orderByChild('userId').equalTo(bid).once('value').catch(()=>null),
+        database.ref('brands').orderByChild('sellerId').equalTo(bid).once('value').catch(()=>null)
+      ]);
+      bSnaps.forEach(function(bs){
+        if(bs&&bs.exists()) bs.forEach(function(c){if(!bseen[c.key]){var d=c.val();d._id=c.key;brands.push(d);bseen[c.key]=1;}});
+      });
+    }
+    // Also check user's own brandId field
+    if(u && u.brandId && !bseen[u.brandId]){
+      var ubSnap=await database.ref('brands/'+u.brandId).once('value').catch(()=>null);
+      if(ubSnap&&ubSnap.exists()){var bd=ubSnap.val();bd._id=u.brandId;brands.push(bd);}
+    }
+
+    if(!u&&!prods.length&&!brands.length){
+      res.innerHTML='<div style="text-align:center;padding:30px;"><i class="fas fa-user-slash" style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:12px;"></i><p style="color:#64748b;">No seller found with this ID or Gmail:<br><strong>'+sid+'</strong></p></div>';
+      return;
+    }
+
     var totalSales=prods.reduce(function(s,p){return s+(parseInt(p.sales)||0);},0);
+    var uidDisplay=uid||sid;
+
     res.innerHTML='<div style="display:flex;flex-direction:column;gap:14px;">'
+
+      // Profile card
       +'<div style="background:#f8fafc;border-radius:12px;padding:16px;border:1px solid #e2e8f0;">'
       +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
       +(u&&u.photoURL?'<img src="'+u.photoURL+'" style="width:48px;height:48px;border-radius:12px;object-fit:cover;">'
-        :'<div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:800;">'+(u&&u.displayName?u.displayName.charAt(0).toUpperCase():'S')+'</div>')
-      +'<div><div style="font-weight:800;font-size:15px;color:#0f172a;">'+(u&&(u.displayName||u.name)||'Unknown Seller')+'</div>'
-      +'<div style="font-size:12px;color:#64748b;">'+(u&&u.email||sid)+'</div></div></div>'
+        :'<div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:800;">'+(u&&(u.displayName||u.name)?((u.displayName||u.name).charAt(0).toUpperCase()):'S')+'</div>')
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-weight:800;font-size:15px;color:#0f172a;">'+(u&&(u.displayName||u.name)||'Unknown Seller')+'</div>'
+      +'<div style="font-size:12px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(u&&u.email||sid)+'</div>'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-top:4px;"><span style="font-size:11px;color:#94a3b8;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">'+uidDisplay+'</span>'
+      +'<button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+uidDisplay+'\').then(function(){showAdminToast(\'Seller ID copied!\',\'success\');})" style="background:#eff6ff;border:none;color:#2563eb;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:10px;font-weight:700;">Copy ID</button>'
+      +'</div></div></div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;">'
       +'<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#2563eb;">'+prods.length+'</div><div style="font-size:10px;color:#64748b;">Products</div></div>'
       +'<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#16a34a;">'+totalSales+'</div><div style="font-size:10px;color:#64748b;">Total Sales</div></div>'
       +'<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#7c3aed;">'+brands.length+'</div><div style="font-size:10px;color:#64748b;">Brands</div></div>'
       +'</div></div>'
-      +(brands.length?'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;"><div style="font-weight:700;font-size:13px;color:#1d4ed8;margin-bottom:8px;"><i class="fas fa-award"></i> Brand(s)</div>'+brands.map(function(b){return '<div style="font-size:14px;font-weight:600;color:#0f172a;">'+b.name+(b.blueTickAdmin?' <span style="color:#2563eb;">✓</span>':'')+'</div>';}).join('')+'</div>':'')
-      +(prods.length?'<div><div style="font-weight:700;font-size:13px;color:#374151;margin-bottom:8px;">📦 Products ('+prods.length+')</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+prods.slice(0,6).map(function(p){var img=p.image||(p.images&&p.images[0])||'';return '<div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:10px;display:flex;gap:8px;align-items:center;">'+(img?'<img src="'+img+'" style="width:36px;height:36px;border-radius:8px;object-fit:cover;">':'<div style="width:36px;height:36px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div>')+'<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#0f172a;">'+(p.name||p.title||'Product')+'</div><div style="font-size:11px;color:#2563eb;font-weight:700;">₹'+(p.price||0)+'</div></div></div>';}).join('')+'</div>'+(prods.length>6?'<p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:8px;">...and '+(prods.length-6)+' more</p>':'')+'</div>':'')
+
+      // Brands
+      +(brands.length
+        ?'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;">'
+         +'<div style="font-weight:700;font-size:13px;color:#1d4ed8;margin-bottom:10px;"><i class="fas fa-award"></i> Brand(s) ('+brands.length+')</div>'
+         +brands.map(function(b){return '<div style="display:flex;align-items:center;gap:10px;background:white;border-radius:8px;padding:10px 12px;margin-bottom:6px;">'
+           +(b.logo?'<img src="'+b.logo+'" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">'
+             :'<div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">'+b.name.charAt(0).toUpperCase()+'</div>')
+           +'<div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0f172a;">'+(b.name||'Brand')+(b.blueTickAdmin?' <span style="color:#2563eb;">✓</span>':'')+'</div>'
+           +'<div style="font-size:11px;color:#64748b;">'+(b.category||'')+(b.status==='suspended'?' · <span style="color:#ef4444;">Suspended</span>':'')+'</div></div>'
+           +'</div>';}).join('')
+         +'</div>'
+        :'<div style="background:#fff7f7;border:1px solid #fca5a5;border-radius:12px;padding:14px;"><div style="font-size:13px;color:#dc2626;font-weight:600;"><i class="fas fa-info-circle"></i> No brands found for this seller</div></div>')
+
+      // Products
+      +(prods.length
+        ?'<div><div style="font-weight:700;font-size:13px;color:#374151;margin-bottom:10px;">📦 Products ('+prods.length+')</div>'
+         +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+         +prods.slice(0,8).map(function(p){
+           var img=p.image||(p.images&&p.images[0])||'';
+           var safeId=p._id.replace(/'/g,"\\'");
+           var safeName=(p.name||p.title||'Product').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+           var safePrice=p.price||0;
+           return '<div onclick="openLookupProduct(\''+safeId+'\')" style="background:white;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor=\'#2563eb\';this.style.boxShadow=\'0 4px 12px rgba(37,99,235,.15)\'" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.boxShadow=\'none\'">'
+             +(img?'<img src="'+img+'" style="width:100%;height:80px;object-fit:cover;">'
+               :'<div style="width:100%;height:60px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:22px;">📦</div>')
+             +'<div style="padding:8px;"><div style="font-size:12px;font-weight:700;color:#0f172a;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+p.name+(p.title&&p.name!==p.title?' / '+p.title:'')+'</div>'
+             +'<div style="font-size:11px;color:#2563eb;font-weight:700;">₹'+(p.price||0)+'</div></div></div>';
+         }).join('')
+         +'</div>'
+         +(prods.length>8?'<p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:8px;">...and '+(prods.length-8)+' more products</p>':'')
+         +'</div>'
+        :'')
       +'</div>';
-  }catch(e){res.innerHTML='<p style="color:#ef4444;text-align:center;">Error: '+e.message+'</p>';}
+
+    // Store products for click handler
+    window._lookupProducts = {};
+    prods.forEach(function(p){ window._lookupProducts[p._id]=p; });
+
+  }catch(e){res.innerHTML='<p style="color:#ef4444;text-align:center;padding:20px;">Error: '+e.message+'</p>';}
+}
+
+function openLookupProduct(productId) {
+  var p = window._lookupProducts && window._lookupProducts[productId];
+  if (!p) return;
+  var img = p.image||(p.images&&p.images[0])||'';
+  var m = document.createElement('div');
+  m.className='modal active'; m.style.zIndex='10002';
+  m.innerHTML='<div class="modal-content" style="max-width:500px;border-radius:16px;overflow:hidden;">'
+    +'<div class="modal-header" style="background:linear-gradient(135deg,#0f172a,#334155);padding:18px 22px;border:none;">'
+    +'<h3 style="color:white;margin:0;font-size:15px;font-weight:700;">📦 Product Details</h3>'
+    +'<button onclick="this.closest(\'.modal\').remove()" style="background:none;border:none;color:white;font-size:22px;cursor:pointer;">&times;</button>'
+    +'</div>'
+    +'<div class="modal-body" style="padding:0;">'
+    +(img?'<img src="'+img+'" style="width:100%;max-height:220px;object-fit:cover;">':'')
+    +'<div style="padding:20px;">'
+    +'<h3 style="margin:0 0 8px;font-size:1.1rem;color:#0f172a;">'+(p.name||p.title||'Product')+'</h3>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">'
+    +'<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">₹'+(p.price||0)+'</span>'
+    +(p.category?'<span style="background:#f3f4f6;color:#374151;padding:3px 10px;border-radius:20px;font-size:12px;">'+p.category+'</span>':'')
+    +(p.stock?'<span style="background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:20px;font-size:12px;">Stock: '+p.stock+'</span>':'')
+    +'</div>'
+    +(p.description?'<p style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:16px;">'+p.description+'</p>':'')
+    +'<div style="font-size:11px;color:#94a3b8;font-family:monospace;margin-bottom:16px;">ID: '+productId+'</div>'
+    +'<div style="display:flex;gap:10px;">'
+    +'<button onclick="editProductFromLookup(\''+productId+'\')" style="flex:1;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;border-radius:10px;padding:11px;cursor:pointer;font-weight:700;font-size:13px;"><i class="fas fa-edit"></i> Edit</button>'
+    +'<button onclick="deleteProductFromLookup(\''+productId+'\',this)" style="flex:1;background:linear-gradient(135deg,#dc2626,#f97316);color:white;border:none;border-radius:10px;padding:11px;cursor:pointer;font-weight:700;font-size:13px;"><i class="fas fa-trash"></i> Delete</button>'
+    +'</div></div></div></div>';
+  document.body.appendChild(m);
+}
+
+function editProductFromLookup(productId) {
+  document.querySelector('.modal[style*="10002"]') && document.querySelector('.modal[style*="10002"]').remove();
+  if(typeof showTab==='function') showTab('products');
+  setTimeout(function(){
+    if(typeof editProduct==='function') editProduct(productId);
+  }, 500);
+}
+
+function deleteProductFromLookup(productId, btn) {
+  if(!confirm('Delete this product permanently? This cannot be undone.')) return;
+  btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>'; btn.disabled=true;
+  database.ref('products/'+productId).remove()
+    .then(function(){
+      showAdminToast&&showAdminToast('Product deleted!','success');
+      document.querySelector('.modal[style*="10002"]') && document.querySelector('.modal[style*="10002"]').remove();
+      if(window._lookupProducts) delete window._lookupProducts[productId];
+      // Remove card from lookup result
+      var card=document.querySelector('[onclick*="'+productId+'"]');
+      if(card) card.remove();
+    })
+    .catch(function(e){ showAdminToast&&showAdminToast('Error: '+e.message,'error'); btn.innerHTML='<i class="fas fa-trash"></i> Delete'; btn.disabled=false; });
 }
 
 // Admin Brand Page
@@ -8922,8 +9193,31 @@ async function showBrandFollowers(brandId,brandName){
   }catch(e){document.getElementById('bFollowerList').innerHTML='<p style="color:#ef4444;">Error: '+e.message+'</p>';}
 }
 
-// Add Seller Lookup to sidebar
-(function(){function inj(){var m=document.querySelector('.admin-menu,.sidebar ul,nav ul,[class*="menu"]');if(!m){setTimeout(inj,800);return;}if(document.getElementById('bzSellerLookupItem'))return;var li=document.createElement('li');li.id='bzSellerLookupItem';li.innerHTML='<a href="#" class="menu-item" onclick="openSellerLookup();return false;"><i class="fas fa-id-card" style="color:#f59e0b;"></i><span>Seller Lookup</span></a>';m.appendChild(li);}inj();})();
+// Add Seller Lookup to sidebar - SKIP (already in HTML menu)
+// window._bzSellerLookupInjected = true;
+
+function bzCopySellerID(uid, btn) {
+  if (!uid || uid === 'undefined') { showAdminToast&&showAdminToast('No Seller ID available','error'); return; }
+  var origText = btn ? btn.textContent : '';
+  function onSuccess() {
+    showAdminToast&&showAdminToast('Seller ID copied!','success');
+    if(btn){ btn.textContent='✅ Copied!'; setTimeout(function(){ btn.textContent=origText; }, 2000); }
+  }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(uid).then(onSuccess).catch(function(){
+      // Fallback
+      var el=document.createElement('textarea'); el.value=uid; el.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0;';
+      document.body.appendChild(el); el.focus(); el.select();
+      try{ document.execCommand('copy'); onSuccess(); }catch(e){ showAdminToast&&showAdminToast('Copy failed, select and copy manually','error'); }
+      document.body.removeChild(el);
+    });
+  } else {
+    var el=document.createElement('textarea'); el.value=uid; el.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0;';
+    document.body.appendChild(el); el.focus(); el.select();
+    try{ document.execCommand('copy'); onSuccess(); }catch(e){ showAdminToast&&showAdminToast('Copy failed','error'); }
+    document.body.removeChild(el);
+  }
+}
 
 // Add Brand / Save Admin Brand
 function showAddAdminBrandModal(){
@@ -9052,7 +9346,6 @@ tbody tr:last-child td { border-bottom:none!important; }
 
 /* ── MOBILE ─────────────────────────────────────── */
 @media (max-width:768px) {
-  .admin-sidebar,.sidebar { display:none; }
   .admin-content,.main-content { padding:14px!important; }
   .stats-container { grid-template-columns:1fr 1fr!important; }
   #mobileMenuBtn { display:flex!important; }
@@ -9126,7 +9419,9 @@ window.publishAdminPost = async function() {
     // Pending seller count fix
     database.ref('sellerRequests').on('value',function(s){
       var c=0;if(s.exists())s.forEach(function(ch){var d=ch.val();if(d&&(d.status==='pending'||!d.status))c++;});
-      ['pendingSellerCount','pendingSeller','sellerPendingCount'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=c;});
+      // Fix: use correct element ID 'pendingSellerReqs'
+      var el=document.getElementById('pendingSellerReqs');
+      if(el) el.textContent=c;
     });
   }
   ready();
