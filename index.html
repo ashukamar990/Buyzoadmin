@@ -8951,27 +8951,129 @@ async function runSellerLookup(){
   var res=document.getElementById('sellerLookupResult');
   if(!sid){res.innerHTML='<p style="color:#ef4444;text-align:center;">Please enter a Seller ID or Gmail</p>';return;}
   res.innerHTML='<p style="text-align:center;color:#94a3b8;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Searching...</p>';
+
+  var isEmail = sid.includes('@');
+  var u=null, uid=null;
+
   try{
-    var u=null, uid=sid;
-
-    // Try direct UID lookup first
-    var directSnap = await database.ref('users/'+sid).once('value').catch(()=>null);
-    if(directSnap && directSnap.exists()) { u=directSnap.val(); uid=sid; }
-
-    // If not found, search by email
-    if(!u) {
+    if(isEmail){
+      // Search by email only — never use email as Firebase path key
       var emailSnap = await database.ref('users').orderByChild('email').equalTo(sid).once('value').catch(()=>null);
-      if(emailSnap && emailSnap.exists()) {
+      if(emailSnap && emailSnap.exists()){
         emailSnap.forEach(function(c){ u=c.val(); uid=c.key; });
       }
-    }
-    // Also try searching by uid field
-    if(!u) {
-      var uidSnap = await database.ref('users').orderByChild('uid').equalTo(sid).once('value').catch(()=>null);
-      if(uidSnap && uidSnap.exists()) {
-        uidSnap.forEach(function(c){ u=c.val(); uid=c.key; });
+      // Also try by displayName or other fields
+      if(!u){
+        var allUsersSnap = await database.ref('users').once('value').catch(()=>null);
+        if(allUsersSnap && allUsersSnap.exists()){
+          allUsersSnap.forEach(function(c){
+            var d=c.val();
+            if(d && d.email && d.email.toLowerCase()===sid.toLowerCase()){
+              u=d; uid=c.key;
+            }
+          });
+        }
+      }
+    } else {
+      // Seller ID (UID) — use as path key
+      var directSnap = await database.ref('users/'+sid).once('value').catch(()=>null);
+      if(directSnap && directSnap.exists()){ u=directSnap.val(); uid=sid; }
+      // Also try uid field index
+      if(!u){
+        var uidSnap = await database.ref('users').orderByChild('uid').equalTo(sid).once('value').catch(()=>null);
+        if(uidSnap && uidSnap.exists()){ uidSnap.forEach(function(c){ u=c.val(); uid=c.key; }); }
       }
     }
+
+    // Use found uid OR original input as search key for products
+    var searchIds = [];
+    if(uid) searchIds.push(uid);
+    if(!isEmail && sid !== uid) searchIds.push(sid);
+    if(!searchIds.length){ res.innerHTML='<div style="text-align:center;padding:30px;"><i class="fas fa-user-slash" style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:12px;"></i><p style="color:#64748b;">No seller found:<br><strong>'+sid+'</strong></p></div>'; return; }
+
+    var prods=[], seen={};
+    for(var i=0;i<searchIds.length;i++){
+      var sid2=searchIds[i];
+      var [p1,p2]=await Promise.all([
+        database.ref('products').orderByChild('sellerId').equalTo(sid2).once('value').catch(()=>null),
+        database.ref('sellerProducts/'+sid2).once('value').catch(()=>null)
+      ]);
+      if(p1&&p1.exists()) p1.forEach(function(c){if(!seen[c.key]){var d=c.val();d._id=c.key;prods.push(d);seen[c.key]=1;}});
+      if(p2&&p2.exists()) p2.forEach(function(c){if(!seen[c.key]){var d=c.val();d._id=c.key;prods.push(d);seen[c.key]=1;}});
+    }
+
+    // Get brands
+    var brands=[], bseen={};
+    for(var j=0;j<searchIds.length;j++){
+      var bid=searchIds[j];
+      var bSnaps=await Promise.all([
+        database.ref('brands').orderByChild('createdBy').equalTo(bid).once('value').catch(()=>null),
+        database.ref('brands').orderByChild('uid').equalTo(bid).once('value').catch(()=>null),
+        database.ref('brands').orderByChild('userId').equalTo(bid).once('value').catch(()=>null),
+        database.ref('brands').orderByChild('sellerId').equalTo(bid).once('value').catch(()=>null)
+      ]);
+      bSnaps.forEach(function(bs){
+        if(bs&&bs.exists()) bs.forEach(function(c){if(!bseen[c.key]){var d=c.val();d._id=c.key;brands.push(d);bseen[c.key]=1;}});
+      });
+    }
+    if(u && u.brandId && !bseen[u.brandId]){
+      var ubSnap=await database.ref('brands/'+u.brandId).once('value').catch(()=>null);
+      if(ubSnap&&ubSnap.exists()){var bd=ubSnap.val();bd._id=u.brandId;brands.push(bd);bseen[u.brandId]=1;}
+    }
+
+    var totalSales=prods.reduce(function(s,p){return s+(parseInt(p.sales)||0);},0);
+    var uidDisplay=uid||searchIds[0]||sid;
+
+    res.innerHTML='<div style="display:flex;flex-direction:column;gap:14px;">'
+      +'<div style="background:#f8fafc;border-radius:12px;padding:16px;border:1px solid #e2e8f0;">'
+      +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
+      +(u&&u.photoURL?'<img src="'+u.photoURL+'" style="width:48px;height:48px;border-radius:12px;object-fit:cover;">'
+        :'<div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:800;">'+(u&&(u.displayName||u.name)?((u.displayName||u.name).charAt(0).toUpperCase()):'S')+'</div>')
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-weight:800;font-size:15px;color:#0f172a;">'+(u&&(u.displayName||u.name)||'Unknown Seller')+'</div>'
+      +'<div style="font-size:12px;color:#64748b;">'+(u&&u.email||sid)+'</div>'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-top:4px;">'
+      +'<span style="font-size:11px;color:#94a3b8;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">'+uidDisplay+'</span>'
+      +'<button onclick="bzCopySellerID(\''+uidDisplay+'\',this)" style="background:#eff6ff;border:none;color:#2563eb;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:10px;font-weight:700;">Copy ID</button>'
+      +'</div></div></div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;">'
+      +'<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#2563eb;">'+prods.length+'</div><div style="font-size:10px;color:#64748b;">Products</div></div>'
+      +'<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#16a34a;">'+totalSales+'</div><div style="font-size:10px;color:#64748b;">Total Sales</div></div>'
+      +'<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#7c3aed;">'+brands.length+'</div><div style="font-size:10px;color:#64748b;">Brands</div></div>'
+      +'</div></div>'
+      +(brands.length
+        ?'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;">'
+         +'<div style="font-weight:700;font-size:13px;color:#1d4ed8;margin-bottom:10px;"><i class="fas fa-award"></i> Brands ('+brands.length+')</div>'
+         +brands.map(function(b){return '<div style="display:flex;align-items:center;gap:10px;background:white;border-radius:8px;padding:10px 12px;margin-bottom:6px;">'
+           +(b.logo?'<img src="'+b.logo+'" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">'
+             :'<div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">'+(b.name||'B').charAt(0).toUpperCase()+'</div>')
+           +'<div><div style="font-weight:700;font-size:13px;color:#0f172a;">'+(b.name||'Brand')+(b.blueTickAdmin?' <span style="color:#2563eb;font-size:14px;">✓</span>':'')+'</div>'
+           +'<div style="font-size:11px;color:#64748b;">'+(b.category||'')+'</div></div></div>';}).join('')+'</div>'
+        :'<div style="background:#fff7f7;border:1px solid #fca5a5;border-radius:10px;padding:12px;"><div style="font-size:13px;color:#dc2626;font-weight:600;"><i class="fas fa-info-circle"></i> No brands found for this seller</div></div>')
+      +(prods.length
+        ?'<div><div style="font-weight:700;font-size:13px;color:#374151;margin-bottom:10px;">📦 Products ('+prods.length+')</div>'
+         +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+         +prods.slice(0,8).map(function(p){
+           var img=p.image||(p.images&&p.images[0])||'';
+           var safeId=p._id.replace(/'/g,"\\'");
+           return '<div onclick="openLookupProduct(\''+safeId+'\')" style="background:white;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor=\'#2563eb\'" onmouseout="this.style.borderColor=\'#e2e8f0\'">'
+             +(img?'<img src="'+img+'" style="width:100%;height:80px;object-fit:cover;">':'<div style="height:60px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:22px;">📦</div>')
+             +'<div style="padding:8px;"><div style="font-size:12px;font-weight:700;color:#0f172a;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+(p.name||p.title||'Product')+'</div>'
+             +'<div style="font-size:11px;color:#2563eb;font-weight:700;">₹'+(p.price||0)+'</div></div></div>';
+         }).join('')
+         +'</div>'+(prods.length>8?'<p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:8px;">...and '+(prods.length-8)+' more</p>':'')+'</div>'
+        :'')
+      +'</div>';
+
+    window._lookupProducts = {};
+    prods.forEach(function(p){ window._lookupProducts[p._id]=p; });
+
+  }catch(e){
+    res.innerHTML='<p style="color:#ef4444;text-align:center;padding:20px;">Error: '+e.message+'</p>';
+  }
+}
+
+    window._lookupProducts = window._lookupProducts || {};
 
     // Get products by sellerId (both the input AND found uid)
     var searchIds = [sid];
@@ -9078,55 +9180,144 @@ async function runSellerLookup(){
 
 function openLookupProduct(productId) {
   var p = window._lookupProducts && window._lookupProducts[productId];
-  if (!p) return;
+  if (!p) { showAdminToast && showAdminToast('Product data not loaded', 'error'); return; }
   var img = p.image||(p.images&&p.images[0])||'';
+
+  // Remove old if exists
+  var old = document.getElementById('lookupProductModal');
+  if (old) old.remove();
+
   var m = document.createElement('div');
-  m.className='modal active'; m.style.zIndex='10002';
-  m.innerHTML='<div class="modal-content" style="max-width:500px;border-radius:16px;overflow:hidden;">'
-    +'<div class="modal-header" style="background:linear-gradient(135deg,#0f172a,#334155);padding:18px 22px;border:none;">'
+  m.id = 'lookupProductModal';
+  m.className = 'modal active';
+  m.style.zIndex = '10003';
+
+  var name = p.name || p.title || '';
+  var price = p.price || 0;
+  var stock = p.stock || '';
+  var category = p.category || '';
+  var desc = p.desc || p.description || '';
+
+  m.innerHTML =
+    '<div class="modal-content" style="max-width:520px;border-radius:16px;overflow:hidden;">'
+    +'<div class="modal-header" style="background:linear-gradient(135deg,#0f172a,#1e293b);padding:16px 20px;border:none;">'
     +'<h3 style="color:white;margin:0;font-size:15px;font-weight:700;">📦 Product Details</h3>'
-    +'<button onclick="this.closest(\'.modal\').remove()" style="background:none;border:none;color:white;font-size:22px;cursor:pointer;">&times;</button>'
+    +'<button onclick="document.getElementById(\'lookupProductModal\').remove()" style="background:none;border:none;color:rgba(255,255,255,.8);font-size:22px;cursor:pointer;line-height:1;">&times;</button>'
     +'</div>'
-    +'<div class="modal-body" style="padding:0;">'
-    +(img?'<img src="'+img+'" style="width:100%;max-height:220px;object-fit:cover;">':'')
-    +'<div style="padding:20px;">'
-    +'<h3 style="margin:0 0 8px;font-size:1.1rem;color:#0f172a;">'+(p.name||p.title||'Product')+'</h3>'
-    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">'
-    +'<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">₹'+(p.price||0)+'</span>'
-    +(p.category?'<span style="background:#f3f4f6;color:#374151;padding:3px 10px;border-radius:20px;font-size:12px;">'+p.category+'</span>':'')
-    +(p.stock?'<span style="background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:20px;font-size:12px;">Stock: '+p.stock+'</span>':'')
+    +'<div id="lookupProdView" style="padding:0;">'
+    +(img?'<img src="'+img+'" style="width:100%;max-height:200px;object-fit:cover;">':'')
+    +'<div style="padding:18px;">'
+    +'<h3 style="margin:0 0 8px;font-size:1.05rem;color:#0f172a;font-weight:800;">'+name+'</h3>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">'
+    +'<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">₹'+price+'</span>'
+    +(category?'<span style="background:#f1f5f9;color:#374151;padding:3px 10px;border-radius:20px;font-size:12px;">'+category+'</span>':'')
+    +(stock?'<span style="background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:20px;font-size:12px;">Stock: '+stock+'</span>':'')
     +'</div>'
-    +(p.description?'<p style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:16px;">'+p.description+'</p>':'')
-    +'<div style="font-size:11px;color:#94a3b8;font-family:monospace;margin-bottom:16px;">ID: '+productId+'</div>'
+    +(desc?'<p style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:14px;">'+desc+'</p>':'')
+    +'<div style="font-size:10px;color:#94a3b8;font-family:monospace;margin-bottom:16px;">ID: '+productId+'</div>'
     +'<div style="display:flex;gap:10px;">'
-    +'<button onclick="editProductFromLookup(\''+productId+'\')" style="flex:1;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;border-radius:10px;padding:11px;cursor:pointer;font-weight:700;font-size:13px;"><i class="fas fa-edit"></i> Edit</button>'
-    +'<button onclick="deleteProductFromLookup(\''+productId+'\',this)" style="flex:1;background:linear-gradient(135deg,#dc2626,#f97316);color:white;border:none;border-radius:10px;padding:11px;cursor:pointer;font-weight:700;font-size:13px;"><i class="fas fa-trash"></i> Delete</button>'
-    +'</div></div></div></div>';
+    +'<button onclick="showLookupEditForm(\''+productId+'\')" style="flex:1;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;border-radius:10px;padding:11px;cursor:pointer;font-weight:700;font-size:13px;"><i class="fas fa-edit"></i> Edit</button>'
+    +'<button onclick="confirmLookupDelete(\''+productId+'\')" style="flex:1;background:linear-gradient(135deg,#dc2626,#f97316);color:white;border:none;border-radius:10px;padding:11px;cursor:pointer;font-weight:700;font-size:13px;" id="lpDelBtn"><i class="fas fa-trash"></i> Delete</button>'
+    +'</div></div></div>'
+    // Edit form (hidden by default)
+    +'<div id="lookupProdEdit" style="display:none;padding:18px;">'
+    +'<div style="font-weight:800;font-size:14px;color:#0f172a;margin-bottom:14px;">✏️ Edit Product</div>'
+    +'<div class="form-group" style="margin-bottom:12px;"><label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Product Name *</label>'
+    +'<input type="text" id="lpe_name" class="form-control" value="'+name.replace(/"/g,'&quot;')+'" style="border-radius:8px;padding:9px 12px;font-size:13px;"></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">'
+    +'<div class="form-group" style="margin:0;"><label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Price (₹) *</label>'
+    +'<input type="number" id="lpe_price" class="form-control" value="'+price+'" style="border-radius:8px;padding:9px 12px;font-size:13px;"></div>'
+    +'<div class="form-group" style="margin:0;"><label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Stock</label>'
+    +'<input type="number" id="lpe_stock" class="form-control" value="'+stock+'" style="border-radius:8px;padding:9px 12px;font-size:13px;"></div>'
+    +'</div>'
+    +'<div class="form-group" style="margin-bottom:12px;"><label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Category</label>'
+    +'<input type="text" id="lpe_category" class="form-control" value="'+category.replace(/"/g,'&quot;')+'" style="border-radius:8px;padding:9px 12px;font-size:13px;"></div>'
+    +'<div class="form-group" style="margin-bottom:16px;"><label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Description</label>'
+    +'<textarea id="lpe_desc" class="form-control" rows="3" style="border-radius:8px;padding:9px 12px;font-size:13px;resize:vertical;">'+desc+'</textarea></div>'
+    +'<div style="display:flex;gap:10px;">'
+    +'<button onclick="document.getElementById(\'lookupProdView\').style.display=\'\';document.getElementById(\'lookupProdEdit\').style.display=\'none\';" style="flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;padding:11px;cursor:pointer;font-weight:600;font-size:13px;">Cancel</button>'
+    +'<button onclick="saveLookupEdit(\''+productId+'\')" id="lpe_saveBtn" style="flex:2;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;border-radius:10px;padding:11px;cursor:pointer;font-weight:700;font-size:13px;"><i class="fas fa-save"></i> Save Changes</button>'
+    +'</div></div>'
+    +'</div>';
+
   document.body.appendChild(m);
 }
 
-function editProductFromLookup(productId) {
-  document.querySelector('.modal[style*="10002"]') && document.querySelector('.modal[style*="10002"]').remove();
-  if(typeof showTab==='function') showTab('products');
-  setTimeout(function(){
-    if(typeof editProduct==='function') editProduct(productId);
-  }, 500);
+function showLookupEditForm(productId) {
+  var view = document.getElementById('lookupProdView');
+  var edit = document.getElementById('lookupProdEdit');
+  if (view) view.style.display = 'none';
+  if (edit) edit.style.display = 'block';
 }
 
-function deleteProductFromLookup(productId, btn) {
-  if(!confirm('Delete this product permanently? This cannot be undone.')) return;
-  btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>'; btn.disabled=true;
-  database.ref('products/'+productId).remove()
-    .then(function(){
-      showAdminToast&&showAdminToast('Product deleted!','success');
-      document.querySelector('.modal[style*="10002"]') && document.querySelector('.modal[style*="10002"]').remove();
-      if(window._lookupProducts) delete window._lookupProducts[productId];
-      // Remove card from lookup result
-      var card=document.querySelector('[onclick*="'+productId+'"]');
-      if(card) card.remove();
+function saveLookupEdit(productId) {
+  var name = (document.getElementById('lpe_name').value || '').trim();
+  var price = parseFloat(document.getElementById('lpe_price').value) || 0;
+  var stock = parseInt(document.getElementById('lpe_stock').value) || 0;
+  var category = (document.getElementById('lpe_category').value || '').trim();
+  var desc = (document.getElementById('lpe_desc').value || '').trim();
+
+  if (!name) { showAdminToast && showAdminToast('Product name required', 'error'); return; }
+
+  var btn = document.getElementById('lpe_saveBtn');
+  if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; btn.disabled = true; }
+
+  var updates = { title: name, name: name, price: price, stock: stock, category: category, desc: desc, description: desc, updatedAt: Date.now() };
+
+  database.ref('products/' + productId).update(updates)
+    .then(function() {
+      // Update local cache
+      if (window._lookupProducts && window._lookupProducts[productId]) {
+        Object.assign(window._lookupProducts[productId], updates);
+      }
+      showAdminToast && showAdminToast('✅ Product updated!', 'success');
+      document.getElementById('lookupProductModal') && document.getElementById('lookupProductModal').remove();
+      // Also try to update sellerProducts if exists
+      var p = window._lookupProducts && window._lookupProducts[productId];
+      if (p && p.sellerId) {
+        database.ref('sellerProducts/' + p.sellerId + '/' + productId).update(updates).catch(function(){});
+      }
     })
-    .catch(function(e){ showAdminToast&&showAdminToast('Error: '+e.message,'error'); btn.innerHTML='<i class="fas fa-trash"></i> Delete'; btn.disabled=false; });
+    .catch(function(e) {
+      showAdminToast && showAdminToast('Error: ' + e.message, 'error');
+      if (btn) { btn.innerHTML = '<i class="fas fa-save"></i> Save Changes'; btn.disabled = false; }
+    });
 }
+
+function confirmLookupDelete(productId) {
+  var p = window._lookupProducts && window._lookupProducts[productId];
+  var name = p ? (p.name || p.title || 'this product') : 'this product';
+
+  if (!confirm('Delete "' + name + '"?\n\nThis action CANNOT be undone. The product will be permanently removed.')) return;
+
+  var btn = document.getElementById('lpDelBtn');
+  if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...'; btn.disabled = true; }
+
+  var deletePromises = [database.ref('products/' + productId).remove()];
+
+  // Also delete from sellerProducts if we know the seller
+  if (p && p.sellerId) {
+    deletePromises.push(database.ref('sellerProducts/' + p.sellerId + '/' + productId).remove().catch(function(){}));
+  }
+
+  Promise.all(deletePromises)
+    .then(function() {
+      showAdminToast && showAdminToast('🗑️ Product deleted successfully!', 'success');
+      document.getElementById('lookupProductModal') && document.getElementById('lookupProductModal').remove();
+      if (window._lookupProducts) delete window._lookupProducts[productId];
+      // Remove card from lookup results UI
+      var card = document.querySelector('[onclick*="openLookupProduct(\'' + productId + '\')"]');
+      if (card) { card.style.opacity = '0'; card.style.transition = 'opacity 0.3s'; setTimeout(function(){ card.remove(); }, 300); }
+    })
+    .catch(function(e) {
+      showAdminToast && showAdminToast('Error: ' + e.message, 'error');
+      if (btn) { btn.innerHTML = '<i class="fas fa-trash"></i> Delete'; btn.disabled = false; }
+    });
+}
+
+// Keep these as aliases for compatibility
+function editProductFromLookup(productId) { showLookupEditForm(productId); }
+function deleteProductFromLookup(productId) { confirmLookupDelete(productId); }
 
 // Admin Brand Page
 var _currentAdminBrandId=null, _adminBrandData=null;
