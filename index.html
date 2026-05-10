@@ -9025,153 +9025,226 @@ function openSellerLookup(){
   else if(document.getElementById("adminSidebar") && document.getElementById("adminSidebar").classList.contains("active")) setTimeout(toggleSidebar,50);
 }
 async function runSellerLookup(){
-  var sid=document.getElementById('sellerLookupInput').value.trim();
-  var res=document.getElementById('sellerLookupResult');
-  if(!sid){res.innerHTML='<p style="color:#ef4444;text-align:center;">Please enter a Seller ID or Gmail</p>';return;}
-  res.innerHTML='<p style="text-align:center;color:#94a3b8;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Searching...</p>';
+  var rawInput = document.getElementById('sellerLookupInput').value.trim();
+  var res = document.getElementById('sellerLookupResult');
+  if(!rawInput){ res.innerHTML='<p style="color:#ef4444;text-align:center;padding:16px;">Please enter a Seller ID, Gmail or Phone Number</p>'; return; }
 
-  var isEmail = sid.includes('@');
-  var isPhone = /^\d{7,15}$/.test(sid.replace(/[\s\-\+]/g,''));
-  var u=null, uid=null;
+  res.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:24px;"><i class="fas fa-spinner fa-spin" style="font-size:20px;"></i><br><br>Searching...</p>';
+
+  var isEmail = rawInput.includes('@');
+  var cleanNum = rawInput.replace(/[\s\-\+\(\)]/g,'');
+  var isPhone  = /^\d{7,15}$/.test(cleanNum);
+  var u=null, uid=null, sellerReqData=null;
 
   try{
+    /* ── 1. FIND USER ─────────────────────────────── */
     if(isEmail){
-      // Search by email
-      var emailSnap = await database.ref('users').orderByChild('email').equalTo(sid).once('value').catch(()=>null);
-      if(emailSnap && emailSnap.exists()){ emailSnap.forEach(function(c){ u=c.val(); uid=c.key; }); }
+      // Try orderByChild first
+      var s1 = await database.ref('users').orderByChild('email').equalTo(rawInput).once('value').catch(()=>null);
+      if(s1&&s1.exists()) s1.forEach(function(c){ u=c.val(); uid=c.key; });
+      // Full scan fallback (handles case differences)
       if(!u){
-        var allSnap = await database.ref('users').once('value').catch(()=>null);
-        if(allSnap && allSnap.exists()){ allSnap.forEach(function(c){ var d=c.val(); if(d&&d.email&&d.email.toLowerCase()===sid.toLowerCase()){ u=d; uid=c.key; } }); }
+        var all = await database.ref('users').once('value').catch(()=>null);
+        if(all&&all.exists()) all.forEach(function(c){
+          if(!u){ var d=c.val(); if(d&&d.email&&d.email.toLowerCase()===rawInput.toLowerCase()){ u=d; uid=c.key; } }
+        });
       }
-    } else if(isPhone){
-      // Search by phone number
-      var phoneClean = sid.replace(/[\s\-\+]/g,'');
-      var allUsersSnap = await database.ref('users').once('value').catch(()=>null);
-      if(allUsersSnap && allUsersSnap.exists()){
-        allUsersSnap.forEach(function(c){
-          var d=c.val();
-          if(d && d.phone){
-            var dPhone = String(d.phone).replace(/[\s\-\+]/g,'');
-            if(dPhone===phoneClean || dPhone.endsWith(phoneClean) || phoneClean.endsWith(dPhone)){ u=d; uid=c.key; }
+      // Look in sellerRequests by email
+      if(!sellerReqData){
+        var sr = await database.ref('sellerRequests').once('value').catch(()=>null);
+        if(sr&&sr.exists()) sr.forEach(function(c){
+          if(!sellerReqData){ var d=c.val();
+            if(d&&d.email&&d.email.toLowerCase()===rawInput.toLowerCase()){ sellerReqData=d; if(!uid) uid=c.key; }
           }
         });
       }
-      // Also search in sellerRequests by phone
-      if(!u){
-        var srSnap = await database.ref('sellerRequests').once('value').catch(()=>null);
-        if(srSnap && srSnap.exists()){
-          srSnap.forEach(function(c){
-            var d=c.val();
-            if(d && d.phone){
-              var dPhone = String(d.phone).replace(/[\s\-\+]/g,'');
-              if(dPhone===phoneClean || dPhone.endsWith(phoneClean)){
-                uid=c.key;
-                if(!u) u = { displayName: d.name||d.fullName, email: d.email||'', phone: d.phone, _fromSellerReq: true, sellerReqData: d };
-              }
-            }
-          });
+
+    } else if(isPhone){
+      var allU = await database.ref('users').once('value').catch(()=>null);
+      if(allU&&allU.exists()) allU.forEach(function(c){
+        if(!u){ var d=c.val();
+          if(d&&d.phone && String(d.phone).replace(/\D/g,'').endsWith(cleanNum.slice(-10))){ u=d; uid=c.key; }
         }
-      }
+      });
+      // sellerRequests by phone
+      var srP = await database.ref('sellerRequests').once('value').catch(()=>null);
+      if(srP&&srP.exists()) srP.forEach(function(c){
+        var d=c.val();
+        if(d&&d.phone && String(d.phone).replace(/\D/g,'').endsWith(cleanNum.slice(-10))){
+          if(!sellerReqData) sellerReqData=d;
+          if(!uid) uid=c.key;
+          if(!u) u={ displayName:d.name||d.fullName||'', email:d.email||'', phone:d.phone };
+        }
+      });
+
     } else {
-      // Seller ID (UID) — use as path key
-      var directSnap = await database.ref('users/'+sid).once('value').catch(()=>null);
-      if(directSnap && directSnap.exists()){ u=directSnap.val(); uid=sid; }
-      // Also try uid field index
+      // Seller ID / UID
+      var du = await database.ref('users/'+rawInput).once('value').catch(()=>null);
+      if(du&&du.exists()){ u=du.val(); uid=rawInput; }
       if(!u){
-        var uidSnap = await database.ref('users').orderByChild('uid').equalTo(sid).once('value').catch(()=>null);
-        if(uidSnap && uidSnap.exists()){ uidSnap.forEach(function(c){ u=c.val(); uid=c.key; }); }
+        var su = await database.ref('users').orderByChild('uid').equalTo(rawInput).once('value').catch(()=>null);
+        if(su&&su.exists()) su.forEach(function(c){ u=c.val(); uid=c.key; });
       }
+      // Also check sellerRequests
+      var srId = await database.ref('sellerRequests/'+rawInput).once('value').catch(()=>null);
+      if(srId&&srId.exists()){ sellerReqData=srId.val(); if(!uid) uid=rawInput; }
     }
 
-    // Use found uid OR original input as search key for products
-    var searchIds = [];
-    if(uid) searchIds.push(uid);
-    if(!isEmail && sid !== uid) searchIds.push(sid);
-    if(!searchIds.length){ res.innerHTML='<div style="text-align:center;padding:30px;"><i class="fas fa-user-slash" style="font-size:36px;color:#cbd5e1;display:block;margin-bottom:12px;"></i><p style="color:#64748b;">No seller found:<br><strong>'+sid+'</strong></p></div>'; return; }
+    /* ── 2. BUILD searchIds (all possible IDs for this seller) ─── */
+    var searchIds=[], seenId={};
+    function addId(v){ if(v&&!seenId[v]){ searchIds.push(v); seenId[v]=1; } }
+    addId(uid);
+    addId(rawInput);
+    if(u&&u.uid) addId(u.uid);
+    if(sellerReqData&&sellerReqData.uid) addId(sellerReqData.uid);
 
-    var prods=[], seen={};
+    /* ── 3. PRODUCTS ─────────────────────────────── */
+    var prods=[], seenProd={};
     for(var i=0;i<searchIds.length;i++){
       var sid2=searchIds[i];
+      if(sid2.includes('@')||sid2.includes('.')||sid2.includes('#')) continue; // skip invalid paths
       var [p1,p2]=await Promise.all([
         database.ref('products').orderByChild('sellerId').equalTo(sid2).once('value').catch(()=>null),
         database.ref('sellerProducts/'+sid2).once('value').catch(()=>null)
       ]);
-      if(p1&&p1.exists()) p1.forEach(function(c){if(!seen[c.key]){var d=c.val();d._id=c.key;prods.push(d);seen[c.key]=1;}});
-      if(p2&&p2.exists()) p2.forEach(function(c){if(!seen[c.key]){var d=c.val();d._id=c.key;prods.push(d);seen[c.key]=1;}});
+      if(p1&&p1.exists()) p1.forEach(function(c){ if(!seenProd[c.key]){ var d=c.val();d._id=c.key;d._sellerId=sid2;prods.push(d);seenProd[c.key]=1; }});
+      if(p2&&p2.exists()) p2.forEach(function(c){ if(!seenProd[c.key]){ var d=c.val();d._id=c.key;d._sellerId=sid2;prods.push(d);seenProd[c.key]=1; }});
+    }
+    // Also search products by sellerEmail if we have it
+    var sellerEmail = (u&&u.email)||(sellerReqData&&sellerReqData.email)||'';
+    if(sellerEmail){
+      var pe = await database.ref('products').orderByChild('sellerEmail').equalTo(sellerEmail).once('value').catch(()=>null);
+      if(pe&&pe.exists()) pe.forEach(function(c){ if(!seenProd[c.key]){ var d=c.val();d._id=c.key;prods.push(d);seenProd[c.key]=1; }});
     }
 
-    // Get brands
-    var brands=[], bseen={};
+    /* ── 4. BRANDS ───────────────────────────────── */
+    var brands=[], seenBrand={};
     for(var j=0;j<searchIds.length;j++){
       var bid=searchIds[j];
+      if(bid.includes('@')||bid.includes('.')||bid.includes('#')) continue;
       var bSnaps=await Promise.all([
         database.ref('brands').orderByChild('createdBy').equalTo(bid).once('value').catch(()=>null),
         database.ref('brands').orderByChild('uid').equalTo(bid).once('value').catch(()=>null),
         database.ref('brands').orderByChild('userId').equalTo(bid).once('value').catch(()=>null),
         database.ref('brands').orderByChild('sellerId').equalTo(bid).once('value').catch(()=>null)
       ]);
-      bSnaps.forEach(function(bs){
-        if(bs&&bs.exists()) bs.forEach(function(c){if(!bseen[c.key]){var d=c.val();d._id=c.key;brands.push(d);bseen[c.key]=1;}});
-      });
+      bSnaps.forEach(function(bs){ if(bs&&bs.exists()) bs.forEach(function(c){ if(!seenBrand[c.key]){ var d=c.val();d._id=c.key;brands.push(d);seenBrand[c.key]=1; }}); });
     }
-    if(u && u.brandId && !bseen[u.brandId]){
-      var ubSnap=await database.ref('brands/'+u.brandId).once('value').catch(()=>null);
-      if(ubSnap&&ubSnap.exists()){var bd=ubSnap.val();bd._id=u.brandId;brands.push(bd);bseen[u.brandId]=1;}
+    if(u&&u.brandId&&!seenBrand[u.brandId]){
+      var ub=await database.ref('brands/'+u.brandId).once('value').catch(()=>null);
+      if(ub&&ub.exists()){ var bd=ub.val();bd._id=u.brandId;brands.push(bd); }
     }
 
-    var totalSales=prods.reduce(function(s,p){return s+(parseInt(p.sales)||0);},0);
-    var uidDisplay=uid||searchIds[0]||sid;
+    /* ── 5. CHECK if anything found ─────────────── */
+    if(!u && !sellerReqData && !prods.length && !brands.length){
+      res.innerHTML='<div style="text-align:center;padding:40px 20px;">'
+        +'<i class="fas fa-user-slash" style="font-size:44px;color:#cbd5e1;display:block;margin-bottom:16px;"></i>'
+        +'<h3 style="color:#64748b;margin-bottom:8px;">No seller found</h3>'
+        +'<p style="color:#94a3b8;font-size:13px;">Tried searching by: <strong>'+rawInput+'</strong></p>'
+        +'<p style="color:#94a3b8;font-size:12px;margin-top:8px;">Make sure the ID/Gmail/Phone is correct</p></div>';
+      return;
+    }
 
-    res.innerHTML='<div style="display:flex;flex-direction:column;gap:14px;">'
-      +'<div style="background:#f8fafc;border-radius:12px;padding:16px;border:1px solid #e2e8f0;">'
-      +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
-      +(u&&u.photoURL?'<img src="'+u.photoURL+'" style="width:48px;height:48px;border-radius:12px;object-fit:cover;">'
-        :'<div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:800;">'+(u&&(u.displayName||u.name)?((u.displayName||u.name).charAt(0).toUpperCase()):'S')+'</div>')
-      +'<div style="flex:1;min-width:0;">'
-      +'<div style="font-weight:800;font-size:15px;color:#0f172a;">'+(u&&(u.displayName||u.name)||'Unknown Seller')+'</div>'
-      +'<div style="font-size:12px;color:#64748b;">'+(u&&u.email||sid)+'</div>'
-      +'<div style="display:flex;align-items:center;gap:6px;margin-top:4px;">'
-      +'<span style="font-size:11px;color:#94a3b8;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">'+uidDisplay+'</span>'
-      +'<button onclick="bzCopySellerID(\''+uidDisplay+'\',this)" style="background:#eff6ff;border:none;color:#2563eb;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:10px;font-weight:700;">Copy ID</button>'
-      +'</div></div></div>'
-      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;">'
-      +'<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#2563eb;">'+prods.length+'</div><div style="font-size:10px;color:#64748b;">Products</div></div>'
-      +'<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#16a34a;">'+totalSales+'</div><div style="font-size:10px;color:#64748b;">Total Sales</div></div>'
-      +'<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#7c3aed;">'+brands.length+'</div><div style="font-size:10px;color:#64748b;">Brands</div></div>'
-      +'</div></div>'
-      +(brands.length
-        ?'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;">'
-         +'<div style="font-weight:700;font-size:13px;color:#1d4ed8;margin-bottom:10px;"><i class="fas fa-award"></i> Brands ('+brands.length+')</div>'
-         +brands.map(function(b){return '<div style="display:flex;align-items:center;gap:10px;background:white;border-radius:8px;padding:10px 12px;margin-bottom:6px;">'
-           +(b.logo?'<img src="'+b.logo+'" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">'
-             :'<div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">'+(b.name||'B').charAt(0).toUpperCase()+'</div>')
-           +'<div><div style="font-weight:700;font-size:13px;color:#0f172a;">'+(b.name||'Brand')+(b.blueTickAdmin?' <span style="color:#2563eb;font-size:14px;">✓</span>':'')+'</div>'
-           +'<div style="font-size:11px;color:#64748b;">'+(b.category||'')+'</div></div></div>';}).join('')+'</div>'
-        :'<div style="background:#fff7f7;border:1px solid #fca5a5;border-radius:10px;padding:12px;"><div style="font-size:13px;color:#dc2626;font-weight:600;"><i class="fas fa-info-circle"></i> No brands found for this seller</div></div>')
-      +(prods.length
-        ?'<div><div style="font-weight:700;font-size:13px;color:#374151;margin-bottom:10px;">📦 Products ('+prods.length+')</div>'
-         +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
-         +prods.slice(0,8).map(function(p){
-           var img=p.image||(p.images&&p.images[0])||'';
-           var safeId=p._id.replace(/'/g,"\\'");
-           return '<div onclick="openLookupProduct(\''+safeId+'\')" style="background:white;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor=\'#2563eb\'" onmouseout="this.style.borderColor=\'#e2e8f0\'">'
-             +(img?'<img src="'+img+'" style="width:100%;height:80px;object-fit:cover;">':'<div style="height:60px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:22px;">📦</div>')
-             +'<div style="padding:8px;"><div style="font-size:12px;font-weight:700;color:#0f172a;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+(p.name||p.title||'Product')+'</div>'
-             +'<div style="font-size:11px;color:#2563eb;font-weight:700;">₹'+(p.price||0)+'</div></div></div>';
-         }).join('')
-         +'</div>'+(prods.length>8?'<p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:8px;">...and '+(prods.length-8)+' more</p>':'')+'</div>'
-        :'')
-      +'</div>';
+    /* ── 6. RENDER ───────────────────────────────── */
+    var sr = sellerReqData || {};
+    var displayName = (u&&(u.displayName||u.name)) || sr.name || sr.fullName || 'Unknown Seller';
+    var email       = (u&&u.email) || sr.email || '';
+    var phone       = (u&&u.phone) || sr.phone || '';
+    var photoURL    = u&&u.photoURL;
+    var uidDisplay  = uid || rawInput;
+    var totalSales  = prods.reduce(function(s,p){ return s+(parseInt(p.sales)||0); },0);
 
-    window._lookupProducts = {};
-    prods.forEach(function(p){ window._lookupProducts[p._id]=p; });
+    var html = '<div style="display:flex;flex-direction:column;gap:14px;">';
+
+    // Profile card
+    html += '<div style="background:#f8fafc;border-radius:14px;padding:16px;border:1px solid #e2e8f0;">';
+    html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">';
+    html += photoURL ? '<img src="'+photoURL+'" style="width:52px;height:52px;border-radius:14px;object-fit:cover;flex-shrink:0;">'
+            : '<div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-size:22px;font-weight:800;flex-shrink:0;">'+displayName.charAt(0).toUpperCase()+'</div>';
+    html += '<div style="flex:1;min-width:0;">';
+    html += '<div style="font-weight:800;font-size:15px;color:#0f172a;">'+displayName+'</div>';
+    if(email) html += '<div style="font-size:12px;color:#2563eb;margin-top:1px;">✉️ '+email+'</div>';
+    if(phone) html += '<div style="font-size:12px;color:#64748b;">📞 '+phone+'</div>';
+    html += '<div style="display:flex;align-items:center;gap:6px;margin-top:4px;">';
+    html += '<span style="font-size:10px;color:#94a3b8;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">🆔 '+uidDisplay+'</span>';
+    html += '<button onclick="bzCopyText(\''+uidDisplay+'\')" style="background:#eff6ff;border:none;color:#2563eb;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:10px;font-weight:700;flex-shrink:0;">📋 Copy ID</button>';
+    html += '</div></div></div>';
+
+    // Stats
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;">';
+    html += '<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.2rem;font-weight:800;color:#2563eb;">'+prods.length+'</div><div style="font-size:10px;color:#64748b;font-weight:600;">Products</div></div>';
+    html += '<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.2rem;font-weight:800;color:#16a34a;">'+totalSales+'</div><div style="font-size:10px;color:#64748b;font-weight:600;">Total Sales</div></div>';
+    html += '<div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.2rem;font-weight:800;color:#7c3aed;">'+brands.length+'</div><div style="font-size:10px;color:#64748b;font-weight:600;">Brands</div></div>';
+    html += '</div></div>'; // close profile card
+
+    // Seller Request info if available
+    if(sellerReqData && Object.keys(sellerReqData).length){
+      html += '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:14px;">';
+      html += '<div style="font-weight:700;font-size:13px;color:#15803d;margin-bottom:10px;"><i class="fas fa-user-check"></i> Seller Application Info</div>';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:#374151;">';
+      if(sr.shopName||sr.businessName) html += '<div>🏪 <strong>Shop:</strong> '+(sr.shopName||sr.businessName)+'</div>';
+      if(sr.category) html += '<div>📦 <strong>Category:</strong> '+sr.category+'</div>';
+      if(sr.gst) html += '<div>📋 <strong>GST:</strong> '+sr.gst+'</div>';
+      if(sr.bankName) html += '<div>🏦 <strong>Bank:</strong> '+sr.bankName+'</div>';
+      if(sr.accountNumber) html += '<div>💳 <strong>A/C:</strong> '+sr.accountNumber+'</div>';
+      if(sr.ifsc) html += '<div>🔑 <strong>IFSC:</strong> '+sr.ifsc+'</div>';
+      if(sr.status) html += '<div>📌 <strong>Status:</strong> '+sr.status+'</div>';
+      if(sr.about||sr.description) html += '<div style="grid-column:1/-1;">📝 '+(sr.about||sr.description)+'</div>';
+      html += '</div></div>';
+    }
+
+    // Brands
+    if(brands.length){
+      html += '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;">';
+      html += '<div style="font-weight:700;font-size:13px;color:#1d4ed8;margin-bottom:10px;"><i class="fas fa-award"></i> Brands ('+brands.length+')</div>';
+      html += brands.map(function(b){
+        return '<div style="display:flex;align-items:center;gap:10px;background:white;border-radius:8px;padding:10px 12px;margin-bottom:6px;">'
+          +(b.logo?'<img src="'+b.logo+'" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">'
+            :'<div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:13px;">'+(b.name||'B').charAt(0).toUpperCase()+'</div>')
+          +'<div style="flex:1;"><div style="font-weight:700;font-size:13px;color:#0f172a;">'+(b.name||'Brand')
+          +(b.blueTickAdmin?'<span style="color:#2563eb;margin-left:4px;">✓</span>':'')+'</div>'
+          +(b.category?'<div style="font-size:11px;color:#64748b;">'+b.category+'</div>':'')
+          +'<div style="font-size:10px;color:#94a3b8;margin-top:2px;">Status: '+(b.status||'active')+'</div></div>'
+          +'</div>';
+      }).join('');
+      html += '</div>';
+    }
+
+    // Products
+    if(prods.length){
+      html += '<div>';
+      html += '<div style="font-weight:700;font-size:13px;color:#374151;margin-bottom:10px;">📦 Products ('+prods.length+')</div>';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+      window._lookupProducts = {};
+      prods.forEach(function(p){ window._lookupProducts[p._id]=p; });
+      html += prods.slice(0,8).map(function(p){
+        var img=p.image||(p.images&&p.images[0])||'';
+        var safeId=p._id.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return '<div onclick="openLookupProduct(\''+safeId+'\')" style="background:white;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor=\'#2563eb\';this.style.boxShadow=\'0 4px 12px rgba(37,99,235,.15)\'" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.boxShadow=\'none\'">'
+          +(img?'<img src="'+img+'" style="width:100%;height:80px;object-fit:cover;">'
+            :'<div style="width:100%;height:60px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:24px;">📦</div>')
+          +'<div style="padding:8px 10px;">'
+          +'<div style="font-size:12px;font-weight:700;color:#0f172a;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">'+(p.name||p.title||'Product')+'</div>'
+          +'<div style="font-size:12px;color:#2563eb;font-weight:700;">₹'+(p.price||0)+'</div>'
+          +'</div></div>';
+      }).join('');
+      html += '</div>';
+      if(prods.length>8) html += '<p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:8px;">...and '+(prods.length-8)+' more products</p>';
+      html += '</div>';
+    }
+
+    if(!prods.length && !brands.length && !sellerReqData){
+      html += '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px;font-size:13px;color:#92400e;"><i class="fas fa-info-circle"></i> Seller found but no products or brands yet.</div>';
+    }
+
+    html += '</div>';
+    res.innerHTML = html;
 
   }catch(e){
-    res.innerHTML='<p style="color:#ef4444;text-align:center;padding:20px;">Error: '+e.message+'</p>';
+    res.innerHTML='<div style="text-align:center;padding:30px;"><i class="fas fa-exclamation-triangle" style="font-size:36px;color:#f97316;display:block;margin-bottom:12px;"></i><p style="color:#ef4444;font-weight:600;">Error: '+e.message+'</p><p style="color:#94a3b8;font-size:12px;margin-top:8px;">Check Firebase rules allow reading users/sellerRequests</p></div>';
   }
 }
 
-    window._lookupProducts = window._lookupProducts || {};
 
     // Get products by sellerId (both the input AND found uid)
     var searchIds = [sid];
@@ -9485,28 +9558,36 @@ async function showBrandFollowers(brandId,brandName){
 // Add Seller Lookup to sidebar - SKIP (already in HTML menu)
 // window._bzSellerLookupInjected = true;
 
-function bzCopySellerID(uid, btn) {
-  if (!uid || uid === 'undefined') { showAdminToast&&showAdminToast('No Seller ID available','error'); return; }
-  var origText = btn ? btn.textContent : '';
-  function onSuccess() {
-    showAdminToast&&showAdminToast('Seller ID copied!','success');
-    if(btn){ btn.textContent='✅ Copied!'; setTimeout(function(){ btn.textContent=origText; }, 2000); }
+function bzCopyText(text, btn) {
+  if(!text || text==='undefined' || text==='null') {
+    showAdminToast && showAdminToast('Nothing to copy', 'error');
+    return;
   }
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(uid).then(onSuccess).catch(function(){
-      // Fallback
-      var el=document.createElement('textarea'); el.value=uid; el.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0;';
-      document.body.appendChild(el); el.focus(); el.select();
-      try{ document.execCommand('copy'); onSuccess(); }catch(e){ showAdminToast&&showAdminToast('Copy failed, select and copy manually','error'); }
-      document.body.removeChild(el);
-    });
-  } else {
-    var el=document.createElement('textarea'); el.value=uid; el.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0;';
-    document.body.appendChild(el); el.focus(); el.select();
-    try{ document.execCommand('copy'); onSuccess(); }catch(e){ showAdminToast&&showAdminToast('Copy failed','error'); }
+  var orig = btn ? (btn.textContent || btn.innerHTML) : '';
+  function onSuccess() {
+    showAdminToast && showAdminToast('✅ Copied!', 'success');
+    if(btn) {
+      btn.textContent = '✅ Copied!';
+      setTimeout(function(){ if(btn) btn.innerHTML = orig; }, 2000);
+    }
+  }
+  if(navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(onSuccess).catch(fallback);
+  } else { fallback(); }
+  function fallback() {
+    var el = document.createElement('textarea');
+    el.value = text;
+    el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+    document.body.appendChild(el);
+    el.focus(); el.select();
+    try { document.execCommand('copy'); onSuccess(); }
+    catch(e) { showAdminToast && showAdminToast('Copy failed — select manually', 'error'); }
     document.body.removeChild(el);
   }
 }
+
+// Alias for backward compatibility
+function bzCopySellerID(uid, btn) { bzCopyText(uid, btn); }
 
 // Add Brand / Save Admin Brand
 function showAddAdminBrandModal(){
