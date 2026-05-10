@@ -8251,6 +8251,173 @@
     document.body.style.minHeight = '100vh';
 
     window.addEventListener('DOMContentLoaded', initAdminPanel);
+
+    /* ══ SELLER LOOKUP (inside main script — has access to database) ══ */
+    window.openSellerLookup = function() {
+      var inp = document.getElementById('sellerLookupInput');
+      if(inp) inp.value = '';
+      var rd = document.getElementById('sellerLookupResult');
+      if(rd) rd.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;">Enter Seller ID, Gmail or Phone Number</p>';
+      var m = document.getElementById('sellerLookupModal');
+      if(m) m.classList.add('active');
+      if(typeof closeSidebar === 'function') setTimeout(closeSidebar, 50);
+    };
+
+    window.runSellerLookup = async function() {
+      var rawInput = (document.getElementById('sellerLookupInput').value || '').trim();
+      var res = document.getElementById('sellerLookupResult');
+      if(!rawInput) { res.innerHTML = '<p style="color:#ef4444;text-align:center;padding:16px;">Please enter a Seller ID, Gmail or Phone Number</p>'; return; }
+      res.innerHTML = '<div style="text-align:center;padding:30px;"><i class="fas fa-spinner fa-spin" style="font-size:28px;color:#2563eb;"></i><p style="color:#94a3b8;margin-top:12px;font-size:13px;">Searching...</p></div>';
+
+      const isEmail = rawInput.includes('@');
+      const cleanNum = rawInput.replace(/[\s\-\+\(\)]/g, '');
+      const isPhone  = /^\d{7,15}$/.test(cleanNum);
+      let u = null, uid = null, sellerReq = null;
+
+      try {
+        /* 1. Find user */
+        if (isEmail) {
+          const s = await database.ref('users').orderByChild('email').equalTo(rawInput).once('value');
+          if (s.exists()) s.forEach(c => { u = c.val(); uid = c.key; });
+          if (!u) {
+            const all = await database.ref('users').once('value');
+            if (all.exists()) all.forEach(c => { const d = c.val(); if (!u && d && d.email && d.email.toLowerCase() === rawInput.toLowerCase()) { u = d; uid = c.key; } });
+          }
+          const sr = await database.ref('sellerRequests').once('value');
+          if (sr.exists()) sr.forEach(c => { const d = c.val(); if (!sellerReq && d && d.email && d.email.toLowerCase() === rawInput.toLowerCase()) { sellerReq = d; if (!uid) uid = c.key; } });
+        } else if (isPhone) {
+          const all = await database.ref('users').once('value');
+          if (all.exists()) all.forEach(c => { const d = c.val(); if (!u && d && d.phone && String(d.phone).replace(/\D/g,'').endsWith(cleanNum.slice(-10))) { u = d; uid = c.key; } });
+          const sr = await database.ref('sellerRequests').once('value');
+          if (sr.exists()) sr.forEach(c => { const d = c.val(); if (d && d.phone && String(d.phone).replace(/\D/g,'').endsWith(cleanNum.slice(-10))) { if (!sellerReq) sellerReq = d; if (!uid) uid = c.key; if (!u) u = { displayName: d.name || d.fullName, email: d.email, phone: d.phone }; } });
+        } else {
+          const du = await database.ref('users/' + rawInput).once('value');
+          if (du.exists()) { u = du.val(); uid = rawInput; }
+          if (!u) { const su = await database.ref('users').orderByChild('uid').equalTo(rawInput).once('value'); if (su.exists()) su.forEach(c => { u = c.val(); uid = c.key; }); }
+          const sr = await database.ref('sellerRequests/' + rawInput).once('value');
+          if (sr.exists()) { sellerReq = sr.val(); if (!uid) uid = rawInput; }
+        }
+
+        /* 2. Build search IDs */
+        const ids = [...new Set([uid, rawInput, u && u.uid, sellerReq && sellerReq.uid].filter(Boolean).filter(v => !v.includes('@') && !v.includes('#') && !v.includes('.')))];
+
+        /* 3. Products */
+        let prods = [], seenP = {};
+        for (const id2 of ids) {
+          const [p1, p2] = await Promise.all([
+            database.ref('products').orderByChild('sellerId').equalTo(id2).once('value'),
+            database.ref('sellerProducts/' + id2).once('value')
+          ]);
+          if (p1.exists()) p1.forEach(c => { if (!seenP[c.key]) { const d = c.val(); d._id = c.key; prods.push(d); seenP[c.key] = 1; } });
+          if (p2.exists()) p2.forEach(c => { if (!seenP[c.key]) { const d = c.val(); d._id = c.key; prods.push(d); seenP[c.key] = 1; } });
+        }
+
+        /* 4. Brands */
+        let brands = [], seenB = {};
+        for (const id2 of ids) {
+          const snaps = await Promise.all(['createdBy','uid','userId','sellerId'].map(f => database.ref('brands').orderByChild(f).equalTo(id2).once('value')));
+          snaps.forEach(s => { if (s.exists()) s.forEach(c => { if (!seenB[c.key]) { const d = c.val(); d._id = c.key; brands.push(d); seenB[c.key] = 1; } }); });
+        }
+        if (u && u.brandId && !seenB[u.brandId]) { const b = await database.ref('brands/' + u.brandId).once('value'); if (b.exists()) { const d = b.val(); d._id = u.brandId; brands.push(d); } }
+
+        /* 5. Nothing found */
+        if (!u && !sellerReq && !prods.length && !brands.length) {
+          res.innerHTML = '<div style="text-align:center;padding:36px 20px;"><i class="fas fa-user-slash" style="font-size:44px;color:#cbd5e1;display:block;margin-bottom:14px;"></i><h3 style="color:#64748b;margin-bottom:8px;">No seller found</h3><p style="color:#94a3b8;font-size:13px;">Searched for: <strong>' + rawInput + '</strong></p></div>';
+          return;
+        }
+
+        /* 6. Render */
+        const sr = sellerReq || {};
+        const name  = (u && (u.displayName || u.name)) || sr.name || sr.fullName || 'Unknown Seller';
+        const email = (u && u.email) || sr.email || '';
+        const phone = (u && u.phone) || sr.phone || '';
+        const photo = u && u.photoURL;
+        const uidD  = uid || rawInput;
+        const sales = prods.reduce((s, p) => s + (parseInt(p.sales) || 0), 0);
+
+        let html = '<div style="display:flex;flex-direction:column;gap:14px;">';
+
+        // Profile
+        html += `<div style="background:#f8fafc;border-radius:14px;padding:16px;border:1px solid #e2e8f0;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            ${photo ? `<img src="${photo}" style="width:52px;height:52px;border-radius:14px;object-fit:cover;flex-shrink:0;">` : `<div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-size:22px;font-weight:800;flex-shrink:0;">${name.charAt(0).toUpperCase()}</div>`}
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:800;font-size:15px;color:#0f172a;">${name}</div>
+              ${email ? `<div style="font-size:12px;color:#2563eb;">✉️ ${email}</div>` : ''}
+              ${phone ? `<div style="font-size:12px;color:#64748b;">📞 ${phone}</div>` : ''}
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                <span style="font-size:10px;color:#94a3b8;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;">🆔 ${uidD}</span>
+                <button onclick="bzCopyText('${uidD.replace(/'/g,"\\'")}',this)" style="background:#eff6ff;border:none;color:#2563eb;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:10px;font-weight:700;flex-shrink:0;">📋 Copy ID</button>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;">
+            <div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#2563eb;">${prods.length}</div><div style="font-size:10px;color:#64748b;font-weight:600;">Products</div></div>
+            <div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#16a34a;">${sales}</div><div style="font-size:10px;color:#64748b;font-weight:600;">Total Sales</div></div>
+            <div style="background:white;border-radius:8px;padding:10px;border:1px solid #e2e8f0;"><div style="font-size:1.1rem;font-weight:800;color:#7c3aed;">${brands.length}</div><div style="font-size:10px;color:#64748b;font-weight:600;">Brands</div></div>
+          </div></div>`;
+
+        // Seller request info
+        if (sellerReq && Object.keys(sellerReq).length > 2) {
+          html += `<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:14px;">
+            <div style="font-weight:700;font-size:13px;color:#15803d;margin-bottom:10px;"><i class="fas fa-user-check"></i> Seller Application</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:#374151;">
+              ${sr.shopName || sr.businessName ? `<div>🏪 <strong>Shop:</strong> ${sr.shopName || sr.businessName}</div>` : ''}
+              ${sr.category ? `<div>📦 <strong>Category:</strong> ${sr.category}</div>` : ''}
+              ${sr.gst ? `<div>📋 <strong>GST:</strong> ${sr.gst}</div>` : ''}
+              ${sr.bankName ? `<div>🏦 <strong>Bank:</strong> ${sr.bankName}</div>` : ''}
+              ${sr.accountNumber ? `<div>💳 <strong>A/C:</strong> ${sr.accountNumber}</div>` : ''}
+              ${sr.ifsc ? `<div>🔑 <strong>IFSC:</strong> ${sr.ifsc}</div>` : ''}
+              ${sr.status ? `<div>📌 <strong>Status:</strong> ${sr.status}</div>` : ''}
+            </div></div>`;
+        }
+
+        // Brands
+        if (brands.length) {
+          html += `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;">
+            <div style="font-weight:700;font-size:13px;color:#1d4ed8;margin-bottom:10px;"><i class="fas fa-award"></i> Brands (${brands.length})</div>
+            ${brands.map(b => `<div style="display:flex;align-items:center;gap:10px;background:white;border-radius:8px;padding:10px;margin-bottom:6px;">
+              ${b.logo ? `<img src="${b.logo}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">` : `<div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;">${(b.name||'B').charAt(0).toUpperCase()}</div>`}
+              <div><div style="font-weight:700;font-size:13px;">${b.name||'Brand'}${b.blueTickAdmin ? ' <span style="color:#2563eb;">✓</span>' : ''}</div><div style="font-size:11px;color:#64748b;">${b.category||''}  ${b.status === 'suspended' ? '<span style="color:#ef4444;">· Suspended</span>' : ''}</div></div>
+            </div>`).join('')}</div>`;
+        }
+
+        // Products
+        if (prods.length) {
+          window._lookupProducts = {};
+          prods.forEach(p => { window._lookupProducts[p._id] = p; });
+          html += `<div><div style="font-weight:700;font-size:13px;color:#374151;margin-bottom:10px;">📦 Products (${prods.length})</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              ${prods.slice(0, 8).map(p => {
+                const img = p.image || (p.images && p.images[0]) || '';
+                const safeId = p._id.replace(/'/g, "\\'");
+                return `<div onclick="openLookupProduct('${safeId}')" style="background:white;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;cursor:pointer;transition:border .2s;" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#e2e8f0'">
+                  ${img ? `<img src="${img}" style="width:100%;height:80px;object-fit:cover;">` : `<div style="height:60px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:24px;">📦</div>`}
+                  <div style="padding:8px;"><div style="font-size:12px;font-weight:700;color:#0f172a;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${p.name||p.title||'Product'}</div><div style="font-size:12px;color:#2563eb;font-weight:700;">₹${p.price||0}</div></div>
+                </div>`;
+              }).join('')}
+            </div>
+            ${prods.length > 8 ? `<p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:8px;">...and ${prods.length - 8} more</p>` : ''}
+          </div>`;
+        }
+
+        html += '</div>';
+        res.innerHTML = html;
+
+      } catch(e) {
+        res.innerHTML = `<div style="text-align:center;padding:30px;"><i class="fas fa-exclamation-triangle" style="font-size:36px;color:#f97316;display:block;margin-bottom:12px;"></i><p style="color:#ef4444;font-weight:600;">${e.message}</p></div>`;
+      }
+    };
+
+    /* ══ UNIVERSAL COPY ══ */
+    window.bzCopyText = function(text, btn) {
+      if (!text || text === 'undefined') { showAdminToast('Nothing to copy', 'error'); return; }
+      const orig = btn ? btn.innerHTML : '';
+      const ok = () => { showAdminToast('✅ Copied!', 'success'); if (btn) { btn.innerHTML = '✅'; setTimeout(() => { if(btn) btn.innerHTML = orig; }, 2000); } };
+      if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(ok).catch(fb); } else { fb(); }
+      function fb() { const t = document.createElement('textarea'); t.value = text; t.style.cssText = 'position:fixed;top:-9999px;left:-9999px;'; document.body.appendChild(t); t.focus(); t.select(); try { document.execCommand('copy'); ok(); } catch(e) { showAdminToast('Copy failed', 'error'); } document.body.removeChild(t); }
+    };
+    window.bzCopySellerID = (uid, btn) => window.bzCopyText(uid, btn);
   </script>
 
   <!-- ===== SELLER ACTIVITY MODAL ===== -->
