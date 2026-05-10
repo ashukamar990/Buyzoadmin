@@ -8761,7 +8761,12 @@
                 ${logoHtml}
                 <div>
                   <div style="font-weight:800;font-size:15px;margin-bottom:2px;">${r.name||'Unknown'} ${countdownHtml}</div>
-                  <div style="font-size:12px;color:#64748b;">By: <strong>${r.requestedByName||r.requestedByEmail||'—'}</strong> · ${r.requestedByEmail||''}</div>
+                  <div style="font-size:12px;color:#64748b;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                    <span>👤 <strong>${r.requestedByName||r.requestedBy||'—'}</strong></span>
+                    ${r.requestedByEmail ? `<span>· <a href="javascript:void(0)" onclick="document.getElementById('sellerGmailFilter')&&(document.getElementById('sellerGmailFilter').value='${(r.requestedByEmail||'').replace(/'/g,"\\'")}');if(typeof filterUserListingsBySeller==='function')filterUserListingsBySeller();showTab('user-listings');" style="color:#2563eb;font-weight:600;" title="See this seller's products">✉️ ${r.requestedByEmail}</a></span>` : ''}
+                    ${r.requestedByPhone ? `<span>· 📞 ${r.requestedByPhone}</span>` : ''}
+                  </div>
+                  ${r.requestedBy ? `<div style="font-size:10px;color:#94a3b8;font-family:monospace;margin-top:2px;cursor:pointer;" onclick="bzCopySellerID('${(r.requestedBy||'').replace(/'/g,"\\'")}',this)" title="Copy Seller ID">🆔 ${(r.requestedBy||'').substring(0,20)}... <small style="color:#2563eb;">(copy)</small></div>` : ''}
                 </div>
               </div>
               <span style="background:${statusBg[r.status]||'#f1f5f9'};color:${statusColors[r.status]||'#64748b'};padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">${statusLabel}</span>
@@ -8769,6 +8774,7 @@
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;font-size:13px;color:#64748b;margin-bottom:12px;">
               <div>📅 <strong>Requested:</strong> ${r.requestedAt ? new Date(r.requestedAt).toLocaleDateString('en-IN') : '—'}</div>
               <div>🔑 <strong>Req ID:</strong> <code style="font-size:11px;">${(r._key||'').slice(-8).toUpperCase()}</code></div>
+              ${r.category ? `<div>📦 <strong>Category:</strong> ${r.category}</div>` : ''}
               ${r.description ? `<div style="grid-column:1/-1;">📝 ${r.description}</div>` : ''}
               ${r.reason ? `<div style="grid-column:1/-1;">💬 <strong>Reason:</strong> ${r.reason}</div>` : ''}
             </div>
@@ -8989,11 +8995,11 @@ new MutationObserver(function(){
 
 // Seller Lookup
 function openSellerLookup(){
-  if(typeof closeSidebar==="function") closeSidebar();
-  else { var sb=document.getElementById("adminSidebar"); if(sb&&sb.classList.contains("active")) toggleSidebar(); }
   var inp=document.getElementById("sellerLookupInput"); if(inp) inp.value="";
-  var rd=document.getElementById("sellerLookupResult"); if(rd) rd.innerHTML='<p style="color:#94a3b8;text-align:center;padding:20px;">Enter Seller ID, Gmail, or Phone Number</p>';
-  setTimeout(function(){ var m=document.getElementById("sellerLookupModal"); if(m) m.classList.add("active"); },150);
+  var rd=document.getElementById("sellerLookupResult"); if(rd) rd.innerHTML='<p style="color:#94a3b8;text-align:center;padding:20px;">Enter Seller ID, Gmail or Phone Number</p>';
+  var m=document.getElementById("sellerLookupModal"); if(m) m.classList.add("active");
+  if(typeof closeSidebar==="function") setTimeout(closeSidebar,50);
+  else if(document.getElementById("adminSidebar") && document.getElementById("adminSidebar").classList.contains("active")) setTimeout(toggleSidebar,50);
 }
 async function runSellerLookup(){
   var sid=document.getElementById('sellerLookupInput').value.trim();
@@ -9697,7 +9703,7 @@ window.publishAdminPost = async function() {
     btn.id='bzMobileBtn';
     btn.style.cssText='display:none;background:none;border:1.5px solid #e2e8f0;border-radius:10px;width:38px;height:38px;cursor:pointer;font-size:16px;align-items:center;justify-content:center;color:#374151;flex-shrink:0;';
     btn.innerHTML='<i class="fas fa-bars"></i>';
-    btn.onclick=function(){var sb=document.querySelector('.admin-sidebar,.sidebar');if(!sb)return;sb.style.display=sb.style.display==='none'?'flex':'none';};
+    btn.onclick=function(){ if(typeof toggleSidebar==='function') toggleSidebar(); };
     h.prepend(btn);
     function check(){btn.style.display=window.innerWidth<768?'flex':'none';}
     check(); window.addEventListener('resize',check);
