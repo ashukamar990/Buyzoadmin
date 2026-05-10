@@ -2466,15 +2466,23 @@
                 <input type="text" id="listingSearch" class="form-control" placeholder="Search listings..." style="width:200px" oninput="filterUserListings()">
               </div>
             </div>
+            <!-- Gmail / Seller ID Filter -->
+            <div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <i class="fas fa-user-circle" style="color:#2563eb;font-size:16px;"></i>
+              <span style="font-size:13px;font-weight:700;color:#374151;white-space:nowrap;">Filter by Seller:</span>
+              <input type="text" id="sellerGmailFilter" class="form-control" placeholder="Enter Gmail, Phone, or Seller ID..." style="flex:1;min-width:200px;border-radius:8px;font-size:13px;" oninput="filterUserListingsBySeller()">
+              <button onclick="filterUserListingsBySeller()" style="background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:700;font-size:13px;white-space:nowrap;"><i class="fas fa-search"></i> Filter</button>
+              <button onclick="document.getElementById('sellerGmailFilter').value='';filterUserListingsBySeller()" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px;">Clear</button>
+            </div>
             <div class="card-body">
-              <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Products added by <strong>approved sellers</strong> (🏪) and user-submitted listings (👤). Approve, edit, or remove them here. Seller products are managed by their seller accounts.</p>
+              <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Products added by <strong>approved sellers</strong> (🏪) and user-submitted listings (👤). Approve, edit, or remove them here.</p>
               <div class="table-responsive">
                 <table>
                   <thead>
                     <tr>
                       <th>Image</th>
                       <th>Title</th>
-                      <th>Seller</th>
+                      <th>Seller / Gmail</th>
                       <th>Category</th>
                       <th>Price</th>
                       <th>Status</th>
@@ -3807,14 +3815,12 @@
     function _setupAdminUI() {
       document.querySelectorAll('.menu-item').forEach(tab => {
         tab.addEventListener('click', function(e) {
-          e.preventDefault();
           if (this.dataset.tab) {
+            e.preventDefault();
             showTab(this.dataset.tab);
-            // AUTO-CLOSE sidebar on mobile after clicking any menu item
-            if (window.innerWidth <= 1024) {
-              closeSidebar();
-            }
+            if (window.innerWidth <= 1024) closeSidebar();
           }
+          // Items without data-tab (like Seller Lookup, Logout) use their own onclick — don't interfere
         });
       });
       
@@ -7824,29 +7830,59 @@
         const sourceBadge = isSeller
           ? '<span style="background:#eff6ff;color:#2563eb;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;display:inline-block;margin-top:2px;">🏪 Seller</span>'
           : '<span style="background:#f0fdf4;color:#16a34a;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;display:inline-block;margin-top:2px;">👤 User</span>';
-        const sellerInfo = isSeller
-          ? `${l.sellerName||l.sellerEmail||'Unknown'}<br><small style="color:#64748b;font-family:monospace;">🆔 ${l.sellerId||'—'}</small>`
-          : `${l.sellerName||'Unknown'}<br><small style="color:#64748b">${l.sellerEmail||''}</small>`;
+
+        // Full seller info with Gmail, phone, seller ID
+        const email = l.sellerEmail || l.addedByEmail || '';
+        const phone = l.sellerPhone || l.addedByPhone || '';
+        const sid   = l.sellerId || l.addedBy || '';
+        const sname = l.sellerName || l.addedByName || 'Unknown';
+
+        const sellerInfo = `
+          <div style="font-weight:700;font-size:13px;color:#0f172a;">${sname}</div>
+          ${email ? `<div style="font-size:11px;color:#2563eb;cursor:pointer;" onclick="document.getElementById('sellerGmailFilter').value='${email}';filterUserListingsBySeller();" title="Filter by this seller">
+            <i class='fas fa-envelope' style='font-size:9px;'></i> ${email}
+          </div>` : ''}
+          ${phone ? `<div style='font-size:11px;color:#64748b;'><i class='fas fa-phone' style='font-size:9px;'></i> ${phone}</div>` : ''}
+          ${sid ? `<div style='font-size:10px;color:#94a3b8;font-family:monospace;cursor:pointer;' onclick="bzCopySellerID('${sid}',this)" title="Copy Seller ID">🆔 ${sid.substring(0,14)}...</div>` : ''}
+          ${sourceBadge}`;
+
         return `<tr>
           <td><img src="${img}" class="product-image" onerror="this.src='https://via.placeholder.com/50'"></td>
           <td style="max-width:160px;">
             <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${l.name||l.title||''}">${l.name||l.title||'—'}</div>
-            ${sourceBadge}
           </td>
-          <td>${sellerInfo}</td>
+          <td style="min-width:160px;">${sellerInfo}</td>
           <td>${l.category||'—'}</td>
           <td style="font-weight:600;">₹${(l.price||0).toLocaleString()}</td>
           <td><span class="badge ${statusColor[status]||'badge-success'}">${status.charAt(0).toUpperCase()+status.slice(1)}</span></td>
           <td>${date}</td>
           <td>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              <button class="btn btn-success btn-sm" onclick="approveUserListing('${l.id}')" title="Approve & make visible"><i class="fas fa-check"></i></button>
+              <button class="btn btn-success btn-sm" onclick="approveUserListing('${l.id}')" title="Approve"><i class="fas fa-check"></i></button>
               <button class="btn btn-warning btn-sm" onclick="editProduct('${l.id}')" title="Edit"><i class="fas fa-edit"></i></button>
               <button class="btn btn-danger btn-sm" onclick="removeUserListing('${l.id}')" title="Remove"><i class="fas fa-ban"></i></button>
             </div>
           </td>
         </tr>`;
       }).join('');
+    }
+
+    function filterUserListingsBySeller() {
+      const query = (document.getElementById('sellerGmailFilter').value || '').toLowerCase().trim();
+      if (!query) { renderUserListings(allUserListings); return; }
+      const filtered = allUserListings.filter(l => {
+        const email = (l.sellerEmail||l.addedByEmail||'').toLowerCase();
+        const phone = String(l.sellerPhone||l.addedByPhone||'');
+        const sid   = (l.sellerId||l.addedBy||'').toLowerCase();
+        const name  = (l.sellerName||l.addedByName||'').toLowerCase();
+        return email.includes(query) || phone.includes(query) || sid.includes(query) || name.includes(query);
+      });
+      renderUserListings(filtered);
+      const count = document.querySelector('#user-listings .card-body p');
+      if (filtered.length === 0) {
+        document.getElementById('userListingsBody').innerHTML =
+          '<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">No products found for: <strong>'+query+'</strong></td></tr>';
+      }
     }
 
     function approveUserListing(id) {
@@ -7906,11 +7942,15 @@
               </span>
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+              ${r.fullName || r.name ? `<div>👤 <strong>Full Name:</strong> ${r.fullName||r.name||'—'}</div>` : ''}
+              ${r.phone ? `<div>📞 <strong>Phone:</strong> ${r.phone}</div>` : ''}
+              ${r.shopName || r.businessName ? `<div>🏪 <strong>Shop:</strong> ${r.shopName||r.businessName||'—'}</div>` : ''}
               <div>📦 <strong>Category:</strong> ${r.category || '—'}</div>
+              ${r.gst ? `<div>📋 <strong>GST:</strong> ${r.gst}</div>` : ''}
+              ${r.about || r.description ? `<div style="grid-column:1/-1;background:#f8fafc;border-radius:8px;padding:8px 12px;"><strong>📝 About:</strong> ${r.about||r.description}</div>` : ''}
               <div>🏦 <strong>Bank:</strong> ${r.bankName || '—'}</div>
               <div>💳 <strong>A/C:</strong> ${r.accountNumber || '—'}</div>
               <div>🔑 <strong>IFSC:</strong> ${r.ifsc || '—'}</div>
-              ${r.gst ? `<div>📋 <strong>GST:</strong> ${r.gst}</div>` : ''}
               <div>📅 <strong>Applied:</strong> ${r.appliedAt ? new Date(r.appliedAt).toLocaleDateString('en-IN') : '—'}</div>
               <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:6px 10px;background:#eff6ff;border-radius:8px;">
                 🆔 <strong>Seller ID (UID):</strong>
@@ -8542,6 +8582,13 @@
         + ' ' + statusBadge
         + '</div>'
         + '<div style="font-size:12px;color:#64748b;">' + b.products.length + ' products &bull; ' + (b.followers || 0) + ' followers &bull; ' + (b.avgRating ? b.avgRating.toFixed(1) + '★' : 'No rating') + '</div>'
+        // Show owner info
+        + (b.ownerEmail || b.createdBy ? '<div style="font-size:11px;margin-top:3px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;">'
+          + '<span style="color:#94a3b8;">👤 Added by:</span>'
+          + '<a href="javascript:void(0)" onclick="document.getElementById(\'sellerGmailFilter\')&&(document.getElementById(\'sellerGmailFilter\').value=\'' + (b.ownerEmail||b.createdBy||'') + '\');if(typeof filterUserListingsBySeller===\'function\')filterUserListingsBySeller();showTab(\'user-listings\');" style="color:#2563eb;font-weight:600;font-size:11px;" title="See this seller\'s listings">'
+          + (b.ownerEmail || b.createdBy || '') + '</a>'
+          + (b.ownerPhone ? ' &bull; <span style="color:#64748b;">📞 ' + b.ownerPhone + '</span>' : '')
+          + '</div>' : '')
         + '</div></div>'
         + '</div>'
         + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;">'
@@ -8807,7 +8854,7 @@
     </div>
     <div class="modal-body" style="padding:24px;">
       <div style="display:flex;gap:10px;margin-bottom:20px;">
-        <input type="text" id="sellerLookupInput" class="form-control" placeholder="Enter Seller ID..." style="border-radius:10px;border:2px solid #e2e8f0;flex:1;" onkeydown="if(event.key==='Enter') runSellerLookup()">
+        <input type="text" id="sellerLookupInput" class="form-control" placeholder="Enter Seller ID, Gmail, or Phone Number..." style="border-radius:10px;border:2px solid #e2e8f0;flex:1;" onkeydown="if(event.key==='Enter') runSellerLookup()">
         <button onclick="runSellerLookup()" style="background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border:none;border-radius:10px;padding:10px 20px;cursor:pointer;font-weight:700;white-space:nowrap;"><i class="fas fa-search"></i> Lookup</button>
       </div>
       <div id="sellerLookupResult" style="min-height:80px;"></div>
@@ -8942,9 +8989,11 @@ new MutationObserver(function(){
 
 // Seller Lookup
 function openSellerLookup(){
-  document.getElementById('sellerLookupInput').value='';
-  document.getElementById('sellerLookupResult').innerHTML='<p style="color:#94a3b8;text-align:center;padding:20px;">Enter a Seller ID and click Lookup</p>';
-  document.getElementById('sellerLookupModal').classList.add('active');
+  if(typeof closeSidebar==="function") closeSidebar();
+  else { var sb=document.getElementById("adminSidebar"); if(sb&&sb.classList.contains("active")) toggleSidebar(); }
+  var inp=document.getElementById("sellerLookupInput"); if(inp) inp.value="";
+  var rd=document.getElementById("sellerLookupResult"); if(rd) rd.innerHTML='<p style="color:#94a3b8;text-align:center;padding:20px;">Enter Seller ID, Gmail, or Phone Number</p>';
+  setTimeout(function(){ var m=document.getElementById("sellerLookupModal"); if(m) m.classList.add("active"); },150);
 }
 async function runSellerLookup(){
   var sid=document.getElementById('sellerLookupInput').value.trim();
@@ -8953,23 +9002,43 @@ async function runSellerLookup(){
   res.innerHTML='<p style="text-align:center;color:#94a3b8;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Searching...</p>';
 
   var isEmail = sid.includes('@');
+  var isPhone = /^\d{7,15}$/.test(sid.replace(/[\s\-\+]/g,''));
   var u=null, uid=null;
 
   try{
     if(isEmail){
-      // Search by email only — never use email as Firebase path key
+      // Search by email
       var emailSnap = await database.ref('users').orderByChild('email').equalTo(sid).once('value').catch(()=>null);
-      if(emailSnap && emailSnap.exists()){
-        emailSnap.forEach(function(c){ u=c.val(); uid=c.key; });
-      }
-      // Also try by displayName or other fields
+      if(emailSnap && emailSnap.exists()){ emailSnap.forEach(function(c){ u=c.val(); uid=c.key; }); }
       if(!u){
-        var allUsersSnap = await database.ref('users').once('value').catch(()=>null);
-        if(allUsersSnap && allUsersSnap.exists()){
-          allUsersSnap.forEach(function(c){
+        var allSnap = await database.ref('users').once('value').catch(()=>null);
+        if(allSnap && allSnap.exists()){ allSnap.forEach(function(c){ var d=c.val(); if(d&&d.email&&d.email.toLowerCase()===sid.toLowerCase()){ u=d; uid=c.key; } }); }
+      }
+    } else if(isPhone){
+      // Search by phone number
+      var phoneClean = sid.replace(/[\s\-\+]/g,'');
+      var allUsersSnap = await database.ref('users').once('value').catch(()=>null);
+      if(allUsersSnap && allUsersSnap.exists()){
+        allUsersSnap.forEach(function(c){
+          var d=c.val();
+          if(d && d.phone){
+            var dPhone = String(d.phone).replace(/[\s\-\+]/g,'');
+            if(dPhone===phoneClean || dPhone.endsWith(phoneClean) || phoneClean.endsWith(dPhone)){ u=d; uid=c.key; }
+          }
+        });
+      }
+      // Also search in sellerRequests by phone
+      if(!u){
+        var srSnap = await database.ref('sellerRequests').once('value').catch(()=>null);
+        if(srSnap && srSnap.exists()){
+          srSnap.forEach(function(c){
             var d=c.val();
-            if(d && d.email && d.email.toLowerCase()===sid.toLowerCase()){
-              u=d; uid=c.key;
+            if(d && d.phone){
+              var dPhone = String(d.phone).replace(/[\s\-\+]/g,'');
+              if(dPhone===phoneClean || dPhone.endsWith(phoneClean)){
+                uid=c.key;
+                if(!u) u = { displayName: d.name||d.fullName, email: d.email||'', phone: d.phone, _fromSellerReq: true, sellerReqData: d };
+              }
             }
           });
         }
