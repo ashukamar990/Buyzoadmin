@@ -2827,6 +2827,64 @@
               </div>
             </div>
           </div>
+
+          <!-- API KEYS SECTION -->
+          <div class="card" style="margin-top:24px">
+            <div class="card-header">
+              <h2 style="margin:0"><i class="fas fa-key" style="color:#f59e0b;margin-right:8px"></i>API Keys &amp; Integrations</h2>
+            </div>
+            <div class="card-body">
+              <p style="color:#64748b;margin-bottom:20px;font-size:0.9rem">Saari API keys ek jagah se manage karo. Save karne ke baad automatically Admin Panel aur Seller Panel dono mein kaam karengi.</p>
+
+              <!-- ImgBB -->
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin-bottom:14px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                  <div style="width:38px;height:38px;background:#2563eb;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🖼️</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:700;font-size:0.95rem;color:#0f172a;">ImgBB Image Upload API Key</div>
+                    <div style="font-size:0.78rem;color:#64748b;">Product &amp; banner images upload ke liye. Free key: <a href="https://api.imgbb.com/" target="_blank" style="color:#2563eb;font-weight:600;">api.imgbb.com</a> → Login → API</div>
+                  </div>
+                  <div id="imgbbStatusBadge" style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:#fef3c7;color:#92400e;white-space:nowrap;">Not Set</div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <input type="password" id="adminImgbbKey" placeholder="Paste ImgBB API key here..." autocomplete="off" style="flex:1;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:monospace;outline:none;transition:border .2s;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+                  <button type="button" onclick="toggleImgbbKeyVisibility()" style="padding:11px 16px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;" title="Show/Hide">👁️</button>
+                </div>
+                <div style="font-size:11px;color:#94a3b8;margin-top:6px;">⚡ Key save hone ke baad Admin Panel aur Seller Panel dono automatically use karenge — kahi aur dalne ki zarurat nahi.</div>
+              </div>
+
+              <!-- Brand Auto-Approve -->
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin-bottom:14px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                  <div style="width:38px;height:38px;background:#8b5cf6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🏷️</div>
+                  <div>
+                    <div style="font-weight:700;font-size:0.95rem;color:#0f172a;">Brand Auto-Approve Time</div>
+                    <div style="font-size:0.78rem;color:#64748b;">Seller brand request kitne ghante mein auto-approve ho (default: 24 hrs)</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <input type="number" id="brandAutoApproveHours" value="24" min="1" max="168" style="width:90px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:700;outline:none;" onfocus="this.style.borderColor='#8b5cf6'" onblur="this.style.borderColor='#e2e8f0'">
+                  <span style="color:#64748b;font-size:13px;font-weight:600;">hours</span>
+                </div>
+              </div>
+
+              <!-- Firebase Info -->
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:18px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:38px;height:38px;background:#f97316;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🔥</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:700;font-size:0.95rem;color:#0f172a;">Firebase</div>
+                    <div style="font-size:12px;color:#64748b;font-family:monospace;margin-top:2px;">Project: <span id="fbProjectId" style="color:#15803d;font-weight:700;">loading...</span></div>
+                  </div>
+                  <div style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:#dcfce7;color:#15803d;">Active ✓</div>
+                </div>
+              </div>
+
+              <button type="button" onclick="saveApiKeys()" style="background:#2563eb;color:#fff;border:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                <i class="fas fa-save"></i> Save API Keys
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -6208,7 +6266,7 @@
         const customers = Object.entries(usersData).map(([uid, u]) => ({
           uid,
           name: u.displayName || u.name || 'N/A',
-          username: u.username ? '@' + u.username : '—',   // ← username from Firebase
+          username: u.username ? '@' + u.username : '—',
           email: u.email || 'N/A',
           photo: u.photoURL || '',
           createdAt: u.createdAt || 0,
@@ -6239,7 +6297,7 @@
                 <div><div style="font-weight:600;">${c.name}</div><div style="font-size:11px;color:#94a3b8;">${c.uid.slice(0,8)}...</div></div>
               </div>
             </td>
-            <td><span style="font-size:13px;font-weight:700;color:${c.username === '—' ? '#94a3b8' : '#2563eb'};font-family:monospace;">${c.username}</span></td>
+            <td><span style="font-size:13px;font-weight:700;color:${c.username==='—'?'#94a3b8':'#2563eb'};font-family:monospace;">${c.username}</span></td>
             <td>${c.email}</td>
             <td><span style="background:#dbeafe;color:#1d4ed8;padding:3px 8px;border-radius:20px;font-size:12px;font-weight:600;">${c.orderCount}</span></td>
             <td>${c.lastOrder ? new Date(c.lastOrder).toLocaleDateString('en-IN') : 'Never'}</td>
@@ -6344,6 +6402,27 @@
         set('heroSubheading', s.heroSubheading || '');
         set('highlightText',  s.highlightText  || '');
         set('heroMessages',   Array.isArray(s.heroMessages) ? s.heroMessages.join('\n') : (s.heroMessages||''));
+
+        // Load ImgBB key
+        const imgbbEl = document.getElementById('adminImgbbKey');
+        const imgbbBadge = document.getElementById('imgbbStatusBadge');
+        if (imgbbEl && s.imgbbKey && s.imgbbKey !== 'YOUR_IMGBB_API_KEY_HERE') {
+          imgbbEl.value = s.imgbbKey;
+          if (imgbbBadge) { imgbbBadge.textContent = 'Active ✓'; imgbbBadge.style.background = '#dcfce7'; imgbbBadge.style.color = '#15803d'; }
+          // Also update the live key for this session
+          ADMIN_IMGBB_KEY = s.imgbbKey;
+        }
+
+        // Load brand auto-approve hours
+        const baaEl = document.getElementById('brandAutoApproveHours');
+        if (baaEl && s.brandAutoApproveHours) baaEl.value = s.brandAutoApproveHours;
+
+        // Show Firebase project ID
+        try {
+          const fbEl = document.getElementById('fbProjectId');
+          if (fbEl && database.app && database.app.options)
+            fbEl.textContent = database.app.options.projectId || 'connected';
+        } catch(e) {}
       }).catch(() => {});
     }
 
@@ -6380,6 +6459,25 @@
       Promise.all([p1, p2])
         .then(() => showAdminToast('✅ Settings saved successfully!', 'success'))
         .catch(error => { console.error('Error saving settings:', error); alert('Error saving settings'); });
+    }
+
+    function saveApiKeys() {
+      const key = (document.getElementById('adminImgbbKey')?.value || '').trim();
+      const hours = parseInt(document.getElementById('brandAutoApproveHours')?.value) || 24;
+      if (!key) { showAdminToast('⚠️ ImgBB API key khali hai — pehle key enter karo', 'warning'); return; }
+      database.ref('adminSettings').update({ imgbbKey: key, brandAutoApproveHours: hours, updatedAt: Date.now() })
+        .then(() => {
+          ADMIN_IMGBB_KEY = key;
+          const badge = document.getElementById('imgbbStatusBadge');
+          if (badge) { badge.textContent = 'Active ✓'; badge.style.background = '#dcfce7'; badge.style.color = '#15803d'; }
+          showAdminToast('✅ API Keys save ho gayi! Admin aur Seller panel dono mein kaam karengi.', 'success');
+        })
+        .catch(err => showAdminToast('❌ Save failed: ' + err.message, 'error'));
+    }
+
+    function toggleImgbbKeyVisibility() {
+      const el = document.getElementById('adminImgbbKey');
+      if (el) el.type = el.type === 'password' ? 'text' : 'password';
     }
 
     function adminToggle2FA(enabled) {
@@ -6896,10 +6994,15 @@
     }
 
     // ── IMGBB CONFIG FOR ADMIN ─────────────────────────────────────
-    // Get your FREE key at https://api.imgbb.com/ → Login → API
-    const ADMIN_IMGBB_KEY = 'YOUR_IMGBB_API_KEY_HERE'; // ← YAHAN KEY DALO
+    // ImgBB key auto-loads from Firebase adminSettings — set it from Admin Panel → Settings → API Keys
+    let ADMIN_IMGBB_KEY = 'YOUR_IMGBB_API_KEY_HERE';
+    setTimeout(function() {
+      try { database.ref('adminSettings/imgbbKey').once('value').then(function(s){ if(s&&s.exists()&&s.val()) ADMIN_IMGBB_KEY=s.val(); }).catch(function(){}); } catch(e) {}
+    }, 1000);
 
     async function uploadImageToImgBBAdmin(file) {
+      // Re-read key from Firebase in case it was just saved
+      try { const s = await database.ref('adminSettings/imgbbKey').once('value'); if(s&&s.exists()&&s.val()) ADMIN_IMGBB_KEY=s.val(); } catch(e) {}
       if (!ADMIN_IMGBB_KEY || ADMIN_IMGBB_KEY === 'YOUR_IMGBB_API_KEY_HERE') {
         // Fallback: convert to base64
         return new Promise((resolve) => {
