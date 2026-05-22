@@ -2091,7 +2091,6 @@
                   <thead>
                     <tr>
                       <th>Customer</th>
-                      <th>Username</th>
                       <th>Email</th>
                       <th>Orders</th>
                       <th>Last Order</th>
@@ -2825,64 +2824,6 @@
                   </span>
                 </label>
               </div>
-            </div>
-          </div>
-
-          <!-- API KEYS SECTION -->
-          <div class="card" style="margin-top:24px">
-            <div class="card-header">
-              <h2 style="margin:0"><i class="fas fa-key" style="color:#f59e0b;margin-right:8px"></i>API Keys &amp; Integrations</h2>
-            </div>
-            <div class="card-body">
-              <p style="color:#64748b;margin-bottom:20px;font-size:0.9rem">Saari API keys ek jagah se manage karo. Save karne ke baad automatically Admin Panel aur Seller Panel dono mein kaam karengi.</p>
-
-              <!-- ImgBB -->
-              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin-bottom:14px;">
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-                  <div style="width:38px;height:38px;background:#2563eb;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🖼️</div>
-                  <div style="flex:1;">
-                    <div style="font-weight:700;font-size:0.95rem;color:#0f172a;">ImgBB Image Upload API Key</div>
-                    <div style="font-size:0.78rem;color:#64748b;">Product &amp; banner images upload ke liye. Free key: <a href="https://api.imgbb.com/" target="_blank" style="color:#2563eb;font-weight:600;">api.imgbb.com</a> → Login → API</div>
-                  </div>
-                  <div id="imgbbStatusBadge" style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:#fef3c7;color:#92400e;white-space:nowrap;">Not Set</div>
-                </div>
-                <div style="display:flex;gap:8px;">
-                  <input type="password" id="adminImgbbKey" placeholder="Paste ImgBB API key here..." autocomplete="off" style="flex:1;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:monospace;outline:none;transition:border .2s;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
-                  <button type="button" onclick="toggleImgbbKeyVisibility()" style="padding:11px 16px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;" title="Show/Hide">👁️</button>
-                </div>
-                <div style="font-size:11px;color:#94a3b8;margin-top:6px;">⚡ Key save hone ke baad Admin Panel aur Seller Panel dono automatically use karenge — kahi aur dalne ki zarurat nahi.</div>
-              </div>
-
-              <!-- Brand Auto-Approve -->
-              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin-bottom:14px;">
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-                  <div style="width:38px;height:38px;background:#8b5cf6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🏷️</div>
-                  <div>
-                    <div style="font-weight:700;font-size:0.95rem;color:#0f172a;">Brand Auto-Approve Time</div>
-                    <div style="font-size:0.78rem;color:#64748b;">Seller brand request kitne ghante mein auto-approve ho (default: 24 hrs)</div>
-                  </div>
-                </div>
-                <div style="display:flex;align-items:center;gap:10px;">
-                  <input type="number" id="brandAutoApproveHours" value="24" min="1" max="168" style="width:90px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:700;outline:none;" onfocus="this.style.borderColor='#8b5cf6'" onblur="this.style.borderColor='#e2e8f0'">
-                  <span style="color:#64748b;font-size:13px;font-weight:600;">hours</span>
-                </div>
-              </div>
-
-              <!-- Firebase Info -->
-              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:18px;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                  <div style="width:38px;height:38px;background:#f97316;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🔥</div>
-                  <div style="flex:1;">
-                    <div style="font-weight:700;font-size:0.95rem;color:#0f172a;">Firebase</div>
-                    <div style="font-size:12px;color:#64748b;font-family:monospace;margin-top:2px;">Project: <span id="fbProjectId" style="color:#15803d;font-weight:700;">loading...</span></div>
-                  </div>
-                  <div style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:#dcfce7;color:#15803d;">Active ✓</div>
-                </div>
-              </div>
-
-              <button type="button" onclick="saveApiKeys()" style="background:#2563eb;color:#fff;border:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
-                <i class="fas fa-save"></i> Save API Keys
-              </button>
             </div>
           </div>
         </div>
@@ -3855,8 +3796,36 @@
       const urlParams = new URLSearchParams(window.location.search);
       const shareId = urlParams.get('share');
       if (shareId) {
-        // Don't wait for Firebase auth for shared access - just check the share link
         checkSharedAccess();
+        return;
+      }
+
+      // FIX: If shared admin refreshed page (no ?share= in URL but sessionStorage has it)
+      const savedShareId = sessionStorage.getItem('sharedAdminId');
+      if (savedShareId && !shareId) {
+        // Re-verify the saved session is still active
+        (async function reVerifySharedAdmin() {
+          try {
+            const snap = await database.ref('sharedAdmins/' + savedShareId).once('value');
+            if (snap.exists() && snap.val().status === 'active') {
+              const shareData = snap.val();
+              const permsRaw = sessionStorage.getItem('sharedPermissions');
+              shareData.permissions = permsRaw ? JSON.parse(permsRaw) : (shareData.permissions || []);
+              // Re-grant access without needing login again
+              const user = auth.currentUser;
+              if (user) {
+                document.getElementById('adminLoginPage').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'flex';
+                loadDashboardData(); loadProducts(); loadCategories(); loadCategoriesForDropdown();
+                showLimitedAdminPanel(shareData.permissions);
+                return;
+              }
+            }
+          } catch(e) {}
+          // Session invalid — clear and show normal login
+          sessionStorage.removeItem('sharedAdminId');
+          sessionStorage.removeItem('sharedPermissions');
+        })();
         return;
       }
 
@@ -4166,24 +4135,46 @@
 
       let shareData = null;
 
-      // Method 1: REST API fetch (works since sharedAdmins .read = true)
+      // Method 1: Try with auth token (required since sharedAdmins rules updated)
       try {
-        const res = await fetch(
-          `https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`,
-          { cache: 'no-store' }
-        );
-        if (res.ok) {
-          const json = await res.json();
-          if (json && typeof json === 'object' && !json.error) shareData = json;
+        // Wait for Firebase auth state (anonymous or existing session)
+        const currentUser = await new Promise(resolve => {
+          const unsub = auth.onAuthStateChanged(u => { unsub(); resolve(u); });
+        });
+        if (currentUser) {
+          const token = await currentUser.getIdToken();
+          const res = await fetch(
+            `https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json?auth=${token}`,
+            { cache: 'no-store' }
+          );
+          if (res.ok) {
+            const json = await res.json();
+            if (json && typeof json === 'object' && !json.error) shareData = json;
+          }
         }
       } catch (e) { /* try SDK */ }
 
-      // Method 2: SDK fallback
+      // Method 2: Firebase SDK (works if user is already signed in from sessionStorage)
       if (!shareData) {
         try {
           const snap = await database.ref('sharedAdmins/' + shareId).once('value');
           if (snap.exists()) shareData = snap.val();
-        } catch (e2) { shareData = null; }
+        } catch (e2) { /* try unauthenticated */ }
+      }
+
+      // Method 3: Unauthenticated REST (only works if data.child('uid') matches — public read on $shareId)
+      // This handles the case where user is not signed in yet but their shareId is valid
+      if (!shareData) {
+        try {
+          const res = await fetch(
+            `https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`,
+            { cache: 'no-store' }
+          );
+          if (res.ok) {
+            const json = await res.json();
+            if (json && typeof json === 'object' && !json.error && json.status) shareData = json;
+          }
+        } catch(e3) { shareData = null; }
       }
 
       // Remove overlay
@@ -6266,7 +6257,6 @@
         const customers = Object.entries(usersData).map(([uid, u]) => ({
           uid,
           name: u.displayName || u.name || 'N/A',
-          username: u.username ? '@' + u.username : '—',
           email: u.email || 'N/A',
           photo: u.photoURL || '',
           createdAt: u.createdAt || 0,
@@ -6280,8 +6270,7 @@
         const searchTerm = (document.getElementById('customerSearch')?.value || '').toLowerCase();
         const filtered = searchTerm ? customers.filter(c =>
           c.name.toLowerCase().includes(searchTerm) ||
-          c.email.toLowerCase().includes(searchTerm) ||
-          c.username.toLowerCase().includes(searchTerm)
+          c.email.toLowerCase().includes(searchTerm)
         ) : customers;
 
         const totalPages = Math.ceil(filtered.length / customersPerPage);
@@ -6297,7 +6286,6 @@
                 <div><div style="font-weight:600;">${c.name}</div><div style="font-size:11px;color:#94a3b8;">${c.uid.slice(0,8)}...</div></div>
               </div>
             </td>
-            <td><span style="font-size:13px;font-weight:700;color:${c.username==='—'?'#94a3b8':'#2563eb'};font-family:monospace;">${c.username}</span></td>
             <td>${c.email}</td>
             <td><span style="background:#dbeafe;color:#1d4ed8;padding:3px 8px;border-radius:20px;font-size:12px;font-weight:600;">${c.orderCount}</span></td>
             <td>${c.lastOrder ? new Date(c.lastOrder).toLocaleDateString('en-IN') : 'Never'}</td>
@@ -6402,27 +6390,6 @@
         set('heroSubheading', s.heroSubheading || '');
         set('highlightText',  s.highlightText  || '');
         set('heroMessages',   Array.isArray(s.heroMessages) ? s.heroMessages.join('\n') : (s.heroMessages||''));
-
-        // Load ImgBB key
-        const imgbbEl = document.getElementById('adminImgbbKey');
-        const imgbbBadge = document.getElementById('imgbbStatusBadge');
-        if (imgbbEl && s.imgbbKey && s.imgbbKey !== 'YOUR_IMGBB_API_KEY_HERE') {
-          imgbbEl.value = s.imgbbKey;
-          if (imgbbBadge) { imgbbBadge.textContent = 'Active ✓'; imgbbBadge.style.background = '#dcfce7'; imgbbBadge.style.color = '#15803d'; }
-          // Also update the live key for this session
-          ADMIN_IMGBB_KEY = s.imgbbKey;
-        }
-
-        // Load brand auto-approve hours
-        const baaEl = document.getElementById('brandAutoApproveHours');
-        if (baaEl && s.brandAutoApproveHours) baaEl.value = s.brandAutoApproveHours;
-
-        // Show Firebase project ID
-        try {
-          const fbEl = document.getElementById('fbProjectId');
-          if (fbEl && database.app && database.app.options)
-            fbEl.textContent = database.app.options.projectId || 'connected';
-        } catch(e) {}
       }).catch(() => {});
     }
 
@@ -6459,25 +6426,6 @@
       Promise.all([p1, p2])
         .then(() => showAdminToast('✅ Settings saved successfully!', 'success'))
         .catch(error => { console.error('Error saving settings:', error); alert('Error saving settings'); });
-    }
-
-    function saveApiKeys() {
-      const key = (document.getElementById('adminImgbbKey')?.value || '').trim();
-      const hours = parseInt(document.getElementById('brandAutoApproveHours')?.value) || 24;
-      if (!key) { showAdminToast('⚠️ ImgBB API key khali hai — pehle key enter karo', 'warning'); return; }
-      database.ref('adminSettings').update({ imgbbKey: key, brandAutoApproveHours: hours, updatedAt: Date.now() })
-        .then(() => {
-          ADMIN_IMGBB_KEY = key;
-          const badge = document.getElementById('imgbbStatusBadge');
-          if (badge) { badge.textContent = 'Active ✓'; badge.style.background = '#dcfce7'; badge.style.color = '#15803d'; }
-          showAdminToast('✅ API Keys save ho gayi! Admin aur Seller panel dono mein kaam karengi.', 'success');
-        })
-        .catch(err => showAdminToast('❌ Save failed: ' + err.message, 'error'));
-    }
-
-    function toggleImgbbKeyVisibility() {
-      const el = document.getElementById('adminImgbbKey');
-      if (el) el.type = el.type === 'password' ? 'text' : 'password';
     }
 
     function adminToggle2FA(enabled) {
@@ -6994,15 +6942,10 @@
     }
 
     // ── IMGBB CONFIG FOR ADMIN ─────────────────────────────────────
-    // ImgBB key auto-loads from Firebase adminSettings — set it from Admin Panel → Settings → API Keys
-    let ADMIN_IMGBB_KEY = 'YOUR_IMGBB_API_KEY_HERE';
-    setTimeout(function() {
-      try { database.ref('adminSettings/imgbbKey').once('value').then(function(s){ if(s&&s.exists()&&s.val()) ADMIN_IMGBB_KEY=s.val(); }).catch(function(){}); } catch(e) {}
-    }, 1000);
+    // Get your FREE key at https://api.imgbb.com/ → Login → API
+    const ADMIN_IMGBB_KEY = 'YOUR_IMGBB_API_KEY_HERE'; // ← YAHAN KEY DALO
 
     async function uploadImageToImgBBAdmin(file) {
-      // Re-read key from Firebase in case it was just saved
-      try { const s = await database.ref('adminSettings/imgbbKey').once('value'); if(s&&s.exists()&&s.val()) ADMIN_IMGBB_KEY=s.val(); } catch(e) {}
       if (!ADMIN_IMGBB_KEY || ADMIN_IMGBB_KEY === 'YOUR_IMGBB_API_KEY_HERE') {
         // Fallback: convert to base64
         return new Promise((resolve) => {
@@ -7616,14 +7559,69 @@
         .catch(e => showAdminToast('Error: ' + e.message, 'error'));
     }
 
-    function deleteBrand(brandId, isAdminBrand) {
+    async function deleteBrand(brandId, isAdminBrand) {
       const msg = isAdminBrand
-        ? 'Delete this admin brand permanently?'
-        : 'Delete this brand? Their brand page will be removed.';
+        ? 'Yeh admin brand permanently delete karein? Brand ke saare posts, followers aur data bhi hata diye jayenge.'
+        : 'Yeh brand delete karein? Brand page, posts, followers — sab permanently remove ho jayega.';
       if (!confirm(msg)) return;
-      database.ref('brands/' + brandId).remove()
-        .then(() => { showAdminToast('Brand deleted!', 'success'); loadBrandsPanel(); })
-        .catch(e => showAdminToast('Error: ' + e.message, 'error'));
+
+      showAdminToast('Brand delete ho raha hai...', 'info');
+
+      try {
+        // Step 1: Get brand data to find seller/creator uid
+        const brandSnap = await database.ref('brands/' + brandId).once('value');
+        const brandData = brandSnap.val() || {};
+        const creatorUid = brandData.createdBy || brandData.uid || brandData.userId || brandData.sellerId || null;
+
+        // Step 2: Build multi-path delete object (atomic)
+        const updates = {};
+        updates['brands/' + brandId] = null;                    // Main brand entry
+        updates['brandPosts/' + brandId] = null;                // All brand posts
+        updates['brandFollowers/' + brandId] = null;            // All followers under brand key
+
+        // Step 3: Remove brand from brandFollowers where brandId matches (fan-out)
+        const followersSnap = await database.ref('brandFollowers').orderByChild('brandId').equalTo(brandId).once('value');
+        if (followersSnap.exists()) {
+          followersSnap.forEach(child => { updates['brandFollowers/' + child.key] = null; });
+        }
+
+        // Step 4: Remove brandRequests for this brand
+        const reqSnap = await database.ref('brandRequests').once('value');
+        if (reqSnap.exists()) {
+          reqSnap.forEach(child => {
+            const req = child.val();
+            if (req && (req.brandId === brandId || req.requestedBrandId === brandId)) {
+              updates['brandRequests/' + child.key] = null;
+            }
+          });
+        }
+
+        // Step 5: Remove brand from seller's sellerProducts brand link (if seller brand)
+        if (creatorUid) {
+          updates['sellers/' + creatorUid + '/brandId'] = null;
+          updates['sellers/' + creatorUid + '/brandApproved'] = null;
+          updates['sellers/' + creatorUid + '/brandName'] = null;
+        }
+
+        // Step 6: Unlink brand from all products that reference this brand
+        const productsSnap = await database.ref('products').orderByChild('brandId').equalTo(brandId).once('value');
+        if (productsSnap.exists()) {
+          productsSnap.forEach(child => {
+            updates['products/' + child.key + '/brandId'] = null;
+            updates['products/' + child.key + '/brand'] = null;
+            updates['products/' + child.key + '/brandName'] = null;
+          });
+        }
+
+        // Execute all deletes atomically
+        await database.ref().update(updates);
+
+        showAdminToast('✅ Brand aur uska sara data delete ho gaya!', 'success');
+        loadBrandsPanel();
+      } catch(e) {
+        showAdminToast('❌ Delete error: ' + e.message, 'error');
+        console.error('deleteBrand error:', e);
+      }
     }
 
     function toggleBlueTick(brandId, current) {
@@ -8484,7 +8482,7 @@
           html += `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;">
             <div style="font-weight:700;font-size:13px;color:#1d4ed8;margin-bottom:10px;"><i class="fas fa-award"></i> Brands (${brands.length})</div>
             ${brands.map(b => `<div style="display:flex;align-items:center;gap:10px;background:white;border-radius:8px;padding:10px;margin-bottom:6px;">
-              ${b.logo ? `<img src="${b.logo}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">` : `<div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;">${(b.name||'B').charAt(0).toUpperCase()}</div>`}
+              ${(b.logo||b.logoUrl||b.imageUrl||b.image||b.icon||b.avatar||'')?`<img src="${b.logo||b.logoUrl||b.imageUrl||b.image||b.icon||b.avatar}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">` : `<div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;">${(b.name||'B').charAt(0).toUpperCase()}</div>`}
               <div><div style="font-weight:700;font-size:13px;">${b.name||'Brand'}${b.blueTickAdmin ? ' <span style="color:#2563eb;">✓</span>' : ''}</div><div style="font-size:11px;color:#64748b;">${b.category||''}  ${b.status === 'suspended' ? '<span style="color:#ef4444;">· Suspended</span>' : ''}</div></div>
             </div>`).join('')}</div>`;
         }
@@ -8748,7 +8746,7 @@
               verified: b.verified || false,
               blueTickAdmin: b.blueTickAdmin || false,
               manuallyAdded: true,
-              logo: b.logo || '',
+              logo: b.logo||b.logoUrl||b.imageUrl||b.image||b.icon||b.avatar||'',
               products: [], totalSales: 0, avgRating: 0, followers: b.followers || 0
             };
             nameToKey[norm] = bid;  // remember name→key mapping
@@ -8848,8 +8846,8 @@
       var safeKey = b.id.replace(/[^a-zA-Z0-9]/g, '_');
       _brandCardMap[safeKey] = b;
 
-      var logoHtml = b.logo
-        ? '<img src="' + b.logo + '" style="width:44px;height:44px;border-radius:10px;object-fit:cover;" onerror="this.style.display=\'none\'">'
+      var _bLogo = b.logo||b.logoUrl||b.imageUrl||b.image||b.icon||b.avatar||'';
+        var logoHtml = _bLogo ? '<img src="' + _bLogo + '" style="width:44px;height:44px;border-radius:10px;object-fit:cover;" onerror="this.style.display=\'none\'">'
         : '<div style="width:44px;height:44px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex-shrink:0;">' + initials + '</div>';
 
       var tickBtn = b.blueTickAdmin
@@ -9882,7 +9880,7 @@ function saveAdminBrand(){
 }
 function suspendBrand(id){if(!confirm('Suspend this brand?'))return;database.ref('brands/'+id).update({status:'suspended'}).then(function(){showAdminToast&&showAdminToast('Brand suspended!','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();});}
 function activateBrand(id){database.ref('brands/'+id).update({status:'active'}).then(function(){showAdminToast&&showAdminToast('Brand activated!','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();});}
-function deleteBrand(id){if(!confirm('Delete this brand permanently?'))return;database.ref('brands/'+id).remove().then(function(){showAdminToast&&showAdminToast('Brand deleted!','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();});}
+// deleteBrand is defined above with full cleanup logic
 function toggleBlueTick(id,cur){var nv=!cur;database.ref('brands/'+id).update({blueTickAdmin:nv}).then(function(){showAdminToast&&showAdminToast(nv?'✅ Blue Tick added!':'Blue Tick removed','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();});}
 </script>
 <!-- ============================================================ -->
