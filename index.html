@@ -3796,36 +3796,8 @@
       const urlParams = new URLSearchParams(window.location.search);
       const shareId = urlParams.get('share');
       if (shareId) {
+        // Don't wait for Firebase auth for shared access - just check the share link
         checkSharedAccess();
-        return;
-      }
-
-      // FIX: If shared admin refreshed page (no ?share= in URL but sessionStorage has it)
-      const savedShareId = sessionStorage.getItem('sharedAdminId');
-      if (savedShareId && !shareId) {
-        // Re-verify the saved session is still active
-        (async function reVerifySharedAdmin() {
-          try {
-            const snap = await database.ref('sharedAdmins/' + savedShareId).once('value');
-            if (snap.exists() && snap.val().status === 'active') {
-              const shareData = snap.val();
-              const permsRaw = sessionStorage.getItem('sharedPermissions');
-              shareData.permissions = permsRaw ? JSON.parse(permsRaw) : (shareData.permissions || []);
-              // Re-grant access without needing login again
-              const user = auth.currentUser;
-              if (user) {
-                document.getElementById('adminLoginPage').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'flex';
-                loadDashboardData(); loadProducts(); loadCategories(); loadCategoriesForDropdown();
-                showLimitedAdminPanel(shareData.permissions);
-                return;
-              }
-            }
-          } catch(e) {}
-          // Session invalid — clear and show normal login
-          sessionStorage.removeItem('sharedAdminId');
-          sessionStorage.removeItem('sharedPermissions');
-        })();
         return;
       }
 
@@ -4135,46 +4107,28 @@
 
       let shareData = null;
 
-      // Method 1: Try with auth token (required since sharedAdmins rules updated)
+      // Method 1: Direct REST fetch — works without login
+      // (Firebase rules allow public read on sharedAdmins/$shareId)
       try {
-        // Wait for Firebase auth state (anonymous or existing session)
-        const currentUser = await new Promise(resolve => {
-          const unsub = auth.onAuthStateChanged(u => { unsub(); resolve(u); });
-        });
-        if (currentUser) {
-          const token = await currentUser.getIdToken();
-          const res = await fetch(
-            `https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json?auth=${token}`,
-            { cache: 'no-store' }
-          );
-          if (res.ok) {
-            const json = await res.json();
-            if (json && typeof json === 'object' && !json.error) shareData = json;
+        const res = await fetch(
+          'https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/' + shareId + '.json',
+          { cache: 'no-store' }
+        );
+        if (res.ok) {
+          const json = await res.json();
+          // json will be null if shareId doesn't exist, or object if it does
+          if (json && typeof json === 'object' && json.status) {
+            shareData = json;
           }
         }
-      } catch (e) { /* try SDK */ }
+      } catch (e) { /* network error — try SDK */ }
 
-      // Method 2: Firebase SDK (works if user is already signed in from sessionStorage)
+      // Method 2: Firebase SDK (if REST failed due to network)
       if (!shareData) {
         try {
           const snap = await database.ref('sharedAdmins/' + shareId).once('value');
           if (snap.exists()) shareData = snap.val();
-        } catch (e2) { /* try unauthenticated */ }
-      }
-
-      // Method 3: Unauthenticated REST (only works if data.child('uid') matches — public read on $shareId)
-      // This handles the case where user is not signed in yet but their shareId is valid
-      if (!shareData) {
-        try {
-          const res = await fetch(
-            `https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`,
-            { cache: 'no-store' }
-          );
-          if (res.ok) {
-            const json = await res.json();
-            if (json && typeof json === 'object' && !json.error && json.status) shareData = json;
-          }
-        } catch(e3) { shareData = null; }
+        } catch (e2) { shareData = null; }
       }
 
       // Remove overlay
@@ -4255,8 +4209,12 @@
         const shareData = await res.json();
         if (shareData && shareData.status === 'active') {
           grantSharedAccess(shareId, shareData, result.user);
+        } else if (shareData && shareData.status === 'suspended') {
+          if (errEl) errEl.textContent = '🚫 Aapka access suspend kiya gaya hai. Admin se contact karein.';
+        } else if (!shareData) {
+          if (errEl) errEl.textContent = '❌ Link invalid ya delete ho gaya hai. Admin se naya link maangein.';
         } else {
-          if (errEl) errEl.textContent = 'Access has been revoked.';
+          if (errEl) errEl.textContent = '❌ Access revoked. Admin se contact karein.';
         }
       } catch(err) {
         if (errEl) errEl.textContent = 'Login failed: ' + (err.message || err);
@@ -7559,69 +7517,14 @@
         .catch(e => showAdminToast('Error: ' + e.message, 'error'));
     }
 
-    async function deleteBrand(brandId, isAdminBrand) {
+    function deleteBrand(brandId, isAdminBrand) {
       const msg = isAdminBrand
-        ? 'Yeh admin brand permanently delete karein? Brand ke saare posts, followers aur data bhi hata diye jayenge.'
-        : 'Yeh brand delete karein? Brand page, posts, followers — sab permanently remove ho jayega.';
+        ? 'Delete this admin brand permanently?'
+        : 'Delete this brand? Their brand page will be removed.';
       if (!confirm(msg)) return;
-
-      showAdminToast('Brand delete ho raha hai...', 'info');
-
-      try {
-        // Step 1: Get brand data to find seller/creator uid
-        const brandSnap = await database.ref('brands/' + brandId).once('value');
-        const brandData = brandSnap.val() || {};
-        const creatorUid = brandData.createdBy || brandData.uid || brandData.userId || brandData.sellerId || null;
-
-        // Step 2: Build multi-path delete object (atomic)
-        const updates = {};
-        updates['brands/' + brandId] = null;                    // Main brand entry
-        updates['brandPosts/' + brandId] = null;                // All brand posts
-        updates['brandFollowers/' + brandId] = null;            // All followers under brand key
-
-        // Step 3: Remove brand from brandFollowers where brandId matches (fan-out)
-        const followersSnap = await database.ref('brandFollowers').orderByChild('brandId').equalTo(brandId).once('value');
-        if (followersSnap.exists()) {
-          followersSnap.forEach(child => { updates['brandFollowers/' + child.key] = null; });
-        }
-
-        // Step 4: Remove brandRequests for this brand
-        const reqSnap = await database.ref('brandRequests').once('value');
-        if (reqSnap.exists()) {
-          reqSnap.forEach(child => {
-            const req = child.val();
-            if (req && (req.brandId === brandId || req.requestedBrandId === brandId)) {
-              updates['brandRequests/' + child.key] = null;
-            }
-          });
-        }
-
-        // Step 5: Remove brand from seller's sellerProducts brand link (if seller brand)
-        if (creatorUid) {
-          updates['sellers/' + creatorUid + '/brandId'] = null;
-          updates['sellers/' + creatorUid + '/brandApproved'] = null;
-          updates['sellers/' + creatorUid + '/brandName'] = null;
-        }
-
-        // Step 6: Unlink brand from all products that reference this brand
-        const productsSnap = await database.ref('products').orderByChild('brandId').equalTo(brandId).once('value');
-        if (productsSnap.exists()) {
-          productsSnap.forEach(child => {
-            updates['products/' + child.key + '/brandId'] = null;
-            updates['products/' + child.key + '/brand'] = null;
-            updates['products/' + child.key + '/brandName'] = null;
-          });
-        }
-
-        // Execute all deletes atomically
-        await database.ref().update(updates);
-
-        showAdminToast('✅ Brand aur uska sara data delete ho gaya!', 'success');
-        loadBrandsPanel();
-      } catch(e) {
-        showAdminToast('❌ Delete error: ' + e.message, 'error');
-        console.error('deleteBrand error:', e);
-      }
+      database.ref('brands/' + brandId).remove()
+        .then(() => { showAdminToast('Brand deleted!', 'success'); loadBrandsPanel(); })
+        .catch(e => showAdminToast('Error: ' + e.message, 'error'));
     }
 
     function toggleBlueTick(brandId, current) {
@@ -8482,7 +8385,7 @@
           html += `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;">
             <div style="font-weight:700;font-size:13px;color:#1d4ed8;margin-bottom:10px;"><i class="fas fa-award"></i> Brands (${brands.length})</div>
             ${brands.map(b => `<div style="display:flex;align-items:center;gap:10px;background:white;border-radius:8px;padding:10px;margin-bottom:6px;">
-              ${(b.logo||b.logoUrl||b.imageUrl||b.image||b.icon||b.avatar||'')?`<img src="${b.logo||b.logoUrl||b.imageUrl||b.image||b.icon||b.avatar}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">` : `<div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;">${(b.name||'B').charAt(0).toUpperCase()}</div>`}
+              ${b.logo ? `<img src="${b.logo}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;">` : `<div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;">${(b.name||'B').charAt(0).toUpperCase()}</div>`}
               <div><div style="font-weight:700;font-size:13px;">${b.name||'Brand'}${b.blueTickAdmin ? ' <span style="color:#2563eb;">✓</span>' : ''}</div><div style="font-size:11px;color:#64748b;">${b.category||''}  ${b.status === 'suspended' ? '<span style="color:#ef4444;">· Suspended</span>' : ''}</div></div>
             </div>`).join('')}</div>`;
         }
@@ -8746,7 +8649,7 @@
               verified: b.verified || false,
               blueTickAdmin: b.blueTickAdmin || false,
               manuallyAdded: true,
-              logo: b.logo||b.logoUrl||b.imageUrl||b.image||b.icon||b.avatar||'',
+              logo: b.logo || '',
               products: [], totalSales: 0, avgRating: 0, followers: b.followers || 0
             };
             nameToKey[norm] = bid;  // remember name→key mapping
@@ -8846,8 +8749,8 @@
       var safeKey = b.id.replace(/[^a-zA-Z0-9]/g, '_');
       _brandCardMap[safeKey] = b;
 
-      var _bLogo = b.logo||b.logoUrl||b.imageUrl||b.image||b.icon||b.avatar||'';
-        var logoHtml = _bLogo ? '<img src="' + _bLogo + '" style="width:44px;height:44px;border-radius:10px;object-fit:cover;" onerror="this.style.display=\'none\'">'
+      var logoHtml = b.logo
+        ? '<img src="' + b.logo + '" style="width:44px;height:44px;border-radius:10px;object-fit:cover;" onerror="this.style.display=\'none\'">'
         : '<div style="width:44px;height:44px;border-radius:10px;background:' + color + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex-shrink:0;">' + initials + '</div>';
 
       var tickBtn = b.blueTickAdmin
@@ -9880,7 +9783,7 @@ function saveAdminBrand(){
 }
 function suspendBrand(id){if(!confirm('Suspend this brand?'))return;database.ref('brands/'+id).update({status:'suspended'}).then(function(){showAdminToast&&showAdminToast('Brand suspended!','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();});}
 function activateBrand(id){database.ref('brands/'+id).update({status:'active'}).then(function(){showAdminToast&&showAdminToast('Brand activated!','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();});}
-// deleteBrand is defined above with full cleanup logic
+function deleteBrand(id){if(!confirm('Delete this brand permanently?'))return;database.ref('brands/'+id).remove().then(function(){showAdminToast&&showAdminToast('Brand deleted!','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();});}
 function toggleBlueTick(id,cur){var nv=!cur;database.ref('brands/'+id).update({blueTickAdmin:nv}).then(function(){showAdminToast&&showAdminToast(nv?'✅ Blue Tick added!':'Blue Tick removed','success');if(typeof loadBrandsPanel==='function')loadBrandsPanel();});}
 </script>
 <!-- ============================================================ -->
