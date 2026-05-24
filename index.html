@@ -2091,6 +2091,7 @@
                   <thead>
                     <tr>
                       <th>Customer</th>
+                      <th>Username</th>
                       <th>Email</th>
                       <th>Orders</th>
                       <th>Last Order</th>
@@ -2829,6 +2830,65 @@
               </div>
             </div>
           </div>
+
+          <!-- API KEYS CARD -->
+          <div class="card" style="margin-top:24px;">
+            <div class="card-header">
+              <h2 style="margin:0;"><i class="fas fa-key" style="color:#f59e0b;margin-right:8px;"></i>API Keys &amp; Integrations</h2>
+            </div>
+            <div class="card-body">
+              <p style="color:#64748b;margin-bottom:18px;font-size:0.88rem;">Saari API keys ek jagah manage karo. Save karte hi Admin Panel aur Seller Panel dono mein automatically kaam karengi.</p>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                  <div style="width:38px;height:38px;background:#2563eb;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🖼️</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:700;font-size:0.93rem;color:#0f172a;">ImgBB Image Upload API Key</div>
+                    <div style="font-size:0.76rem;color:#64748b;">Free key: <a href="https://api.imgbb.com/" target="_blank" style="color:#2563eb;font-weight:600;">api.imgbb.com</a> → Login → API</div>
+                  </div>
+                  <div id="imgbbStatusBadge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#fef3c7;color:#92400e;white-space:nowrap;flex-shrink:0;">Not Set</div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <input type="password" id="adminImgbbKey" placeholder="Paste ImgBB API key here..." autocomplete="off"
+                    style="flex:1;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:monospace;outline:none;"
+                    onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+                  <button type="button" onclick="toggleImgbbKeyVisibility()" title="Show/Hide"
+                    style="padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;font-size:15px;">👁️</button>
+                </div>
+                <div style="font-size:11px;color:#94a3b8;margin-top:5px;">⚡ Save ke baad Admin Panel aur Seller Panel dono use karenge</div>
+              </div>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                  <div style="width:38px;height:38px;background:#8b5cf6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🏷️</div>
+                  <div>
+                    <div style="font-weight:700;font-size:0.93rem;color:#0f172a;">Brand Auto-Approve Time</div>
+                    <div style="font-size:0.76rem;color:#64748b;">Seller brand request kitne ghante mein auto-approve ho (default: 24)</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <input type="number" id="brandAutoApproveHours" value="24" min="1" max="168"
+                    style="width:90px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:700;outline:none;"
+                    onfocus="this.style.borderColor='#8b5cf6'" onblur="this.style.borderColor='#e2e8f0'">
+                  <span style="color:#64748b;font-size:13px;font-weight:600;">hours</span>
+                </div>
+              </div>
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;margin-bottom:18px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:38px;height:38px;background:#f97316;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🔥</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:700;font-size:0.93rem;color:#0f172a;">Firebase</div>
+                    <div style="font-size:12px;color:#64748b;font-family:monospace;margin-top:2px;">Project: <span id="fbProjectId" style="color:#15803d;font-weight:700;">loading...</span></div>
+                  </div>
+                  <div style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#dcfce7;color:#15803d;">Active ✓</div>
+                </div>
+              </div>
+              <button type="button" onclick="saveApiKeys()"
+                style="background:#2563eb;color:#fff;border:none;padding:12px 26px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;"
+                onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                <i class="fas fa-save"></i> Save API Keys
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -2861,7 +2921,7 @@
         
         <div class="form-group">
           <label for="productCategory">Category *</label>
-          <select id="productCategory" class="form-control">
+          <select id="productCategory" class="form-control" onchange="toggleSizesForCategory(this.value)">
             <option value="">-- Select Category --</option>
           </select>
         </div>
@@ -2876,9 +2936,10 @@
           <textarea id="productFullDesc" class="form-control" placeholder="Enter full description" rows="3"></textarea>
         </div>
         
-        <div class="form-group">
+        <div class="form-group" id="productSizesGroup">
           <label for="productSizes">Sizes (comma separated)</label>
           <input type="text" id="productSizes" class="form-control" placeholder="S, M, L, XL">
+          <small style="color:#94a3b8;font-size:11px;">Electronics/Digital categories mein auto-hide hoga</small>
         </div>
         
         <div class="form-group">
@@ -2956,6 +3017,13 @@
           <div class="image-preview" id="categoryImagePreview" style="margin-top: 10px;"></div>
         </div>
         
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px;">
+            <label style="font-weight:600;font-size:12px;color:#64748b;margin-bottom:6px;display:block;">🖼️ Image Display in Category Circle</label>
+            <select id="categoryImageFit" class="form-control" style="font-size:13px;">
+              <option value="cover">Cover (Fill circle)</option>
+              <option value="contain">Contain (Full image visible)</option>
+            </select>
+          </div>
         <div class="checkbox-group">
           <input type="checkbox" id="categoryStatus" checked>
           <label for="categoryStatus">Active Category</label>
@@ -2992,6 +3060,32 @@
           <div class="image-preview" id="bannerImagePreview" style="margin-top: 10px;"></div>
         </div>
         
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;">
+          <label style="font-weight:700;font-size:13px;color:#0f172a;margin-bottom:10px;display:block;">🖼️ Banner Display Settings</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <div>
+              <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Image Fit</label>
+              <select id="bannerObjectFit" class="form-control" style="font-size:13px;" onchange="previewBannerSettings()">
+                <option value="cover">Cover — Fill (Recommended)</option>
+                <option value="contain">Contain — Full Image</option>
+                <option value="fill">Stretch — Exact Fit</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Image Position</label>
+              <select id="bannerObjectPosition" class="form-control" style="font-size:13px;" onchange="previewBannerSettings()">
+                <option value="center">Center</option>
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+          </div>
+          <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Banner Height: <span id="bannerHeightVal">200px</span></label>
+          <input type="range" id="bannerHeightRange" min="120" max="400" value="200" style="width:100%;" oninput="document.getElementById('bannerHeightVal').textContent=this.value+'px';previewBannerSettings()">
+          <div id="bannerLivePreview" style="display:none;margin-top:10px;border-radius:8px;overflow:hidden;border:2px dashed #2563eb;"></div>
+        </div>
         <div class="checkbox-group">
           <input type="checkbox" id="bannerStatus" checked>
           <label for="bannerStatus">Active Banner</label>
@@ -3795,42 +3889,32 @@
       setupCopyProtection();
       setupPageVisibilityFix();
 
-      // Check for shared access link first
       const urlParams = new URLSearchParams(window.location.search);
       const shareId = urlParams.get('share');
-      if (shareId) {
-        // Don't wait for Firebase auth for shared access - just check the share link
-        checkSharedAccess();
-        return;
-      }
+      if (shareId) { checkSharedAccess(); return; }
 
-      // Re-verify shared admin on page refresh (no ?share= in URL but session exists)
+      // Re-verify shared admin on page refresh
       const savedShareId = sessionStorage.getItem('sharedAdminId');
       if (savedShareId) {
         (async function reVerifySharedAdmin() {
           try {
             const snap = await database.ref('sharedAdmins/' + savedShareId).once('value');
             if (snap.exists() && snap.val() && snap.val().status === 'active') {
-              const shareData = snap.val();
+              const sd = snap.val();
               const permsRaw = sessionStorage.getItem('sharedPermissions');
-              shareData.permissions = permsRaw ? JSON.parse(permsRaw) : (shareData.permissions || []);
+              sd.permissions = permsRaw ? JSON.parse(permsRaw) : (sd.permissions || []);
               const user = auth.currentUser;
               if (user) {
-                // Re-write uid mapping
-                database.ref('sharedAdminsByUid/' + user.uid).set({
-                  shareId: savedShareId, email: user.email || '',
-                  permissions: shareData.permissions, grantedAt: Date.now()
-                }).catch(()=>{});
+                database.ref('sharedAdminsByUid/' + user.uid).set({ shareId: savedShareId, email: user.email||'', permissions: sd.permissions, grantedAt: Date.now() }).catch(()=>{});
                 document.getElementById('adminLoginPage').style.display = 'none';
                 document.getElementById('adminPanel').style.display = 'flex';
                 loadDashboardData(); loadProducts(); loadCategories(); loadCategoriesForDropdown();
-                showLimitedAdminPanel(shareData.permissions);
+                showLimitedAdminPanel(sd.permissions);
                 return;
               }
             }
           } catch(e) {}
-          sessionStorage.removeItem('sharedAdminId');
-          sessionStorage.removeItem('sharedPermissions');
+          sessionStorage.removeItem('sharedAdminId'); sessionStorage.removeItem('sharedPermissions');
         })();
         return;
       }
@@ -3975,13 +4059,8 @@
     // ===== ADMIN SHARING SYSTEM =====
     function addAdminSharingMenuItem() {
       const el = document.getElementById('adminSharingMenuItem');
-      if (isSuperAdmin()) {
-        // Super admin: show the menu item
-        if (el) el.style.display = '';
-      } else {
-        // Shared admin: always keep hidden
-        if (el) el.style.display = 'none';
-      }
+      if (isSuperAdmin()) { if (el) el.style.display = ''; }
+      else { if (el) el.style.display = 'none'; }
     }
 
     function isSuperAdmin() {
@@ -4120,24 +4199,14 @@
 
       let shareData = null;
 
-      // Method 1: REST API fetch (works since sharedAdmins .read = true)
+      // Method 1: Public REST fetch (sharedAdmins/$shareId .read = true in rules)
       try {
-        const res = await fetch(
-          `https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`,
-          { cache: 'no-store' }
-        );
-        if (res.ok) {
-          const json = await res.json();
-          if (json && typeof json === 'object' && !json.error) shareData = json;
-        }
-      } catch (e) { /* try SDK */ }
-
+        const res = await fetch('https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/' + shareId + '.json', { cache: 'no-store' });
+        if (res.ok) { const json = await res.json(); if (json && typeof json === 'object' && json.status) shareData = json; }
+      } catch(e) {}
       // Method 2: SDK fallback
       if (!shareData) {
-        try {
-          const snap = await database.ref('sharedAdmins/' + shareId).once('value');
-          if (snap.exists()) shareData = snap.val();
-        } catch (e2) { shareData = null; }
+        try { const snap = await database.ref('sharedAdmins/' + shareId).once('value'); if (snap.exists()) shareData = snap.val(); } catch(e2) {}
       }
 
       // Remove overlay
@@ -4229,21 +4298,15 @@
     function grantSharedAccess(shareId, shareData, user) {
       sessionStorage.setItem('sharedAdminId', shareId);
       sessionStorage.setItem('sharedPermissions', JSON.stringify(shareData.permissions));
-
-      // ══ ROOT FIX: Write uid to sharedAdminsByUid so Firebase rules work ══
-      // Rules check root.child('sharedAdminsByUid').child(auth.uid).exists()
+      // ROOT FIX: write uid so Firebase rules work
       if (user && user.uid) {
         database.ref('sharedAdminsByUid/' + user.uid).set({
-          shareId: shareId,
-          email: user.email || shareData.email || '',
-          permissions: shareData.permissions || [],
-          grantedAt: Date.now()
-        }).catch(() => {});
-        // Also update sharedAdmins entry with uid for reference
-        database.ref('sharedAdmins/' + shareId + '/uid').set(user.uid).catch(() => {});
+          shareId: shareId, email: user.email || shareData.email || '',
+          permissions: shareData.permissions || [], grantedAt: Date.now()
+        }).catch(()=>{});
+        database.ref('sharedAdmins/' + shareId + '/uid').set(user.uid).catch(()=>{});
         sessionStorage.setItem('sharedAdminUid', user.uid);
       }
-
       // Update lastAccessed
       fetch(`https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}/lastAccessed.json`, {
         method: 'PUT', body: JSON.stringify(Date.now())
@@ -4299,12 +4362,10 @@
     }
 
     function showLimitedAdminPanel(permissions) {
-      // Hide ALL sidebar menu items except dashboard
       document.querySelectorAll('.menu-item').forEach(item => {
         const tab = item.dataset.tab;
         if (tab && tab !== 'dashboard') item.style.display = 'none';
       });
-      // Triple safety: admin-sharing NEVER shows for shared admins
       const sharingLi = document.getElementById('adminSharingMenuItem');
       if (sharingLi) sharingLi.style.display = 'none';
 
@@ -4337,8 +4398,6 @@
         'analytics': 'analytics',
         'settings': 'settings'
       };
-      
-      // Dashboard is always visible for shared admins
       const dashItem = document.querySelector('.menu-item[data-tab="dashboard"]');
       if (dashItem) dashItem.style.display = 'flex';
       
@@ -4435,11 +4494,8 @@
     async function deleteSharedAdmin(shareId) {
       if (!confirm('Permanently delete this shared admin? This cannot be undone.')) return;
       try {
-        // Also remove from sharedAdminsByUid (get uid first)
         const snap = await database.ref('sharedAdmins/' + shareId + '/uid').once('value');
-        if (snap.exists() && snap.val()) {
-          await database.ref('sharedAdminsByUid/' + snap.val()).remove().catch(()=>{});
-        }
+        if (snap.exists() && snap.val()) await database.ref('sharedAdminsByUid/' + snap.val()).remove().catch(()=>{});
         await database.ref('sharedAdmins/' + shareId).remove();
         await database.ref('sharedAdminLogs/' + shareId).remove().catch(()=>{});
         showAdminToast('Admin deleted successfully!', 'success');
@@ -4604,9 +4660,6 @@
           transferredFrom: existing.email || '', transferredAt: Date.now(),
           createdAt: Date.now(), lastAccessed: null
         }));
-        // Remove old uid mapping
-        const oldUidSnap = await database.ref('sharedAdmins/' + shareId + '/uid').once('value').catch(()=>null);
-        if (oldUidSnap && oldUidSnap.exists()) await database.ref('sharedAdminsByUid/' + oldUidSnap.val()).remove().catch(()=>{});
         await database.ref('sharedAdmins/' + shareId).remove();
         closeModal('as-transfer-modal');
         showAdminToast('✅ Admin access "' + newEmail + '" ko transfer ho gaya!', 'success');
@@ -4628,7 +4681,6 @@
           const pids = new Set(Object.values(logs).filter(l => l.productId).map(l => l.productId));
           for (const pid of pids) await database.ref('products/' + pid).remove().catch(() => {});
         }
-        // Remove from sharedAdminsByUid
         const uidSnap = await database.ref('sharedAdmins/' + shareId + '/uid').once('value').catch(()=>null);
         if (uidSnap && uidSnap.exists()) await database.ref('sharedAdminsByUid/' + uidSnap.val()).remove().catch(()=>{});
         await database.ref('sharedAdmins/' + shareId).remove();
@@ -6253,6 +6305,7 @@
         const customers = Object.entries(usersData).map(([uid, u]) => ({
           uid,
           name: u.displayName || u.name || 'N/A',
+          username: u.username ? '@' + u.username : '—',
           email: u.email || 'N/A',
           photo: u.photoURL || '',
           createdAt: u.createdAt || 0,
@@ -6266,7 +6319,8 @@
         const searchTerm = (document.getElementById('customerSearch')?.value || '').toLowerCase();
         const filtered = searchTerm ? customers.filter(c =>
           c.name.toLowerCase().includes(searchTerm) ||
-          c.email.toLowerCase().includes(searchTerm)
+          c.email.toLowerCase().includes(searchTerm) ||
+          c.username.toLowerCase().includes(searchTerm)
         ) : customers;
 
         const totalPages = Math.ceil(filtered.length / customersPerPage);
@@ -6282,6 +6336,7 @@
                 <div><div style="font-weight:600;">${c.name}</div><div style="font-size:11px;color:#94a3b8;">${c.uid.slice(0,8)}...</div></div>
               </div>
             </td>
+            <td><span style="font-size:13px;font-weight:700;color:${c.username==='—'?'#94a3b8':'#2563eb'};font-family:monospace;">${c.username}</span></td>
             <td>${c.email}</td>
             <td><span style="background:#dbeafe;color:#1d4ed8;padding:3px 8px;border-radius:20px;font-size:12px;font-weight:600;">${c.orderCount}</span></td>
             <td>${c.lastOrder ? new Date(c.lastOrder).toLocaleDateString('en-IN') : 'Never'}</td>
@@ -6385,7 +6440,16 @@
         set('heroHeading',    s.heroHeading    || '');
         set('heroSubheading', s.heroSubheading || '');
         set('highlightText',  s.highlightText  || '');
-        set('heroMessages',   Array.isArray(s.heroMessages) ? s.heroMessages.join('\n') : (s.heroMessages||''));
+        set('heroMessages', Array.isArray(s.heroMessages) ? s.heroMessages.join('\n') : (s.heroMessages||''));
+        const imgbbEl = document.getElementById('adminImgbbKey');
+        const imgbbBadge = document.getElementById('imgbbStatusBadge');
+        if (imgbbEl && s.imgbbKey && s.imgbbKey !== 'YOUR_IMGBB_API_KEY_HERE') {
+          imgbbEl.value = s.imgbbKey; ADMIN_IMGBB_KEY = s.imgbbKey;
+          if (imgbbBadge) { imgbbBadge.textContent = 'Active ✓'; imgbbBadge.style.background = '#dcfce7'; imgbbBadge.style.color = '#15803d'; }
+        } else if (imgbbBadge) { imgbbBadge.textContent = 'Not Set'; }
+        const baaEl = document.getElementById('brandAutoApproveHours');
+        if (baaEl && s.brandAutoApproveHours) baaEl.value = s.brandAutoApproveHours;
+        try { const fbEl = document.getElementById('fbProjectId'); if (fbEl && database.app && database.app.options) fbEl.textContent = database.app.options.projectId || 'connected'; } catch(e) {}
       }).catch(() => {});
     }
 
@@ -6424,6 +6488,22 @@
         .catch(error => { console.error('Error saving settings:', error); alert('Error saving settings'); });
     }
 
+    function saveApiKeys() {
+      const key = (document.getElementById('adminImgbbKey')?.value || '').trim();
+      const hours = parseInt(document.getElementById('brandAutoApproveHours')?.value) || 24;
+      if (!key) { showAdminToast('⚠️ ImgBB API key khali hai', 'warning'); return; }
+      database.ref('adminSettings').update({ imgbbKey: key, brandAutoApproveHours: hours, updatedAt: Date.now() })
+        .then(() => {
+          ADMIN_IMGBB_KEY = key;
+          const badge = document.getElementById('imgbbStatusBadge');
+          if (badge) { badge.textContent = 'Active ✓'; badge.style.background = '#dcfce7'; badge.style.color = '#15803d'; }
+          showAdminToast('✅ API Keys save ho gayi!', 'success');
+        }).catch(err => showAdminToast('❌ ' + err.message, 'error'));
+    }
+    function toggleImgbbKeyVisibility() {
+      const el = document.getElementById('adminImgbbKey');
+      if (el) el.type = el.type === 'password' ? 'text' : 'password';
+    }
     function adminToggle2FA(enabled) {
       const slider = document.getElementById('featureTwoFactorSlider');
       const knob = document.getElementById('featureTwoFactorKnob');
@@ -6919,6 +6999,38 @@
       }
     }
 
+    // ── Banner live preview refresh ──
+    function previewBannerSettings() {
+      const lp = document.getElementById('bannerLivePreview');
+      if (!lp || lp.style.display === 'none') return;
+      const img = lp.querySelector('img');
+      if (!img) return;
+      const fit = document.getElementById('bannerObjectFit')?.value || 'cover';
+      const pos = document.getElementById('bannerObjectPosition')?.value || 'center';
+      const h   = document.getElementById('bannerHeightRange')?.value || 200;
+      img.style.objectFit = fit;
+      img.style.objectPosition = pos;
+      lp.style.height = h + 'px';
+    }
+
+    // ── Categories where size is irrelevant ──
+    const NO_SIZE_CATEGORIES = [
+      'electronics','electric','laptop','mobile','phone','computer','tablet','tv',
+      'television','camera','headphone','speaker','charger','cable','appliance',
+      'digital','gadget','watch','smartwatch','earphone','earbud','keyboard',
+      'mouse','monitor','printer','router','powerbank','power bank','furniture',
+      'book','food','grocery','medicine','health','beauty','skincare','cosmetic',
+      'decoration','decor','art','stationery','toy','baby','pet','automotive'
+    ];
+
+    function toggleSizesForCategory(val) {
+      const group = document.getElementById('productSizesGroup');
+      if (!group) return;
+      const hide = NO_SIZE_CATEGORIES.some(k => (val||'').toLowerCase().includes(k));
+      group.style.display = hide ? 'none' : '';
+      if (hide) { const inp = document.getElementById('productSizes'); if (inp) inp.value = ''; }
+    }
+
     async function handleBannerImageUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -6932,6 +7044,15 @@
         preview.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <img src="${url}" style="height:60px;width:120px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;" onerror="this.style.border='2px solid red'">
           <div><div style="color:#22c55e;font-size:12px;font-weight:700;">✓ ${isImgBB?'Uploaded to ImgBB':'Ready (Base64)'}</div></div></div>`;
+        // Update live preview with current display settings
+        const livePreview = document.getElementById('bannerLivePreview');
+        if (livePreview) {
+          const h   = document.getElementById('bannerHeightRange')?.value || 200;
+          const fit = document.getElementById('bannerObjectFit')?.value || 'cover';
+          const pos = document.getElementById('bannerObjectPosition')?.value || 'center';
+          livePreview.style.cssText = 'display:block;height:'+h+'px;border-radius:8px;overflow:hidden;border:2px dashed #2563eb;margin-top:10px;';
+          livePreview.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:'+fit+';object-position:'+pos+';display:block;">';
+        }
       } catch(err) {
         preview.innerHTML = `<div style="color:#ef4444;font-size:12px;">✗ ${err.message}</div>`;
       }
@@ -6939,9 +7060,13 @@
 
     // ── IMGBB CONFIG FOR ADMIN ─────────────────────────────────────
     // Get your FREE key at https://api.imgbb.com/ → Login → API
-    const ADMIN_IMGBB_KEY = 'YOUR_IMGBB_API_KEY_HERE'; // ← YAHAN KEY DALO
+    let ADMIN_IMGBB_KEY = 'YOUR_IMGBB_API_KEY_HERE';
+    setTimeout(function() {
+      try { database.ref('adminSettings/imgbbKey').once('value').then(function(s){ if(s&&s.exists()&&s.val()){ ADMIN_IMGBB_KEY=s.val(); const b=document.getElementById('imgbbStatusBadge'); if(b){b.textContent='Active ✓';b.style.background='#dcfce7';b.style.color='#15803d';} } }).catch(function(){}); } catch(e) {}
+    }, 1000);
 
     async function uploadImageToImgBBAdmin(file) {
+      try { const s = await database.ref('adminSettings/imgbbKey').once('value'); if(s&&s.exists()&&s.val()) ADMIN_IMGBB_KEY=s.val(); } catch(e) {}
       if (!ADMIN_IMGBB_KEY || ADMIN_IMGBB_KEY === 'YOUR_IMGBB_API_KEY_HERE') {
         // Fallback: convert to base64
         return new Promise((resolve) => {
@@ -7077,6 +7202,7 @@
           name: name,
           description: description,
           image: uploadedCategoryImage,
+          imageFit: document.getElementById('categoryImageFit')?.value || 'cover',
           status: status,
           productCount: 0
         };
@@ -7126,7 +7252,10 @@
           title: title,
           link: link,
           image: uploadedBannerImage,
-          status: status
+          status: status,
+          objectFit: document.getElementById('bannerObjectFit')?.value || 'cover',
+          objectPosition: document.getElementById('bannerObjectPosition')?.value || 'center',
+          height: parseInt(document.getElementById('bannerHeightRange')?.value) || 200
         };
         
         bannersRef.child(bannerId).set(newBanner)
