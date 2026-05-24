@@ -2858,7 +2858,7 @@
         
         <div class="form-group">
           <label for="productCategory">Category *</label>
-          <select id="productCategory" class="form-control">
+          <select id="productCategory" class="form-control" onchange="toggleSizesForCategory(this.value)">
             <option value="">-- Select Category --</option>
           </select>
         </div>
@@ -2873,9 +2873,10 @@
           <textarea id="productFullDesc" class="form-control" placeholder="Enter full description" rows="3"></textarea>
         </div>
         
-        <div class="form-group">
+        <div class="form-group" id="productSizesGroup">
           <label for="productSizes">Sizes (comma separated)</label>
           <input type="text" id="productSizes" class="form-control" placeholder="S, M, L, XL">
+          <small style="color:#94a3b8;font-size:11px;">Electronics/Digital categories mein auto-hide hoga</small>
         </div>
         
         <div class="form-group">
@@ -2953,6 +2954,13 @@
           <div class="image-preview" id="categoryImagePreview" style="margin-top: 10px;"></div>
         </div>
         
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px;">
+            <label style="font-weight:600;font-size:12px;color:#64748b;margin-bottom:6px;display:block;">🖼️ Image Display in Category Circle</label>
+            <select id="categoryImageFit" class="form-control" style="font-size:13px;">
+              <option value="cover">Cover (Fill circle)</option>
+              <option value="contain">Contain (Full image visible)</option>
+            </select>
+          </div>
         <div class="checkbox-group">
           <input type="checkbox" id="categoryStatus" checked>
           <label for="categoryStatus">Active Category</label>
@@ -2989,6 +2997,32 @@
           <div class="image-preview" id="bannerImagePreview" style="margin-top: 10px;"></div>
         </div>
         
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;">
+          <label style="font-weight:700;font-size:13px;color:#0f172a;margin-bottom:10px;display:block;">🖼️ Banner Display Settings</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <div>
+              <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Image Fit</label>
+              <select id="bannerObjectFit" class="form-control" style="font-size:13px;" onchange="previewBannerSettings()">
+                <option value="cover">Cover — Fill (Recommended)</option>
+                <option value="contain">Contain — Full Image</option>
+                <option value="fill">Stretch — Exact Fit</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Image Position</label>
+              <select id="bannerObjectPosition" class="form-control" style="font-size:13px;" onchange="previewBannerSettings()">
+                <option value="center">Center</option>
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+          </div>
+          <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Banner Height: <span id="bannerHeightVal">200px</span></label>
+          <input type="range" id="bannerHeightRange" min="120" max="400" value="200" style="width:100%;" oninput="document.getElementById('bannerHeightVal').textContent=this.value+'px';previewBannerSettings()">
+          <div id="bannerLivePreview" style="display:none;margin-top:10px;border-radius:8px;overflow:hidden;border:2px dashed #2563eb;"></div>
+        </div>
         <div class="checkbox-group">
           <input type="checkbox" id="bannerStatus" checked>
           <label for="bannerStatus">Active Banner</label>
@@ -4107,23 +4141,19 @@
 
       let shareData = null;
 
-      // Method 1: Direct REST fetch — works without login
-      // (Firebase rules allow public read on sharedAdmins/$shareId)
+      // Method 1: REST API fetch (works since sharedAdmins .read = true)
       try {
         const res = await fetch(
-          'https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/' + shareId + '.json',
+          `https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}.json`,
           { cache: 'no-store' }
         );
         if (res.ok) {
           const json = await res.json();
-          // json will be null if shareId doesn't exist, or object if it does
-          if (json && typeof json === 'object' && json.status) {
-            shareData = json;
-          }
+          if (json && typeof json === 'object' && !json.error) shareData = json;
         }
-      } catch (e) { /* network error — try SDK */ }
+      } catch (e) { /* try SDK */ }
 
-      // Method 2: Firebase SDK (if REST failed due to network)
+      // Method 2: SDK fallback
       if (!shareData) {
         try {
           const snap = await database.ref('sharedAdmins/' + shareId).once('value');
@@ -4209,12 +4239,8 @@
         const shareData = await res.json();
         if (shareData && shareData.status === 'active') {
           grantSharedAccess(shareId, shareData, result.user);
-        } else if (shareData && shareData.status === 'suspended') {
-          if (errEl) errEl.textContent = '🚫 Aapka access suspend kiya gaya hai. Admin se contact karein.';
-        } else if (!shareData) {
-          if (errEl) errEl.textContent = '❌ Link invalid ya delete ho gaya hai. Admin se naya link maangein.';
         } else {
-          if (errEl) errEl.textContent = '❌ Access revoked. Admin se contact karein.';
+          if (errEl) errEl.textContent = 'Access has been revoked.';
         }
       } catch(err) {
         if (errEl) errEl.textContent = 'Login failed: ' + (err.message || err);
@@ -6881,6 +6907,38 @@
       }
     }
 
+    // ── Banner live preview refresh ──
+    function previewBannerSettings() {
+      const lp = document.getElementById('bannerLivePreview');
+      if (!lp || lp.style.display === 'none') return;
+      const img = lp.querySelector('img');
+      if (!img) return;
+      const fit = document.getElementById('bannerObjectFit')?.value || 'cover';
+      const pos = document.getElementById('bannerObjectPosition')?.value || 'center';
+      const h   = document.getElementById('bannerHeightRange')?.value || 200;
+      img.style.objectFit = fit;
+      img.style.objectPosition = pos;
+      lp.style.height = h + 'px';
+    }
+
+    // ── Categories where size is irrelevant ──
+    const NO_SIZE_CATEGORIES = [
+      'electronics','electric','laptop','mobile','phone','computer','tablet','tv',
+      'television','camera','headphone','speaker','charger','cable','appliance',
+      'digital','gadget','watch','smartwatch','earphone','earbud','keyboard',
+      'mouse','monitor','printer','router','powerbank','power bank','furniture',
+      'book','food','grocery','medicine','health','beauty','skincare','cosmetic',
+      'decoration','decor','art','stationery','toy','baby','pet','automotive'
+    ];
+
+    function toggleSizesForCategory(val) {
+      const group = document.getElementById('productSizesGroup');
+      if (!group) return;
+      const hide = NO_SIZE_CATEGORIES.some(k => (val||'').toLowerCase().includes(k));
+      group.style.display = hide ? 'none' : '';
+      if (hide) { const inp = document.getElementById('productSizes'); if (inp) inp.value = ''; }
+    }
+
     async function handleBannerImageUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -6894,6 +6952,15 @@
         preview.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <img src="${url}" style="height:60px;width:120px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;" onerror="this.style.border='2px solid red'">
           <div><div style="color:#22c55e;font-size:12px;font-weight:700;">✓ ${isImgBB?'Uploaded to ImgBB':'Ready (Base64)'}</div></div></div>`;
+        // Update live preview with current display settings
+        const livePreview = document.getElementById('bannerLivePreview');
+        if (livePreview) {
+          const h   = document.getElementById('bannerHeightRange')?.value || 200;
+          const fit = document.getElementById('bannerObjectFit')?.value || 'cover';
+          const pos = document.getElementById('bannerObjectPosition')?.value || 'center';
+          livePreview.style.cssText = 'display:block;height:'+h+'px;border-radius:8px;overflow:hidden;border:2px dashed #2563eb;margin-top:10px;';
+          livePreview.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:'+fit+';object-position:'+pos+';display:block;">';
+        }
       } catch(err) {
         preview.innerHTML = `<div style="color:#ef4444;font-size:12px;">✗ ${err.message}</div>`;
       }
@@ -7039,6 +7106,7 @@
           name: name,
           description: description,
           image: uploadedCategoryImage,
+          imageFit: document.getElementById('categoryImageFit')?.value || 'cover',
           status: status,
           productCount: 0
         };
@@ -7088,7 +7156,10 @@
           title: title,
           link: link,
           image: uploadedBannerImage,
-          status: status
+          status: status,
+          objectFit: document.getElementById('bannerObjectFit')?.value || 'cover',
+          objectPosition: document.getElementById('bannerObjectPosition')?.value || 'center',
+          height: parseInt(document.getElementById('bannerHeightRange')?.value) || 200
         };
         
         bannersRef.child(bannerId).set(newBanner)
