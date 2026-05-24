@@ -3896,16 +3896,23 @@
       // Re-verify shared admin on page refresh
       const savedShareId = sessionStorage.getItem('sharedAdminId');
       if (savedShareId) {
-        (async function reVerifySharedAdmin() {
+        // Wait for Firebase auth to resolve (auth.currentUser is null on load)
+        const unsubVerify = auth.onAuthStateChanged(async function(user) {
+          unsubVerify(); // run only once
           try {
             const snap = await database.ref('sharedAdmins/' + savedShareId).once('value');
             if (snap.exists() && snap.val() && snap.val().status === 'active') {
               const sd = snap.val();
               const permsRaw = sessionStorage.getItem('sharedPermissions');
               sd.permissions = permsRaw ? JSON.parse(permsRaw) : (sd.permissions || []);
-              const user = auth.currentUser;
               if (user) {
-                database.ref('sharedAdminsByUid/' + user.uid).set({ shareId: savedShareId, email: user.email||'', permissions: sd.permissions, grantedAt: Date.now() }).catch(()=>{});
+                // Write sharedAdminsByUid so Firebase rules work
+                await database.ref('sharedAdminsByUid/' + user.uid).set({
+                  shareId: savedShareId, email: user.email || '',
+                  permissions: sd.permissions, grantedAt: Date.now()
+                }).catch(()=>{});
+                // Small wait for rules to propagate
+                await new Promise(r => setTimeout(r, 300));
                 document.getElementById('adminLoginPage').style.display = 'none';
                 document.getElementById('adminPanel').style.display = 'flex';
                 loadDashboardData(); loadProducts(); loadCategories(); loadCategoriesForDropdown();
@@ -3913,13 +3920,17 @@
                 return;
               }
             }
-          } catch(e) {}
-          sessionStorage.removeItem('sharedAdminId'); sessionStorage.removeItem('sharedPermissions');
-        })();
+          } catch(e) { console.error('reVerify error:', e); }
+          sessionStorage.removeItem('sharedAdminId');
+          sessionStorage.removeItem('sharedPermissions');
+          document.getElementById('adminLoginPage').style.display = 'flex';
+        });
         return;
       }
 
       auth.onAuthStateChanged(user => {
+        // Don't override if shared admin is already verified via sessionStorage
+        if (sessionStorage.getItem('sharedAdminId')) return;
         if (user && isAllowedAdmin(user.email)) {
           onAdminLoginSuccess();
         } else {
@@ -4300,12 +4311,22 @@
       sessionStorage.setItem('sharedPermissions', JSON.stringify(shareData.permissions));
       // ROOT FIX: write uid so Firebase rules work
       if (user && user.uid) {
-        database.ref('sharedAdminsByUid/' + user.uid).set({
-          shareId: shareId, email: user.email || shareData.email || '',
-          permissions: shareData.permissions || [], grantedAt: Date.now()
-        }).catch(()=>{});
-        database.ref('sharedAdmins/' + shareId + '/uid').set(user.uid).catch(()=>{});
+        // Force token refresh so new sharedAdminsByUid write is authorized
+        user.getIdToken(true).then(() => {
+          database.ref('sharedAdminsByUid/' + user.uid).set({
+            shareId: shareId, email: user.email || shareData.email || '',
+            permissions: shareData.permissions || [], grantedAt: Date.now()
+          }).catch(e => console.error('sharedAdminsByUid write failed:', e));
+          database.ref('sharedAdmins/' + shareId + '/uid').set(user.uid).catch(()=>{});
+        }).catch(()=>{
+          // Fallback without token refresh
+          database.ref('sharedAdminsByUid/' + user.uid).set({
+            shareId: shareId, email: user.email || shareData.email || '',
+            permissions: shareData.permissions || [], grantedAt: Date.now()
+          }).catch(()=>{});
+        });
         sessionStorage.setItem('sharedAdminUid', user.uid);
+        sessionStorage.setItem('sharedAdminEmail', user.email || '');
       }
       // Update lastAccessed
       fetch(`https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}/lastAccessed.json`, {
@@ -4366,8 +4387,11 @@
         const tab = item.dataset.tab;
         if (tab && tab !== 'dashboard') item.style.display = 'none';
       });
+      // Force hide admin-sharing and seller-lookup for shared admins
       const sharingLi = document.getElementById('adminSharingMenuItem');
       if (sharingLi) sharingLi.style.display = 'none';
+      const sellerLookupItem = document.querySelector('.menu-item[data-tab="seller-lookup"]');
+      if (sellerLookupItem) sellerLookupItem.closest('li') && (sellerLookupItem.closest('li').style.display = 'none');
 
       // Also hide logout? No - keep logout visible always
       // Hide admin-sharing menu item for shared admins (they can't share access)
@@ -4761,9 +4785,17 @@
     function logSharedAdminActivity(type, description, detail, productId) {
       const shareId = sessionStorage.getItem('sharedAdminId');
       if (!shareId) return;
-      const log = { type, description, detail: detail || '', timestamp: Date.now() };
+      const log = {
+        type, description, detail: detail || '', timestamp: Date.now(),
+        adminEmail: auth.currentUser ? auth.currentUser.email : (sessionStorage.getItem('sharedAdminEmail') || 'Shared Admin')
+      };
       if (productId) log.productId = productId;
+      // Write to sharedAdminLogs (per-admin log)
       database.ref('sharedAdminLogs/' + shareId).push(log).catch(() => {});
+      // ALSO write to global activityLog so real admin can see it
+      database.ref('activityLog').push(Object.assign({}, log, {
+        source: 'shared_admin', shareId: shareId
+      })).catch(() => {});
     }
 
     // ===== SEARCH TAG PRODUCT MANAGEMENT =====
