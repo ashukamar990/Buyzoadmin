@@ -2091,6 +2091,7 @@
                   <thead>
                     <tr>
                       <th>Customer</th>
+                      <th>Username</th>
                       <th>Email</th>
                       <th>Orders</th>
                       <th>Last Order</th>
@@ -2826,6 +2827,72 @@
               </div>
             </div>
           </div>
+
+          <!-- ══ API KEYS & INTEGRATIONS CARD ══ -->
+          <div class="card" style="margin-top:24px;">
+            <div class="card-header">
+              <h2 style="margin:0;"><i class="fas fa-key" style="color:#f59e0b;margin-right:8px;"></i>API Keys &amp; Integrations</h2>
+            </div>
+            <div class="card-body">
+              <p style="color:#64748b;margin-bottom:18px;font-size:0.88rem;">Saari API keys ek jagah manage karo. Save karte hi Admin Panel aur Seller Panel dono mein automatically kaam karengi — kahi aur dalne ki zarurat nahi.</p>
+
+              <!-- ImgBB -->
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                  <div style="width:38px;height:38px;background:#2563eb;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🖼️</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:700;font-size:0.93rem;color:#0f172a;">ImgBB Image Upload API Key</div>
+                    <div style="font-size:0.76rem;color:#64748b;">Product &amp; banner images upload ke liye — Free key: <a href="https://api.imgbb.com/" target="_blank" style="color:#2563eb;font-weight:600;">api.imgbb.com</a> → Login → API</div>
+                  </div>
+                  <div id="imgbbStatusBadge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#fef3c7;color:#92400e;white-space:nowrap;flex-shrink:0;">Not Set</div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <input type="password" id="adminImgbbKey" placeholder="Paste ImgBB API key here..." autocomplete="off"
+                    style="flex:1;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:monospace;outline:none;"
+                    onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+                  <button type="button" onclick="toggleImgbbKeyVisibility()" title="Show/Hide"
+                    style="padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;font-size:15px;">👁️</button>
+                </div>
+                <div style="font-size:11px;color:#94a3b8;margin-top:5px;">⚡ Save ke baad Admin Panel aur Seller Panel dono use karenge</div>
+              </div>
+
+              <!-- Brand Auto-Approve -->
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                  <div style="width:38px;height:38px;background:#8b5cf6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🏷️</div>
+                  <div>
+                    <div style="font-weight:700;font-size:0.93rem;color:#0f172a;">Brand Auto-Approve Time</div>
+                    <div style="font-size:0.76rem;color:#64748b;">Seller brand request kitne ghante mein auto-approve ho (default: 24 hrs)</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <input type="number" id="brandAutoApproveHours" value="24" min="1" max="168"
+                    style="width:90px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:700;outline:none;"
+                    onfocus="this.style.borderColor='#8b5cf6'" onblur="this.style.borderColor='#e2e8f0'">
+                  <span style="color:#64748b;font-size:13px;font-weight:600;">hours</span>
+                </div>
+              </div>
+
+              <!-- Firebase Info -->
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;margin-bottom:18px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:38px;height:38px;background:#f97316;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🔥</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:700;font-size:0.93rem;color:#0f172a;">Firebase</div>
+                    <div style="font-size:12px;color:#64748b;font-family:monospace;margin-top:2px;">Project: <span id="fbProjectId" style="color:#15803d;font-weight:700;">loading...</span></div>
+                  </div>
+                  <div style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#dcfce7;color:#15803d;">Active ✓</div>
+                </div>
+              </div>
+
+              <button type="button" onclick="saveApiKeys()"
+                style="background:#2563eb;color:#fff;border:none;padding:12px 26px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;"
+                onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                <i class="fas fa-save"></i> Save API Keys
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -2858,7 +2925,7 @@
         
         <div class="form-group">
           <label for="productCategory">Category *</label>
-          <select id="productCategory" class="form-control" onchange="toggleSizesForCategory(this.value)">
+          <select id="productCategory" class="form-control">
             <option value="">-- Select Category --</option>
           </select>
         </div>
@@ -2873,10 +2940,9 @@
           <textarea id="productFullDesc" class="form-control" placeholder="Enter full description" rows="3"></textarea>
         </div>
         
-        <div class="form-group" id="productSizesGroup">
+        <div class="form-group">
           <label for="productSizes">Sizes (comma separated)</label>
           <input type="text" id="productSizes" class="form-control" placeholder="S, M, L, XL">
-          <small style="color:#94a3b8;font-size:11px;">Electronics/Digital categories mein auto-hide hoga</small>
         </div>
         
         <div class="form-group">
@@ -2954,13 +3020,6 @@
           <div class="image-preview" id="categoryImagePreview" style="margin-top: 10px;"></div>
         </div>
         
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px;">
-            <label style="font-weight:600;font-size:12px;color:#64748b;margin-bottom:6px;display:block;">🖼️ Image Display in Category Circle</label>
-            <select id="categoryImageFit" class="form-control" style="font-size:13px;">
-              <option value="cover">Cover (Fill circle)</option>
-              <option value="contain">Contain (Full image visible)</option>
-            </select>
-          </div>
         <div class="checkbox-group">
           <input type="checkbox" id="categoryStatus" checked>
           <label for="categoryStatus">Active Category</label>
@@ -2997,32 +3056,6 @@
           <div class="image-preview" id="bannerImagePreview" style="margin-top: 10px;"></div>
         </div>
         
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;">
-          <label style="font-weight:700;font-size:13px;color:#0f172a;margin-bottom:10px;display:block;">🖼️ Banner Display Settings</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-            <div>
-              <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Image Fit</label>
-              <select id="bannerObjectFit" class="form-control" style="font-size:13px;" onchange="previewBannerSettings()">
-                <option value="cover">Cover — Fill (Recommended)</option>
-                <option value="contain">Contain — Full Image</option>
-                <option value="fill">Stretch — Exact Fit</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Image Position</label>
-              <select id="bannerObjectPosition" class="form-control" style="font-size:13px;" onchange="previewBannerSettings()">
-                <option value="center">Center</option>
-                <option value="top">Top</option>
-                <option value="bottom">Bottom</option>
-                <option value="left">Left</option>
-                <option value="right">Right</option>
-              </select>
-            </div>
-          </div>
-          <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Banner Height: <span id="bannerHeightVal">200px</span></label>
-          <input type="range" id="bannerHeightRange" min="120" max="400" value="200" style="width:100%;" oninput="document.getElementById('bannerHeightVal').textContent=this.value+'px';previewBannerSettings()">
-          <div id="bannerLivePreview" style="display:none;margin-top:10px;border-radius:8px;overflow:hidden;border:2px dashed #2563eb;"></div>
-        </div>
         <div class="checkbox-group">
           <input type="checkbox" id="bannerStatus" checked>
           <label for="bannerStatus">Active Banner</label>
@@ -6241,6 +6274,7 @@
         const customers = Object.entries(usersData).map(([uid, u]) => ({
           uid,
           name: u.displayName || u.name || 'N/A',
+          username: u.username ? '@' + u.username : '—',
           email: u.email || 'N/A',
           photo: u.photoURL || '',
           createdAt: u.createdAt || 0,
@@ -6254,7 +6288,8 @@
         const searchTerm = (document.getElementById('customerSearch')?.value || '').toLowerCase();
         const filtered = searchTerm ? customers.filter(c =>
           c.name.toLowerCase().includes(searchTerm) ||
-          c.email.toLowerCase().includes(searchTerm)
+          c.email.toLowerCase().includes(searchTerm) ||
+          c.username.toLowerCase().includes(searchTerm)
         ) : customers;
 
         const totalPages = Math.ceil(filtered.length / customersPerPage);
@@ -6270,6 +6305,7 @@
                 <div><div style="font-weight:600;">${c.name}</div><div style="font-size:11px;color:#94a3b8;">${c.uid.slice(0,8)}...</div></div>
               </div>
             </td>
+            <td><span style="font-size:13px;font-weight:700;color:${c.username==='—'?'#94a3b8':'#2563eb'};font-family:monospace;">${c.username}</span></td>
             <td>${c.email}</td>
             <td><span style="background:#dbeafe;color:#1d4ed8;padding:3px 8px;border-radius:20px;font-size:12px;font-weight:600;">${c.orderCount}</span></td>
             <td>${c.lastOrder ? new Date(c.lastOrder).toLocaleDateString('en-IN') : 'Never'}</td>
@@ -6373,7 +6409,26 @@
         set('heroHeading',    s.heroHeading    || '');
         set('heroSubheading', s.heroSubheading || '');
         set('highlightText',  s.highlightText  || '');
-        set('heroMessages',   Array.isArray(s.heroMessages) ? s.heroMessages.join('\n') : (s.heroMessages||''));
+        set('heroMessages', Array.isArray(s.heroMessages) ? s.heroMessages.join('\n') : (s.heroMessages||''));
+
+        // Load ImgBB key
+        const imgbbEl    = document.getElementById('adminImgbbKey');
+        const imgbbBadge = document.getElementById('imgbbStatusBadge');
+        if (imgbbEl && s.imgbbKey && s.imgbbKey !== 'YOUR_IMGBB_API_KEY_HERE') {
+          imgbbEl.value = s.imgbbKey;
+          ADMIN_IMGBB_KEY = s.imgbbKey;
+          if (imgbbBadge) { imgbbBadge.textContent = 'Active ✓'; imgbbBadge.style.background = '#dcfce7'; imgbbBadge.style.color = '#15803d'; }
+        } else if (imgbbBadge) {
+          imgbbBadge.textContent = 'Not Set'; imgbbBadge.style.background = '#fef3c7'; imgbbBadge.style.color = '#92400e';
+        }
+        // Load brand auto-approve hours
+        const baaEl = document.getElementById('brandAutoApproveHours');
+        if (baaEl && s.brandAutoApproveHours) baaEl.value = s.brandAutoApproveHours;
+        // Show Firebase project ID
+        try {
+          const fbEl = document.getElementById('fbProjectId');
+          if (fbEl && database.app && database.app.options) fbEl.textContent = database.app.options.projectId || 'connected';
+        } catch(e) {}
       }).catch(() => {});
     }
 
@@ -6410,6 +6465,25 @@
       Promise.all([p1, p2])
         .then(() => showAdminToast('✅ Settings saved successfully!', 'success'))
         .catch(error => { console.error('Error saving settings:', error); alert('Error saving settings'); });
+    }
+
+    function saveApiKeys() {
+      const key   = (document.getElementById('adminImgbbKey')?.value || '').trim();
+      const hours = parseInt(document.getElementById('brandAutoApproveHours')?.value) || 24;
+      if (!key) { showAdminToast('⚠️ ImgBB API key khali hai — pehle key enter karo', 'warning'); return; }
+      database.ref('adminSettings').update({ imgbbKey: key, brandAutoApproveHours: hours, updatedAt: Date.now() })
+        .then(() => {
+          ADMIN_IMGBB_KEY = key;
+          const badge = document.getElementById('imgbbStatusBadge');
+          if (badge) { badge.textContent = 'Active ✓'; badge.style.background = '#dcfce7'; badge.style.color = '#15803d'; }
+          showAdminToast('✅ API Keys save ho gayi! Admin aur Seller panel dono mein kaam karengi.', 'success');
+        })
+        .catch(err => showAdminToast('❌ Save failed: ' + err.message, 'error'));
+    }
+
+    function toggleImgbbKeyVisibility() {
+      const el = document.getElementById('adminImgbbKey');
+      if (el) el.type = el.type === 'password' ? 'text' : 'password';
     }
 
     function adminToggle2FA(enabled) {
@@ -6907,38 +6981,6 @@
       }
     }
 
-    // ── Banner live preview refresh ──
-    function previewBannerSettings() {
-      const lp = document.getElementById('bannerLivePreview');
-      if (!lp || lp.style.display === 'none') return;
-      const img = lp.querySelector('img');
-      if (!img) return;
-      const fit = document.getElementById('bannerObjectFit')?.value || 'cover';
-      const pos = document.getElementById('bannerObjectPosition')?.value || 'center';
-      const h   = document.getElementById('bannerHeightRange')?.value || 200;
-      img.style.objectFit = fit;
-      img.style.objectPosition = pos;
-      lp.style.height = h + 'px';
-    }
-
-    // ── Categories where size is irrelevant ──
-    const NO_SIZE_CATEGORIES = [
-      'electronics','electric','laptop','mobile','phone','computer','tablet','tv',
-      'television','camera','headphone','speaker','charger','cable','appliance',
-      'digital','gadget','watch','smartwatch','earphone','earbud','keyboard',
-      'mouse','monitor','printer','router','powerbank','power bank','furniture',
-      'book','food','grocery','medicine','health','beauty','skincare','cosmetic',
-      'decoration','decor','art','stationery','toy','baby','pet','automotive'
-    ];
-
-    function toggleSizesForCategory(val) {
-      const group = document.getElementById('productSizesGroup');
-      if (!group) return;
-      const hide = NO_SIZE_CATEGORIES.some(k => (val||'').toLowerCase().includes(k));
-      group.style.display = hide ? 'none' : '';
-      if (hide) { const inp = document.getElementById('productSizes'); if (inp) inp.value = ''; }
-    }
-
     async function handleBannerImageUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -6952,15 +6994,6 @@
         preview.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <img src="${url}" style="height:60px;width:120px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;" onerror="this.style.border='2px solid red'">
           <div><div style="color:#22c55e;font-size:12px;font-weight:700;">✓ ${isImgBB?'Uploaded to ImgBB':'Ready (Base64)'}</div></div></div>`;
-        // Update live preview with current display settings
-        const livePreview = document.getElementById('bannerLivePreview');
-        if (livePreview) {
-          const h   = document.getElementById('bannerHeightRange')?.value || 200;
-          const fit = document.getElementById('bannerObjectFit')?.value || 'cover';
-          const pos = document.getElementById('bannerObjectPosition')?.value || 'center';
-          livePreview.style.cssText = 'display:block;height:'+h+'px;border-radius:8px;overflow:hidden;border:2px dashed #2563eb;margin-top:10px;';
-          livePreview.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:'+fit+';object-position:'+pos+';display:block;">';
-        }
       } catch(err) {
         preview.innerHTML = `<div style="color:#ef4444;font-size:12px;">✗ ${err.message}</div>`;
       }
@@ -6968,9 +7001,15 @@
 
     // ── IMGBB CONFIG FOR ADMIN ─────────────────────────────────────
     // Get your FREE key at https://api.imgbb.com/ → Login → API
-    const ADMIN_IMGBB_KEY = 'YOUR_IMGBB_API_KEY_HERE'; // ← YAHAN KEY DALO
+    // Key automatically loads from Firebase — set via Admin Panel → Settings → API Keys
+    let ADMIN_IMGBB_KEY = 'YOUR_IMGBB_API_KEY_HERE';
+    setTimeout(function() {
+      try { database.ref('adminSettings/imgbbKey').once('value').then(function(s){ if(s&&s.exists()&&s.val()) { ADMIN_IMGBB_KEY=s.val(); const b=document.getElementById('imgbbStatusBadge'); if(b){b.textContent='Active ✓';b.style.background='#dcfce7';b.style.color='#15803d';} } }).catch(function(){}); } catch(e) {}
+    }, 1000);
 
     async function uploadImageToImgBBAdmin(file) {
+      // Always re-read from Firebase in case key was just saved this session
+      try { const s = await database.ref('adminSettings/imgbbKey').once('value'); if(s&&s.exists()&&s.val()) ADMIN_IMGBB_KEY=s.val(); } catch(e) {}
       if (!ADMIN_IMGBB_KEY || ADMIN_IMGBB_KEY === 'YOUR_IMGBB_API_KEY_HERE') {
         // Fallback: convert to base64
         return new Promise((resolve) => {
@@ -7106,7 +7145,6 @@
           name: name,
           description: description,
           image: uploadedCategoryImage,
-          imageFit: document.getElementById('categoryImageFit')?.value || 'cover',
           status: status,
           productCount: 0
         };
@@ -7156,10 +7194,7 @@
           title: title,
           link: link,
           image: uploadedBannerImage,
-          status: status,
-          objectFit: document.getElementById('bannerObjectFit')?.value || 'cover',
-          objectPosition: document.getElementById('bannerObjectPosition')?.value || 'center',
-          height: parseInt(document.getElementById('bannerHeightRange')?.value) || 200
+          status: status
         };
         
         bannersRef.child(bannerId).set(newBanner)
