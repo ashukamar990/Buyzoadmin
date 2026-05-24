@@ -4422,8 +4422,11 @@
         'analytics': 'analytics',
         'settings': 'settings'
       };
-      const dashItem = document.querySelector('.menu-item[data-tab="dashboard"]');
-      if (dashItem) dashItem.style.display = 'flex';
+      // Show dashboard only if it's in permissions OR no permissions given (fallback)
+      if (permissions.includes('dashboard') || permissions.length === 0) {
+        const dashItem = document.querySelector('.menu-item[data-tab="dashboard"]');
+        if (dashItem) dashItem.style.display = 'flex';
+      }
       
       permissions.forEach(perm => {
         const tabId = tabMapping[perm];
@@ -4716,6 +4719,7 @@
 
     // ===== SHARED ADMIN ACTIVITY =====
     async function viewSharedAdminActivity(shareId, email) {
+      window._currentActivityEmail = email || '';
       document.getElementById('activityModalTitle').textContent = 'Activity — ' + (email || 'Shared Admin');
       document.getElementById('activityModalEmail').textContent = email || '';
       document.getElementById('activityLogList').innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
@@ -4728,9 +4732,16 @@
         const snap = await database.ref('sharedAdmins/' + shareId).once('value');
         const shareData = snap.val() || {};
         const perms = shareData.permissions || [];
-        const permLabels = { products:'Products', categories:'Categories', orders:'Orders', offers:'Offers', banners:'Banners', trending:'Trending', similar:'Similar Products', reviews:'Reviews', notifications:'Notifications', searchTags:'Search Tags', popularSearches:'Popular Searches', customers:'Customers', policies:'Policies', sellerRequests:'Seller Requests', hero:'Hero Section', userListings:'User Listing', brands:'Brands', analytics:'Analytics' };
+        const permLabels = { dashboard:'Dashboard', products:'Products', categories:'Categories', orders:'Orders', offers:'Offers', banners:'Banners', trending:'Trending', similar:'Similar Products', reviews:'Reviews', notifications:'Notifications', searchTags:'Search Tags', popularSearches:'Popular Searches', customers:'Customers', policies:'Policies', sellerRequests:'Seller Requests', hero:'Hero Section', userListings:'User Listing', brands:'Brands', brandRequests:'Brand Requests', settings:'Settings', analytics:'Analytics' };
+        // Store shareId for chip clicks
+        window._currentActivityShareId = shareId;
+        window._currentActivityPerms = perms;
         document.getElementById('activityPermsList').innerHTML = perms.length
-          ? perms.map(p => '<span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">' + (permLabels[p] || p) + '</span>').join('')
+          ? perms.map(p => {
+              const label = permLabels[p] || p;
+              const hasDetail = ['products','categories','orders','customers','banners','offers','reviews','brands'].includes(p);
+              return '<span onclick="' + (hasDetail ? 'showPermDetails(\'' + p + '\',\'' + shareId + '\')' : '') + '" style="background:#dbeafe;color:#1d4ed8;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;' + (hasDetail ? 'cursor:pointer;' : '') + '" ' + (hasDetail ? 'title="Click to view ' + label + '"' : '') + '>' + label + (hasDetail ? ' 🔍' : '') + '</span>';
+            }).join('')
           : '<span style="color:#94a3b8;font-size:12px;">No permissions assigned</span>';
 
         const logSnap = await database.ref('sharedAdminLogs/' + shareId).orderByChild('timestamp').limitToLast(100).once('value');
@@ -4759,6 +4770,58 @@
       } catch(e) {
         document.getElementById('activityLogList').innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px;">Error: ' + e.message + '</p>';
       }
+    }
+
+    async function showPermDetails(perm, shareId) {
+      const labels = { products:'Products', categories:'Categories', orders:'Orders', customers:'Customers', banners:'Banners', offers:'Offers', reviews:'Reviews', brands:'Brands' };
+      const label = labels[perm] || perm;
+      const el = document.getElementById('activityLogList');
+      el.innerHTML = '<p style="text-align:center;padding:20px;color:#94a3b8;"><i class="fas fa-spinner fa-spin"></i> Loading ' + label + '...</p>';
+      try {
+        let html = '<div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;">'
+          + '<button onclick="viewSharedAdminActivity(\'' + shareId + '\',\''  + (window._currentActivityEmail||'') + '\')" style="background:#f1f5f9;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;">← Back to Activity</button>'
+          + '<span style="font-weight:700;font-size:14px;color:#0f172a;">' + label + '</span></div>';
+
+        if (perm === 'products') {
+          // Show products added by this shared admin (from logs)
+          const logSnap = await database.ref('sharedAdminLogs/' + shareId).once('value');
+          const pids = new Set();
+          if (logSnap.exists()) logSnap.forEach(c => { if (c.val().productId && c.val().type === 'product_add') pids.add(c.val().productId); });
+          if (!pids.size) { el.innerHTML = html + '<p style="text-align:center;color:#94a3b8;padding:20px;">Koi product add nahi kiya</p>'; return; }
+          const prods = [];
+          for (const pid of pids) {
+            const ps = await database.ref('products/' + pid).once('value');
+            if (ps.exists()) prods.push(ps.val());
+          }
+          html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' + prods.map(p => {
+            const img = (p.images && p.images[0]) || p.image || '';
+            return '<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;">'
+              + (img ? '<img src="' + img + '" style="width:100%;height:70px;object-fit:cover;">' : '<div style="height:60px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:20px;">📦</div>')
+              + '<div style="padding:8px;"><div style="font-size:12px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (p.title||p.name||'Product') + '</div>'
+              + '<div style="font-size:12px;color:#2563eb;font-weight:700;">₹' + (p.price||0) + '</div></div></div>';
+          }).join('') + '</div>';
+        } else if (perm === 'orders') {
+          const snap = await database.ref('orders').limitToLast(20).once('value');
+          const orders = []; if (snap.exists()) snap.forEach(c => orders.unshift({id: c.key, ...c.val()}));
+          html += orders.length ? '<div style="font-size:12px;color:#64748b;margin-bottom:8px;">Last 20 orders shown</div>'
+            + orders.map(o => '<div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:6px;background:#fff;">'
+              + '<div style="font-weight:700;font-size:12px;">Order #' + (o.id||'').slice(-6) + ' — ₹' + (o.totalAmount||o.total||0) + '</div>'
+              + '<div style="font-size:11px;color:#64748b;">' + (o.status||'pending') + ' • ' + new Date(o.orderDate||o.timestamp||0).toLocaleDateString('en-IN') + '</div>'
+              + '</div>').join('') : '<p style="text-align:center;color:#94a3b8;padding:20px;">Koi order nahi</p>';
+        } else if (perm === 'customers') {
+          const snap = await database.ref('users').limitToLast(15).once('value');
+          const users = []; if (snap.exists()) snap.forEach(c => users.unshift({uid: c.key, ...c.val()}));
+          html += users.length ? users.map(u => '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;">'
+            + '<div style="width:32px;height:32px;background:#dbeafe;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#1d4ed8;font-size:13px;">' + (u.displayName||u.email||'U')[0].toUpperCase() + '</div>'
+            + '<div><div style="font-size:13px;font-weight:600;">' + (u.displayName||u.email||'User') + '</div>'
+            + (u.username ? '<div style="font-size:11px;color:#2563eb;">@' + u.username + '</div>' : '')
+            + '</div></div>').join('') : '<p style="text-align:center;color:#94a3b8;padding:20px;">Koi customer nahi</p>';
+        } else {
+          html += '<p style="text-align:center;color:#94a3b8;padding:20px;">' + label + ' ki details yahan dikhegi.</p>';
+        }
+        el.innerHTML = html;
+        window._currentActivityEmail = window._currentActivityEmail || '';
+      } catch(e) { el.innerHTML = '<p style="color:#ef4444;padding:20px;">Error: ' + e.message + '</p>'; }
     }
 
     function copyActivityLink() {
@@ -7187,6 +7250,8 @@
         
         productsRef.child(productId).set(newProduct)
           .then(() => {
+            // Log activity for shared admin
+            logSharedAdminActivity('product_add', 'Product Add kiya: ' + name, 'Category: ' + category + ' | Price: ₹' + price, productId);
             closeModal('addProductModal');
             loadProducts();
             loadTrendingProducts();
@@ -7241,6 +7306,7 @@
         
         categoriesRef.child(categoryId).set(newCategory)
           .then(() => {
+            logSharedAdminActivity('category_add', 'Category Add ki: ' + name, 'Status: ' + status);
             allCategories.push(newCategory);
             updateCategoryDropdowns();
             closeModal('addCategoryModal');
@@ -7292,6 +7358,7 @@
         
         bannersRef.child(bannerId).set(newBanner)
           .then(() => {
+            logSharedAdminActivity('banner_add', 'Banner Add kiya', 'Banner ID: ' + bannerId);
             closeModal('addBannerModal');
             loadBanners();
             alert('Banner added successfully!');
@@ -7432,6 +7499,7 @@
       
       database.ref('products/' + productId).update(updates)
         .then(() => {
+          logSharedAdminActivity('product_edit', 'Product Edit kiya: ' + (updates.title||updates.name||productId), 'ID: ' + productId, productId);
           closeModal('editProductModal');
           loadProducts();
           loadTrendingProducts();
@@ -7449,6 +7517,7 @@
       if (confirm('Are you sure you want to delete this product?')) {
         database.ref('products/' + productId).remove()
           .then(() => {
+            logSharedAdminActivity('product_delete', 'Product Delete kiya', 'ID: ' + productId, productId);
             closeModal('editProductModal');
             loadProducts();
             loadTrendingProducts();
@@ -7463,6 +7532,7 @@
       if (confirm('Are you sure you want to delete this product?')) {
         database.ref('products/' + productId).remove()
           .then(() => {
+            logSharedAdminActivity('product_delete', 'Product Delete kiya', 'Product ID: ' + productId, productId);
             loadProducts();
             loadTrendingProducts();
             if (currentAdminTab === 'dashboard') loadDashboardData();
@@ -8216,6 +8286,7 @@
       database.ref('sellerRequests/' + uid).update({
         status: 'approved', approvedAt: Date.now(), approvedBy: 'admin'
       }).then(() => {
+        logSharedAdminActivity('seller_approve', 'Seller Approve kiya: ' + name, 'UID: ' + uid);
         showAdminToast('✅ Seller approved! They can now access their dashboard.', 'success');
         loadSellerRequests();
       }).catch(err => alert('Error: ' + err.message));
@@ -8227,6 +8298,7 @@
         status: 'rejected', rejectedAt: Date.now(), rejectedBy: 'admin',
         rejectionReason: reason
       }).then(() => {
+        logSharedAdminActivity('seller_reject', 'Seller Reject kiya', 'UID: ' + uid + (reason ? ' | Reason: ' + reason : ''));
         showAdminToast('Seller request rejected.', 'success');
         loadSellerRequests();
       }).catch(err => alert('Error: ' + err.message));
@@ -8592,7 +8664,10 @@
         // Products
         if (prods.length) {
           window._lookupProducts = {};
-          prods.forEach(p => { window._lookupProducts[p._id] = p; });
+          prods.forEach(p => {
+            if (p._id) window._lookupProducts[p._id] = p;
+            if (p.id && p.id !== p._id) window._lookupProducts[p.id] = p;
+          });
           html += `<div><div style="font-weight:700;font-size:13px;color:#374151;margin-bottom:10px;">📦 Products (${prods.length})</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
               ${prods.slice(0, 8).map(p => {
