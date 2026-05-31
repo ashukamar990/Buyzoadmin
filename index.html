@@ -3896,8 +3896,9 @@
       // Re-verify shared admin on page refresh
       const savedShareId = sessionStorage.getItem('sharedAdminId');
       if (savedShareId) {
+        // Wait for Firebase auth to resolve (auth.currentUser is null on load)
         const unsubVerify = auth.onAuthStateChanged(async function(user) {
-          unsubVerify();
+          unsubVerify(); // run only once
           try {
             const snap = await database.ref('sharedAdmins/' + savedShareId).once('value');
             if (snap.exists() && snap.val() && snap.val().status === 'active') {
@@ -3905,49 +3906,16 @@
               const permsRaw = sessionStorage.getItem('sharedPermissions');
               sd.permissions = permsRaw ? JSON.parse(permsRaw) : (sd.permissions || []);
               if (user) {
-                // ── Write sharedAdminsByUid with authenticated REST fallback ──
-                const writeData = { shareId: savedShareId, email: user.email || '', permissions: sd.permissions, grantedAt: Date.now() };
-                let writeOk = false;
-                try {
-                  await user.getIdToken(true);
-                  await database.ref('sharedAdminsByUid/' + user.uid).set(writeData);
-                  writeOk = true;
-                } catch(we) {
-                  try {
-                    const tok = await user.getIdToken();
-                    const r = await fetch('https://buyzocart-default-rtdb.firebaseio.com/sharedAdminsByUid/' + user.uid + '.json?auth=' + tok, {
-                      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(writeData)
-                    });
-                    if (r.ok) writeOk = true;
-                  } catch(re) { console.error('Refresh write failed completely', re); }
-                }
-
-                if (writeOk) await new Promise(r => setTimeout(r, 500));
-
+                // Write sharedAdminsByUid so Firebase rules work
+                await database.ref('sharedAdminsByUid/' + user.uid).set({
+                  shareId: savedShareId, email: user.email || '',
+                  permissions: sd.permissions, grantedAt: Date.now()
+                }).catch(()=>{});
+                // Small wait for rules to propagate
+                await new Promise(r => setTimeout(r, 300));
                 document.getElementById('adminLoginPage').style.display = 'none';
                 document.getElementById('adminPanel').style.display = 'flex';
-
-                const perms = sd.permissions;
-                if (perms.includes('dashboard'))       loadDashboardData();
-                if (perms.includes('products'))        { loadProducts(); loadCategoriesForDropdown(); }
-                if (perms.includes('categories'))      loadCategories();
-                if (perms.includes('orders'))          loadOrders();
-                if (perms.includes('trending'))        loadTrendingProducts();
-                if (perms.includes('similar'))         loadSimilarProducts();
-                if (perms.includes('searchTags'))      loadSearchTags();
-                if (perms.includes('popularSearches')) loadPopularSearches();
-                if (perms.includes('customers'))       loadCustomers();
-                if (perms.includes('banners'))         loadBanners();
-                if (perms.includes('offers'))          loadOffers();
-                if (perms.includes('notifications'))   loadNotifHistory();
-                if (perms.includes('sellerRequests'))  loadSellerRequests();
-                if (perms.includes('hero'))            loadHeroSectionSettings();
-                if (perms.includes('userListings'))    loadUserListings();
-                if (perms.includes('brands'))          loadBrandsPanel();
-                if (perms.includes('brandRequests') && typeof loadBrandRequests==='function') loadBrandRequests();
-                if (perms.includes('analytics'))       loadAnalytics();
-                if (perms.includes('settings') && typeof loadSettings==='function') loadSettings();
-
+                loadDashboardData(); loadProducts(); loadCategories(); loadCategoriesForDropdown();
                 showLimitedAdminPanel(sd.permissions);
                 return;
               }
@@ -4338,119 +4306,69 @@
       }
     }
 
-    async function grantSharedAccess(shareId, shareData, user) {
-      // Use passed user OR currently signed-in user as fallback
-      const currentUser = user || auth.currentUser;
-
+    function grantSharedAccess(shareId, shareData, user) {
       sessionStorage.setItem('sharedAdminId', shareId);
-      sessionStorage.setItem('sharedPermissions', JSON.stringify(shareData.permissions || []));
-      if (currentUser) {
-        sessionStorage.setItem('sharedAdminUid', currentUser.uid);
-        sessionStorage.setItem('sharedAdminEmail', currentUser.email || '');
+      sessionStorage.setItem('sharedPermissions', JSON.stringify(shareData.permissions));
+      // ROOT FIX: write uid so Firebase rules work
+      if (user && user.uid) {
+        // Force token refresh so new sharedAdminsByUid write is authorized
+        user.getIdToken(true).then(() => {
+          database.ref('sharedAdminsByUid/' + user.uid).set({
+            shareId: shareId, email: user.email || shareData.email || '',
+            permissions: shareData.permissions || [], grantedAt: Date.now()
+          }).catch(e => console.error('sharedAdminsByUid write failed:', e));
+          database.ref('sharedAdmins/' + shareId + '/uid').set(user.uid).catch(()=>{});
+        }).catch(()=>{
+          // Fallback without token refresh
+          database.ref('sharedAdminsByUid/' + user.uid).set({
+            shareId: shareId, email: user.email || shareData.email || '',
+            permissions: shareData.permissions || [], grantedAt: Date.now()
+          }).catch(()=>{});
+        });
+        sessionStorage.setItem('sharedAdminUid', user.uid);
+        sessionStorage.setItem('sharedAdminEmail', user.email || '');
       }
-
-      // ── Show loading overlay BEFORE any Firebase operations ──
-      const overlay = document.createElement('div');
-      overlay.id = 'sharedAccessLoader';
-      overlay.style.cssText = 'position:fixed;inset:0;background:linear-gradient(135deg,#1e40af,#7c3aed);z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Segoe UI,sans-serif;';
-      overlay.innerHTML = `
-        <div style="text-align:center;color:white;">
-          <div style="font-size:52px;margin-bottom:16px;">🔐</div>
-          <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:8px;">Setting up your panel...</h2>
-          <p style="opacity:0.8;font-size:14px;margin-bottom:24px;">Permissions configure ho rahi hain</p>
-          <div style="width:200px;height:4px;background:rgba(255,255,255,0.25);border-radius:2px;overflow:hidden;margin:0 auto;">
-            <div id="saLoaderBar" style="height:100%;width:10%;background:white;border-radius:2px;transition:width 0.5s ease;"></div>
-          </div>
-        </div>`;
-      document.body.appendChild(overlay);
-      setTimeout(() => { const b = document.getElementById('saLoaderBar'); if(b) b.style.width = '60%'; }, 200);
-
-      // ── Write sharedAdminsByUid BEFORE showing panel ──
-      let writeSuccess = false;
-      if (currentUser && currentUser.uid) {
-        const writeData = {
-          shareId: shareId,
-          email: currentUser.email || shareData.email || '',
-          permissions: shareData.permissions || [],
-          grantedAt: Date.now()
-        };
-
-        // Attempt 1: SDK with fresh token
-        try {
-          await currentUser.getIdToken(true);
-          await database.ref('sharedAdminsByUid/' + currentUser.uid).set(writeData);
-          writeSuccess = true;
-        } catch(e1) {
-          console.warn('SDK write failed, trying REST...', e1.message);
-
-          // Attempt 2: Authenticated REST API with ID token
-          try {
-            const idToken = await currentUser.getIdToken();
-            const res = await fetch(
-              'https://buyzocart-default-rtdb.firebaseio.com/sharedAdminsByUid/' + currentUser.uid + '.json?auth=' + idToken,
-              { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(writeData) }
-            );
-            if (res.ok) { writeSuccess = true; }
-          } catch(e2) {
-            console.error('Both write attempts failed', e2.message);
-          }
-        }
-
-        // Also update sharedAdmins uid field (fire-and-forget)
-        database.ref('sharedAdmins/' + shareId + '/uid').set(currentUser.uid).catch(()=>{});
-      }
-
-      // Progress bar → 90%
-      const bar = document.getElementById('saLoaderBar');
-      if (bar) bar.style.width = '90%';
-
-      // Update lastAccessed & log (fire-and-forget)
-      fetch('https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/' + shareId + '/lastAccessed.json',
-        { method: 'PUT', body: JSON.stringify(Date.now()) }).catch(() => {});
-      fetch('https://buyzocart-default-rtdb.firebaseio.com/sharedAdminLogs/' + shareId + '.json', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ type: 'login', description: 'Panel Access - Login', timestamp: Date.now() })
+      // Update lastAccessed
+      fetch(`https://buyzocart-default-rtdb.firebaseio.com/sharedAdmins/${shareId}/lastAccessed.json`, {
+        method: 'PUT', body: JSON.stringify(Date.now())
       }).catch(() => {});
 
-      // Small delay to let Firebase propagate the write before reads happen
-      if (writeSuccess) await new Promise(r => setTimeout(r, 500));
+      // Log login activity
+      const logEntry = { type: 'login', description: 'Panel Access - Login', detail: 'Shared admin ne panel access kiya', timestamp: Date.now() };
+      fetch('https://buyzocart-default-rtdb.firebaseio.com/sharedAdminLogs/' + shareId + '.json', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(logEntry)
+      }).catch(() => {});
 
-      // Remove loader and show panel
-      overlay.remove();
       document.getElementById('adminLoginPage').style.display = 'none';
       document.getElementById('adminPanel').style.display = 'flex';
 
-      const perms = shareData.permissions || [];
-
-      // ── Load data ONLY for permitted sections ──
-      if (perms.includes('dashboard'))       loadDashboardData();
-      if (perms.includes('products'))        { loadProducts(); loadCategoriesForDropdown(); }
-      if (perms.includes('categories'))      loadCategories();
-      if (perms.includes('orders'))          loadOrders();
-      if (perms.includes('trending'))        loadTrendingProducts();
-      if (perms.includes('similar'))         loadSimilarProducts();
-      if (perms.includes('searchTags'))      loadSearchTags();
-      if (perms.includes('popularSearches')) loadPopularSearches();
-      if (perms.includes('customers'))       loadCustomers();
-      if (perms.includes('banners'))         loadBanners();
-      if (perms.includes('offers'))          loadOffers();
-      if (perms.includes('notifications'))   loadNotifHistory();
-      if (perms.includes('sellerRequests'))  loadSellerRequests();
-      if (perms.includes('hero'))            loadHeroSectionSettings();
-      if (perms.includes('userListings'))    loadUserListings();
-      if (perms.includes('brands'))          loadBrandsPanel();
-      if (perms.includes('brandRequests') && typeof loadBrandRequests === 'function') loadBrandRequests();
-      if (perms.includes('analytics'))       loadAnalytics();
-      if (perms.includes('settings') && typeof loadSettings === 'function') loadSettings();
+      // Load data
+      loadDashboardData(); loadProducts(); loadCategories(); loadCategoriesForDropdown();
+      if (shareData.permissions.includes('orders')) loadOrders();
+      if (shareData.permissions.includes('trending')) loadTrendingProducts();
+      if (shareData.permissions.includes('similar')) loadSimilarProducts();
+      if (shareData.permissions.includes('searchTags')) loadSearchTags();
+      if (shareData.permissions.includes('popularSearches')) loadPopularSearches();
+      if (shareData.permissions.includes('customers')) loadCustomers();
+      if (shareData.permissions.includes('banners')) loadBanners();
+      if (shareData.permissions.includes('offers')) loadOffers();
+      if (shareData.permissions.includes('notifications')) loadNotifHistory();
+      if (shareData.permissions.includes('sellerRequests')) loadSellerRequests();
+      if (shareData.permissions.includes('hero')) loadHeroSectionSettings();
+      if (shareData.permissions.includes('userListings')) loadUserListings();
+      if (shareData.permissions.includes('brands')) loadBrandsPanel();
+      if (shareData.permissions.includes('brandRequests')) { if(typeof loadBrandRequests==='function') loadBrandRequests(); }
+      if (shareData.permissions.includes('analytics')) loadAnalytics();
+      if (shareData.permissions.includes('settings')) { if(typeof loadSettings==='function') loadSettings(); }
       setupOnlineUsersTracking();
 
-      const displayEmail = currentUser ? currentUser.email : shareData.email || 'Shared Admin';
+      const displayEmail = user ? user.email : shareData.email || 'Shared Admin';
       const userAvatar = document.querySelector('.user-avatar');
       const userDiv = document.querySelector('.user-profile > div:last-child');
       if (userAvatar) userAvatar.textContent = displayEmail[0].toUpperCase();
       if (userDiv) userDiv.textContent = displayEmail;
 
-      showLimitedAdminPanel(perms);
+      showLimitedAdminPanel(shareData.permissions);
     }
 
     function showSharedErrorPage(icon, title, message) {
@@ -4465,79 +4383,67 @@
     }
 
     function showLimitedAdminPanel(permissions) {
-      // ── Step 1: Hide ALL menu items ──
-      document.querySelectorAll('.menu-item').forEach(item => item.style.display = 'none');
+      document.querySelectorAll('.menu-item').forEach(item => {
+        const tab = item.dataset.tab;
+        if (tab && tab !== 'dashboard') item.style.display = 'none';
+      });
+      // Force hide admin-sharing and seller-lookup for shared admins
+      const sharingLi = document.getElementById('adminSharingMenuItem');
+      if (sharingLi) sharingLi.style.display = 'none';
+      const sellerLookupItem = document.querySelector('.menu-item[data-tab="seller-lookup"]');
+      if (sellerLookupItem) sellerLookupItem.closest('li') && (sellerLookupItem.closest('li').style.display = 'none');
 
-      // ── Step 2: Permission → sidebar tab mapping ──
+      // Also hide logout? No - keep logout visible always
+      // Hide admin-sharing menu item for shared admins (they can't share access)
+      const adminSharingItem = document.querySelector('.menu-item[data-tab="admin-sharing"]');
+      if (adminSharingItem) adminSharingItem.style.display = 'none';
+      
+      // Permission key → sidebar tab mapping
       const tabMapping = {
-        'dashboard':       'dashboard',
-        'products':        'products',
-        'categories':      'categories',
-        'banners':         'banners',
-        'trending':        'trending',
-        'similar':         'similar-products',
-        'reviews':         'reviews',
-        'notifications':   'notifications',
-        'searchTags':      'search-tags',
+        'dashboard': 'dashboard',
+        'products': 'products',
+        'categories': 'categories',
+        'banners': 'banners',
+        'trending': 'trending',
+        'similar': 'similar-products',
+        'reviews': 'reviews',
+        'notifications': 'notifications',
+        'searchTags': 'search-tags',
         'popularSearches': 'popular-searches',
-        'orders':          'orders',
-        'offers':          'offers',
-        'customers':       'customers',
-        'policies':        'policies',
-        'sellerRequests':  'seller-requests',
-        'hero':            'hero',
-        'userListings':    'user-listings',
-        'brands':          'brands',
-        'brandRequests':   'brand-requests',
-        'analytics':       'analytics',
-        'settings':        'settings'
+        'orders': 'orders',
+        'offers': 'offers',
+        'customers': 'customers',
+        'policies': 'policies',
+        'sellerRequests': 'seller-requests',
+        'hero': 'hero',
+        'userListings': 'user-listings',
+        'brands': 'brands',
+        'brandRequests': 'brand-requests',
+        'analytics': 'analytics',
+        'settings': 'settings'
       };
-
-      // ── Step 3: Show ONLY permitted tabs ──
-      let firstTabId = null;
+      // Show dashboard only if it's in permissions OR no permissions given (fallback)
+      if (permissions.includes('dashboard') || permissions.length === 0) {
+        const dashItem = document.querySelector('.menu-item[data-tab="dashboard"]');
+        if (dashItem) dashItem.style.display = 'flex';
+      }
+      
       permissions.forEach(perm => {
         const tabId = tabMapping[perm];
         if (tabId) {
           const menuItem = document.querySelector(`.menu-item[data-tab="${tabId}"]`);
           if (menuItem) {
             menuItem.style.display = 'flex';
-            if (!firstTabId) firstTabId = tabId;
           }
         }
       });
 
-      // ── Step 4: Always show Logout ──
-      document.querySelectorAll('.menu-item').forEach(item => {
-        if ((item.textContent || '').trim().toLowerCase().includes('logout')) item.style.display = 'flex';
-      });
-
-      // ── Step 5: Navigate to first permitted tab ──
-      if (firstTabId && typeof showTab === 'function') showTab(firstTabId);
-
-      // ── Step 6: Limited Access banner — clean strip below header ──
-      const existing = document.getElementById('limitedAccessBanner');
-      if (existing) existing.remove();
-      const panel = document.querySelector('.panel-content, .main-content, .content-area, #mainContent');
-      const header = document.querySelector('.header, .top-bar, .admin-header, header');
-      const insertTarget = panel || header;
-      if (insertTarget) {
-        const banner = document.createElement('div');
-        banner.id = 'limitedAccessBanner';
-        banner.style.cssText = [
-          'width:100%', 'box-sizing:border-box',
-          'background:linear-gradient(90deg,#fef3c7,#fde68a)',
-          'border-bottom:2px solid #fcd34d',
-          'padding:6px 16px',
-          'display:flex', 'align-items:center', 'gap:8px',
-          'font-size:12px', 'font-weight:700', 'color:#92400e',
-          'letter-spacing:0.3px', 'flex-shrink:0', 'z-index:100'
-        ].join(';');
-        banner.innerHTML = `<i class="fas fa-lock" style="font-size:10px;"></i> LIMITED ACCESS &nbsp;·&nbsp; ${permissions.length} section${permissions.length!==1?'s':''} permitted`;
-        if (panel) {
-          panel.insertBefore(banner, panel.firstChild);
-        } else {
-          header.insertAdjacentElement('afterend', banner);
-        }
+      // Show a "Shared Access" badge in the header
+      const headerRight = document.querySelector('.header-right');
+      if (headerRight) {
+        const badge = document.createElement('div');
+        badge.innerHTML = `<span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid #fcd34d;"><i class="fas fa-lock" style="margin-right:5px;"></i>Limited Access</span>`;
+        headerRight.prepend(badge);
       }
     }
 
