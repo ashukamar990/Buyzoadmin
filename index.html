@@ -1365,6 +1365,9 @@
       height: 15px;
       cursor: pointer;
     }
+    .tags-dropdown-hidden {
+      display: none;
+    }
     .active-dropdown {
       display: block !important;
     }
@@ -2964,7 +2967,7 @@
             </div>
             <i class="fas fa-chevron-down" style="color:#94a3b8;align-self:center;font-size:12px;"></i>
           </div>
-          <div id="productTagsDropdown" style="display:none;border:1px solid #d1d5db;border-radius:6px;margin-top:4px;max-height:200px;overflow-y:auto;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.1);" class="">
+          <div id="productTagsDropdown" style="border:1px solid #d1d5db;border-radius:6px;margin-top:4px;max-height:200px;overflow-y:auto;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.1);" class="tags-dropdown-hidden">
             <div style="padding:8px;border-bottom:1px solid #e2e8f0;">
               <input type="text" id="tagSearchInput" class="form-control" placeholder="Search tags..." style="font-size:13px;" oninput="filterTagsInDropdown()" onclick="event.stopPropagation()">
             </div>
@@ -2988,6 +2991,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('addProductModal')">Cancel</button>
+        <button class="btn btn-success" onclick="saveProductAndAddSimilar()" id="saveProductSimilarBtn" style="background:linear-gradient(135deg,#7c3aed,#2563eb);"><i class="fas fa-random"></i> Save & Add Similar</button>
         <button class="btn btn-primary" onclick="saveProduct()" id="saveProductBtn">Save Product</button>
       </div>
     </div>
@@ -3032,6 +3036,49 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('addCategoryModal')">Cancel</button>
         <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Category Modal -->
+  <div class="modal" id="editCategoryModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Edit Category</h3>
+        <button class="close" onclick="closeModal('editCategoryModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editCategoryId">
+        <div class="form-group">
+          <label for="editCategoryName">Category Name *</label>
+          <input type="text" id="editCategoryName" class="form-control" placeholder="Enter category name">
+        </div>
+        <div class="form-group">
+          <label for="editCategoryDescription">Description</label>
+          <textarea id="editCategoryDescription" class="form-control" placeholder="Enter category description" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Current Image</label>
+          <div id="editCategoryCurrentImage" style="margin-bottom:10px;"></div>
+          <label>Change Image (optional)</label>
+          <input type="file" id="editCategoryImage" class="form-control" accept="image/*" onchange="handleEditCategoryImageUpload(event)">
+          <div class="image-preview" id="editCategoryImagePreview" style="margin-top:10px;"></div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:12px;">
+          <label style="font-weight:600;font-size:12px;color:#64748b;margin-bottom:6px;display:block;">🖼️ Image Display in Category Circle</label>
+          <select id="editCategoryImageFit" class="form-control" style="font-size:13px;">
+            <option value="cover">Cover (Fill circle)</option>
+            <option value="contain">Contain (Full image visible)</option>
+          </select>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="editCategoryStatus" checked>
+          <label for="editCategoryStatus">Active Category</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('editCategoryModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="updateCategory()">Update Category</button>
       </div>
     </div>
   </div>
@@ -3094,6 +3141,68 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('addBannerModal')">Cancel</button>
         <button class="btn btn-primary" onclick="saveBanner()">Save Banner</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Banner Modal -->
+  <div class="modal" id="editBannerModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Edit Banner</h3>
+        <button class="close" onclick="closeModal('editBannerModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editBannerId">
+        <div class="form-group">
+          <label for="editBannerTitle">Banner Title *</label>
+          <input type="text" id="editBannerTitle" class="form-control" placeholder="Enter banner title">
+        </div>
+        <div class="form-group">
+          <label for="editBannerLink">Banner Link (Optional)</label>
+          <input type="url" id="editBannerLink" class="form-control" placeholder="https://example.com">
+        </div>
+        <div class="form-group">
+          <label>Current Image</label>
+          <div id="editBannerCurrentImage" style="margin-bottom:10px;"></div>
+          <label>Change Image (optional)</label>
+          <input type="file" id="editBannerImage" class="form-control" accept="image/*" onchange="handleEditBannerImageUpload(event)">
+          <div class="image-preview" id="editBannerImagePreview" style="margin-top:10px;"></div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;">
+          <label style="font-weight:700;font-size:13px;color:#0f172a;margin-bottom:10px;display:block;">🖼️ Banner Display Settings</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <div>
+              <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Image Fit</label>
+              <select id="editBannerObjectFit" class="form-control" style="font-size:13px;" onchange="previewEditBannerSettings()">
+                <option value="cover">Cover — Fill (Recommended)</option>
+                <option value="contain">Contain — Full Image</option>
+                <option value="fill">Stretch — Exact Fit</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Image Position</label>
+              <select id="editBannerObjectPosition" class="form-control" style="font-size:13px;" onchange="previewEditBannerSettings()">
+                <option value="center">Center</option>
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+          </div>
+          <label style="font-size:12px;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Banner Height: <span id="editBannerHeightVal">200px</span></label>
+          <input type="range" id="editBannerHeightRange" min="120" max="400" value="200" style="width:100%;" oninput="document.getElementById('editBannerHeightVal').textContent=this.value+'px';previewEditBannerSettings()">
+          <div id="editBannerLivePreview" style="display:none;margin-top:10px;border-radius:8px;overflow:hidden;border:2px dashed #2563eb;"></div>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="editBannerStatus" checked>
+          <label for="editBannerStatus">Active Banner</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('editBannerModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="updateBanner()">Update Banner</button>
       </div>
     </div>
   </div>
@@ -7543,7 +7652,259 @@
     }
 
     function editCategory(categoryId) {
-      alert('Edit category functionality coming soon!');
+      const cat = allCategories.find(c => c.id === categoryId || c.id === String(categoryId));
+      if (!cat) { alert('Category data nahi mili. Dobara try karein.'); return; }
+      document.getElementById('editCategoryId').value = cat.id;
+      document.getElementById('editCategoryName').value = cat.name || '';
+      document.getElementById('editCategoryDescription').value = cat.description || '';
+      document.getElementById('editCategoryStatus').checked = cat.status === 'active';
+      const fitEl = document.getElementById('editCategoryImageFit');
+      if (fitEl) fitEl.value = cat.imageFit || 'cover';
+      // Show current image
+      const currentImg = document.getElementById('editCategoryCurrentImage');
+      if (currentImg) {
+        currentImg.innerHTML = cat.image
+          ? `<img src="${cat.image}" style="height:60px;border-radius:8px;border:1px solid #e2e8f0;" onerror="this.style.display='none'">`
+          : '<span style="color:#94a3b8;font-size:13px;">No image</span>';
+      }
+      document.getElementById('editCategoryImagePreview').innerHTML = '';
+      window._editCategoryNewImage = null;
+      document.getElementById('editCategoryModal').classList.add('active');
+    }
+
+    function handleEditCategoryImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const preview = document.getElementById('editCategoryImagePreview');
+      preview.innerHTML = '<span style="color:#64748b;font-size:13px;">Uploading...</span>';
+      const imgbbKey = (typeof ADMIN_IMGBB_KEY !== 'undefined' && ADMIN_IMGBB_KEY && ADMIN_IMGBB_KEY !== 'YOUR_IMGBB_API_KEY_HERE') ? ADMIN_IMGBB_KEY : '';
+      if (!imgbbKey) {
+        // Fallback: read as base64 if no ImgBB key
+        const reader = new FileReader();
+        reader.onload = e => {
+          window._editCategoryNewImage = e.target.result;
+          preview.innerHTML = `<img src="${e.target.result}" style="height:60px;border-radius:8px;" >`;
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+      const formData = new FormData();
+      formData.append('image', file);
+      fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            window._editCategoryNewImage = data.data.url;
+            preview.innerHTML = `<img src="${data.data.url}" style="height:60px;border-radius:8px;">`;
+          } else {
+            preview.innerHTML = '<span style="color:#ef4444;font-size:13px;">Upload failed</span>';
+          }
+        })
+        .catch(() => { preview.innerHTML = '<span style="color:#ef4444;font-size:13px;">Upload error</span>'; });
+    }
+
+    function updateCategory() {
+      const id = document.getElementById('editCategoryId').value;
+      const name = document.getElementById('editCategoryName').value.trim();
+      const description = document.getElementById('editCategoryDescription').value.trim();
+      const status = document.getElementById('editCategoryStatus').checked ? 'active' : 'inactive';
+      const imageFit = document.getElementById('editCategoryImageFit')?.value || 'cover';
+      if (!name) { alert('Category name required'); return; }
+      const cat = allCategories.find(c => c.id === id || c.id === String(id));
+      const currentImage = cat ? cat.image : '';
+      const newImage = window._editCategoryNewImage || currentImage;
+      const updates = { name, description, status, imageFit, image: newImage };
+      database.ref('categories/' + id).update(updates)
+        .then(() => {
+          // Update allCategories in memory
+          const idx = allCategories.findIndex(c => c.id === id || c.id === String(id));
+          if (idx !== -1) allCategories[idx] = { ...allCategories[idx], ...updates };
+          updateCategoryDropdowns();
+          closeModal('editCategoryModal');
+          loadCategories();
+          if (typeof showAdminToast === 'function') showAdminToast('Category updated!', 'success');
+          else alert('Category updated successfully!');
+        })
+        .catch(err => alert('Error: ' + err.message));
+    }
+
+    function editBanner(bannerId) {
+      database.ref('banners/' + bannerId).once('value').then(snap => {
+        if (!snap.exists()) { alert('Banner data nahi mili.'); return; }
+        const banner = snap.val();
+        document.getElementById('editBannerId').value = bannerId;
+        document.getElementById('editBannerTitle').value = banner.title || '';
+        document.getElementById('editBannerLink').value = banner.link || '';
+        document.getElementById('editBannerStatus').checked = banner.status === 'active';
+        const fitEl = document.getElementById('editBannerObjectFit');
+        if (fitEl) fitEl.value = banner.objectFit || 'cover';
+        const posEl = document.getElementById('editBannerObjectPosition');
+        if (posEl) posEl.value = banner.objectPosition || 'center';
+        const heightRange = document.getElementById('editBannerHeightRange');
+        const heightVal = document.getElementById('editBannerHeightVal');
+        if (heightRange) heightRange.value = banner.height || 200;
+        if (heightVal) heightVal.textContent = (banner.height || 200) + 'px';
+        // Show current image
+        const currentImg = document.getElementById('editBannerCurrentImage');
+        if (currentImg) {
+          currentImg.innerHTML = banner.image
+            ? `<img src="${banner.image}" style="height:50px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;" onerror="this.style.display='none'">`
+            : '<span style="color:#94a3b8;font-size:13px;">No image</span>';
+        }
+        document.getElementById('editBannerImagePreview').innerHTML = '';
+        document.getElementById('editBannerLivePreview').style.display = 'none';
+        window._editBannerNewImage = null;
+        window._editBannerCurrentImage = banner.image || '';
+        document.getElementById('editBannerModal').classList.add('active');
+      }).catch(err => alert('Error loading banner: ' + err.message));
+    }
+
+    function handleEditBannerImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const preview = document.getElementById('editBannerImagePreview');
+      preview.innerHTML = '<span style="color:#64748b;font-size:13px;">Uploading...</span>';
+      const imgbbKey = (typeof ADMIN_IMGBB_KEY !== 'undefined' && ADMIN_IMGBB_KEY && ADMIN_IMGBB_KEY !== 'YOUR_IMGBB_API_KEY_HERE') ? ADMIN_IMGBB_KEY : '';
+      if (!imgbbKey) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          window._editBannerNewImage = e.target.result;
+          preview.innerHTML = `<img src="${e.target.result}" style="height:50px;border-radius:6px;object-fit:cover;">`;
+          previewEditBannerSettings();
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+      const formData = new FormData();
+      formData.append('image', file);
+      fetch(`https://api.imgbb.com/1/upload?key=${imgbbKey}`, { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            window._editBannerNewImage = data.data.url;
+            preview.innerHTML = `<img src="${data.data.url}" style="height:50px;border-radius:6px;object-fit:cover;">`;
+            previewEditBannerSettings();
+          } else {
+            preview.innerHTML = '<span style="color:#ef4444;font-size:13px;">Upload failed</span>';
+          }
+        })
+        .catch(() => { preview.innerHTML = '<span style="color:#ef4444;font-size:13px;">Upload error</span>'; });
+    }
+
+    function previewEditBannerSettings() {
+      const img = window._editBannerNewImage || window._editBannerCurrentImage || '';
+      if (!img) return;
+      const fit = document.getElementById('editBannerObjectFit')?.value || 'cover';
+      const pos = document.getElementById('editBannerObjectPosition')?.value || 'center';
+      const h = document.getElementById('editBannerHeightRange')?.value || 200;
+      const preview = document.getElementById('editBannerLivePreview');
+      if (preview) {
+        preview.style.display = 'block';
+        preview.innerHTML = `<img src="${img}" style="width:100%;height:${h}px;object-fit:${fit};object-position:${pos};display:block;">`;
+      }
+    }
+
+    function updateBanner() {
+      const id = document.getElementById('editBannerId').value;
+      const title = document.getElementById('editBannerTitle').value.trim();
+      const link = document.getElementById('editBannerLink').value.trim();
+      const status = document.getElementById('editBannerStatus').checked ? 'active' : 'inactive';
+      const objectFit = document.getElementById('editBannerObjectFit')?.value || 'cover';
+      const objectPosition = document.getElementById('editBannerObjectPosition')?.value || 'center';
+      const height = parseInt(document.getElementById('editBannerHeightRange')?.value) || 200;
+      if (!title) { alert('Banner title required'); return; }
+      const newImage = window._editBannerNewImage || window._editBannerCurrentImage || '';
+      const updates = { title, link, status, objectFit, objectPosition, height, image: newImage };
+      database.ref('banners/' + id).update(updates)
+        .then(() => {
+          closeModal('editBannerModal');
+          loadBanners();
+          if (typeof showAdminToast === 'function') showAdminToast('Banner updated!', 'success');
+          else alert('Banner updated successfully!');
+        })
+        .catch(err => alert('Error: ' + err.message));
+    }
+
+    // Save Product and then open Similar Products modal for same product
+    function saveProductAndAddSimilar() {
+      const name = document.getElementById('productName').value.trim();
+      const price = document.getElementById('productPrice').value.trim();
+      const stock = document.getElementById('productStock').value.trim();
+      const category = document.getElementById('productCategory').value;
+      const desc = document.getElementById('productDesc').value.trim();
+      const fullDesc = document.getElementById('productFullDesc').value.trim();
+      const sizesInput = document.getElementById('productSizes').value.trim();
+      const trending = document.getElementById('productTrending').checked;
+      const status = document.getElementById('productStatus').checked ? 'active' : 'inactive';
+      if (!name) { alert('Please enter product name'); return; }
+      if (!price || isNaN(price) || parseFloat(price) <= 0) { alert('Please enter a valid price'); return; }
+      if (!category) { alert('Please select a category'); return; }
+      if (!desc) { alert('Please enter product description'); return; }
+      if (uploadedImages.length === 0) { alert('Please upload at least one product image'); return; }
+      const saveBtn = document.getElementById('saveProductSimilarBtn');
+      const originalText = saveBtn.innerHTML;
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      saveBtn.disabled = true;
+      const productsRef = database.ref('products');
+      productsRef.once('value', snapshot => {
+        const productsData = snapshot.val();
+        let products = productsData ? Object.values(productsData) : [];
+        let nextId = 1;
+        if (products.length > 0) {
+          const ids = products.map(p => parseInt(p.id || p.key)).filter(id => !isNaN(id));
+          nextId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+        }
+        const productId = nextId.toString();
+        const sizes = sizesInput ? sizesInput.split(',').map(s => s.trim()).filter(s => s) : [];
+        const tagsRaw = document.getElementById('productSearchTags')?.value?.trim() || '';
+        const productTags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+        const newProduct = {
+          id: productId, title: name, price: parseFloat(price),
+          stock: stock ? parseInt(stock) : 0, desc, fullDesc,
+          images: uploadedImages, sizes, category, trending, status,
+          tags: productTags, timestamp: Date.now()
+        };
+        productsRef.child(productId).set(newProduct)
+          .then(() => {
+            logSharedAdminActivity('product_add', 'Product Add kiya: ' + name, 'Category: ' + category + ' | Price: ₹' + price, productId);
+            closeModal('addProductModal');
+            loadProducts();
+            loadTrendingProducts();
+            if (currentAdminTab === 'dashboard') loadDashboardData();
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+            // Now open Similar Products modal and pre-select the new product
+            setTimeout(() => {
+              const modal = document.getElementById('addSimilarProductsModal');
+              if (!modal) return;
+              // Reload allProductsForSimilar then open
+              database.ref('products').once('value').then(snap => {
+                allProductsForSimilar = snap.exists()
+                  ? Object.entries(snap.val()).map(([k, v]) => ({ ...v, id: k }))
+                  : [];
+                const mainSel = document.getElementById('mainProductSelect');
+                if (mainSel) {
+                  mainSel.innerHTML = '<option value="">-- Select Product --</option>' +
+                    allProductsForSimilar.map(p => `<option value="${p.id}" ${p.id === productId ? 'selected' : ''}>${p.title || 'Product ' + p.id}</option>`).join('');
+                  mainSel.value = productId;
+                  loadProductDetails(productId);
+                }
+                const simSel = document.getElementById('similarProductsSelect');
+                if (simSel) {
+                  simSel.innerHTML = allProductsForSimilar
+                    .filter(p => p.id !== productId)
+                    .map(p => `<option value="${p.id}">${p.title || 'Product ' + p.id} (${p.category || ''})</option>`).join('');
+                }
+                modal.classList.add('active');
+              });
+            }, 300);
+          })
+          .catch(error => {
+            alert('Error saving product: ' + error.message);
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+          });
+      });
     }
 
     function deleteCategory(categoryId) {
@@ -7557,10 +7918,6 @@
           })
           .catch(err => alert('Error: ' + err.message));
       }
-    }
-
-    function editBanner(bannerId) {
-      alert('Edit banner functionality coming soon!');
     }
 
     function deleteBanner(bannerId) {
